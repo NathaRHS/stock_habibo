@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Travail frontend hors périmètre du login
+src/pages/*
+!src/pages/Login.tsx
+src/pages/css/
+src/components/
+src/assets/icon/
+
+# Configuration locale du frontend
+.env
+.env.*
+!.env.example
