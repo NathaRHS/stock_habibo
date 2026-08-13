@@ -26,7 +26,7 @@ public class UserService {
     // créer un utilisateur avec un rôle spécifique
     public UserResponse creerCompte(CreateUserRequest request) {
         Role role = roleRepository.findById(request.roleId())
-                .orElseThrow(() -> new IllegalArgumentException("Role introuvable"));
+                .orElseThrow(() -> new IllegalArgumentException("Role introuvable : " + request.roleId()));
 
         String passwordHash = passwordEncoder.encode(request.password());
         User user = new User(request.username(), request.matricule(), request.email(), passwordHash, role);
@@ -40,7 +40,7 @@ public class UserService {
                 savedUser.getRole().getName());
     }
 
-    // Login
+    // Login utilisateur en utilisant son matricule
     public UserResponse login(String matricule, String password) {
         User user = userRepository.findByMatricule(matricule)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
