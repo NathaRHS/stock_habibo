@@ -5,5 +5,5 @@ public record CreateUserRequest(
         String matricule,
         String email,
         String password,
-                Long roleId) {
+        Long roleId) {
 }

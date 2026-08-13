@@ -22,7 +22,7 @@ public class User {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "role_id", nullable = false)
-    private Role role;
+    private Role role; // admin , inventoriste , superviseur , audit
 
     public User() {
     }
@@ -34,6 +34,8 @@ public class User {
         this.email = email;
         this.passwordHash = passwordHash;
     }
+
+    
 
     public Long getId() {
         return id;
@@ -82,7 +84,5 @@ public class User {
     public void setRole(Role role) {
         this.role = role;
     }
-
-    
 
 }
