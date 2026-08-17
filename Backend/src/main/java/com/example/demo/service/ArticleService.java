@@ -8,10 +8,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.dto.ArticleResponse;
 import com.example.demo.dto.CreateArticleRequest;
+import com.example.demo.repository.TypeProduitRepository;
 import com.example.demo.entity.Article;
 import com.example.demo.entity.TypeProduit;
 import com.example.demo.repository.ArticleRepository;
-import com.example.demo.repository.TypeProduitRepository;
 
 @Service
 public class ArticleService {
@@ -29,14 +29,17 @@ public class ArticleService {
         return versResponse(articleRepository.save(article));
     }
 
+    //Lister les articles 
     public List<ArticleResponse> getAllArticles() {
         return articleRepository.findAll().stream().map(this::versResponse).toList();
     }
 
+    //Récupérer un article par son ID
     public ArticleResponse getArticleById(Long id) {
         return versResponse(trouverArticle(id));
     }
 
+    //Modifier un article existant
     public ArticleResponse modifierArticle(Long id, CreateArticleRequest request) {
         Article article = trouverArticle(id);
         article.setNomArticle(request.nomArticle());
@@ -45,10 +48,12 @@ public class ArticleService {
         return versResponse(articleRepository.save(article));
     }
 
+    //Supprimer un article
     public void supprimerArticle(Long id) {
         articleRepository.delete(trouverArticle(id));
     }
 
+    //HTTPStatus not found -> 400
     private Article trouverArticle(Long id) {
         return articleRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(

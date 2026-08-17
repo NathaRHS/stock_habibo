@@ -29,7 +29,6 @@ public class JwtService {
 
     public String generateToken(User user) {
         Instant now = Instant.now();
-
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("stock-api")
                 .issuedAt(now)

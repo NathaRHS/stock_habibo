@@ -26,6 +26,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 
+
+
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -49,8 +51,8 @@ public class SecurityConfig {
                         .permitAll()
 
                         // Toute gestion et consultation des utilisateurs : ADMIN
-                        .requestMatchers("/user", "/user/**")
-                        .hasRole("ADMIN")
+                        // .requestMatchers("/user", "/user/**")
+                        // .hasRole("ADMIN")
 
                         // Toutes les créations : ADMIN
                         .requestMatchers(HttpMethod.POST, "/**")

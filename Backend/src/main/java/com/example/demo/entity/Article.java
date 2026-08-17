@@ -1,5 +1,8 @@
 package com.example.demo.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -13,6 +16,12 @@ public class Article {
     @Column(name = "nom_article", nullable = false)
     private String nomArticle;
 
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "type_conditionnement_id",nullable = false)
+    TypeConditionnement typeConditionnement ;
+
+
   
 
     @ManyToOne(optional = false)
@@ -21,6 +30,9 @@ public class Article {
 
     @Column(name = "code_bar", nullable = false, unique = true)
     private String codeBar;
+
+    @OneToMany(mappedBy = "article")
+    private List<DetailJournal> detailsJournal = new ArrayList<>();
 
     public Article() {
     }
@@ -61,6 +73,22 @@ public class Article {
 
     public void setCodeBar(String codeBar) {
         this.codeBar = codeBar;
+    }
+
+    public TypeConditionnement getTypeConditionnement() {
+        return typeConditionnement;
+    }
+
+    public void setTypeConditionnement(TypeConditionnement typeConditionnement) {
+        this.typeConditionnement = typeConditionnement;
+    }
+
+    public List<DetailJournal> getDetailsJournal() {
+        return detailsJournal;
+    }
+
+    public void setDetailsJournal(List<DetailJournal> detailsJournal) {
+        this.detailsJournal = detailsJournal;
     }
 
 }
