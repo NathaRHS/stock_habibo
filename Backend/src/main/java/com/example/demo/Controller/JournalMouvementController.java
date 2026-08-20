@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.demo.dto.DetailJournalResponse;
 import com.example.demo.dto.JournalMouvementRequest;
 import com.example.demo.dto.JournalMouvementResponse;
+import com.example.demo.dto.UpdateStatutJournalRequest;
 import com.example.demo.service.JournalMouvementService;
 
 @RestController
@@ -32,6 +34,7 @@ public class JournalMouvementController {
         return service.create(request);
     }
 
+
     @GetMapping
     public List<JournalMouvementResponse> findAll() {
         return service.findAll();
@@ -40,6 +43,10 @@ public class JournalMouvementController {
     @GetMapping("/{id}")
     public JournalMouvementResponse findById(@PathVariable Long id) {
         return service.findById(id);
+    }
+        @GetMapping("/detailJournal")
+    public List<DetailJournalResponse> findAllDetailJournal() {
+        return service.findAllDetailJournal();
     }
 
     @PutMapping("/{id}")
@@ -53,4 +60,12 @@ public class JournalMouvementController {
     public void delete(@PathVariable Long id) {
         service.delete(id);
     }
+
+    @PutMapping("/{id}/statut")
+    public JournalMouvementResponse changeStatutJournal(
+            @PathVariable Long id,
+            @RequestBody UpdateStatutJournalRequest request) {
+        return service.updateStatutJournal(id, request.statutId());
+    }
+
 }

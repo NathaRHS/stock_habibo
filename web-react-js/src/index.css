@@ -1,0 +1,64 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.material-symbols-outlined {
+  display: inline-block;
+  overflow: hidden;
+  font-family: "Material Symbols Outlined";
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "liga";
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+}
+:root {
+  --color-primary: #01498e;
+  --color-primary-hover: #003d78;
+  --color-primary-soft: #eaf2fa;
+  --color-secondary: #415364;
+  --color-secondary-soft: #eef1f3;
+  --color-background: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-border: #dfe4e8;
+  --color-text: #18212a;
+  --color-text-secondary: #667482;
+  --color-text-muted: #98a2ab;
+  --color-success: #1f9d62;
+  --color-success-soft: #e8f7ef;
+  --color-danger: #d64545;
+  --color-danger-soft: #fbecec;
+  --color-warning: #d99016;
+  --color-warning-soft: #fff5df;
+}

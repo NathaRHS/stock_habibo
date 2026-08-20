@@ -14,7 +14,7 @@ public class JournalMouvement {
 
     @ManyToOne
     @JoinColumn(name = "fournisseur_id")
-    private Fournisseur fournisseur;
+    private Societe fournisseur;
 
     @Column(name = "reference", nullable = false, unique = true)
     private String reference;
@@ -41,7 +41,7 @@ public class JournalMouvement {
     }
 
     public JournalMouvement(
-            Fournisseur fournisseur,
+            Societe fournisseur,
             String reference,
             String urlPieceJointe,
             String nomClient,
@@ -63,11 +63,11 @@ public class JournalMouvement {
         this.id = id;
     }
 
-    public Fournisseur getFournisseur() {
+    public Societe getFournisseur() {
         return fournisseur;
     }
 
-    public void setFournisseur(Fournisseur fournisseur) {
+    public void setFournisseur(Societe fournisseur) {
         this.fournisseur = fournisseur;
     }
 

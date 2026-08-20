@@ -64,4 +64,6 @@ public class DetailJournal {
         this.quantite = quantite;
     }
 
+  
+
 }

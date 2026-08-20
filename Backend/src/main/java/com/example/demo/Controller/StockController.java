@@ -1,5 +1,6 @@
 package com.example.demo.Controller;
 
+import java.lang.annotation.Repeatable;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,9 @@ public class StockController {
     public List<StockParEtageResponse> showAllStocksParEtage() {
         return stockService.getAllStocksParEtage();
     }
+
+    // @GetMapping("/getListeEmplacementTotal")
+    
 
     @GetMapping("/articles/{articleId}/etages")
     public List<StockParEtageResponse> showStocksParEtageByArticleId(

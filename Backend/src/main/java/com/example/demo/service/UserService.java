@@ -1,13 +1,18 @@
 package com.example.demo.service;
 
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.example.demo.dto.CreateUserRequest;
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.LoginResponse;
+import com.example.demo.dto.StatutJournalMouvementResponse;
 import com.example.demo.dto.UserResponse;
 import com.example.demo.entity.Role;
+import com.example.demo.entity.StatutjournalMouvement;
 import com.example.demo.entity.User;
 
 import com.example.demo.repository.RoleRepository;
@@ -68,5 +73,20 @@ public class UserService {
                 "Bearer",
                 jwtService.getExpirationSeconds(),
                 userResponse);
+    }
+
+    public List<UserResponse> getAll() {
+        return userRepository.findAll().stream()
+                .map(this::versResponse)
+                .toList();
+    }
+
+    private UserResponse versResponse(User user) {
+        return new UserResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getMatricule(),
+                user.getEmail(),
+                user.getRole().getName());
     }
 }

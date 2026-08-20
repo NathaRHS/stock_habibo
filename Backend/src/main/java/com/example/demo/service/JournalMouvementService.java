@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -13,12 +14,13 @@ import com.example.demo.dto.JournalMouvementRequest;
 import com.example.demo.dto.JournalMouvementResponse;
 import com.example.demo.entity.Article;
 import com.example.demo.entity.DetailJournal;
-import com.example.demo.entity.Fournisseur;
+import com.example.demo.entity.Societe;
 import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.StatutjournalMouvement;
 import com.example.demo.entity.TypeMouvementJournal;
 import com.example.demo.repository.ArticleRepository;
-import com.example.demo.repository.FournisseurRepository;
+import com.example.demo.repository.DetailJournalRepository;
+import com.example.demo.repository.SocieteRepository;
 import com.example.demo.repository.JournalMouvementRepository;
 import com.example.demo.repository.StatutJournalMouvementRepository;
 import com.example.demo.repository.TypeMouvementJournalRepository;
@@ -29,34 +31,39 @@ public class JournalMouvementService {
     private final JournalMouvementRepository journalRepository;
     private final TypeMouvementJournalRepository typeRepository;
     private final StatutJournalMouvementRepository statutRepository;
-    private final FournisseurRepository fournisseurRepository;
+    private final SocieteRepository fournisseurRepository;
     private final ArticleRepository articleRepository;
+    private final DetailJournalRepository detailJournalRepository;
 
     public JournalMouvementService(
             JournalMouvementRepository journalRepository,
             TypeMouvementJournalRepository typeRepository,
             StatutJournalMouvementRepository statutRepository,
-            FournisseurRepository fournisseurRepository,
-            ArticleRepository articleRepository) {
+            SocieteRepository fournisseurRepository,
+            ArticleRepository articleRepository, DetailJournalRepository detailJournalRepository) {
         this.journalRepository = journalRepository;
         this.typeRepository = typeRepository;
         this.statutRepository = statutRepository;
         this.fournisseurRepository = fournisseurRepository;
+        this.detailJournalRepository = detailJournalRepository;
         this.articleRepository = articleRepository;
+
     }
 
     public JournalMouvementResponse create(JournalMouvementRequest request) {
         String reference = normaliserReference(request.reference());
         verifierReferenceDisponible(reference, null);
         // validerDetails(request.details());
-
+        Long idOriginal = Long.valueOf(1);
+        StatutjournalMouvement statutjournalMouvement = statutRepository.findById(idOriginal)
+                .orElseThrow(() -> new RuntimeException("statut original non créé"));
         JournalMouvement journal = new JournalMouvement(
                 trouverFournisseur(request.fournisseurId()),
                 reference,
                 normaliserFacultatif(request.urlPieceJointe()),
                 normaliserFacultatif(request.nomClient()),
                 trouverType(request.typeMouvementJournalId()),
-                trouverStatut(request.statutJournalMouvementId()));
+                statutjournalMouvement);
 
         // remplacerDetails(journal, request.details());
         return versResponse(journalRepository.save(journal));
@@ -93,32 +100,6 @@ public class JournalMouvementService {
         journalRepository.delete(trouverJournal(id));
     }
 
-    private void remplacerDetails(JournalMouvement journal, List<DetailJournalRequest> requests) {
-        journal.supprimerTousLesDetails();
-        for (DetailJournalRequest request : requests) {
-            Article article = articleRepository.findById(request.articleId())
-                    .orElseThrow(() -> new ResponseStatusException(
-                            HttpStatus.NOT_FOUND, "Article introuvable : " + request.articleId()));
-            journal.ajouterDetail(new DetailJournal(journal, article, request.quantite()));
-        }
-    }
-
-    private void validerDetails(List<DetailJournalRequest> details) {
-        if (details == null || details.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Le journal doit contenir au moins un detail");
-        }
-        for (DetailJournalRequest detail : details) {
-            if (detail == null || detail.articleId() == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "articleId est obligatoire");
-            }
-            if (detail.quantite() == null || detail.quantite() <= 0) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "La quantite doit etre strictement positive");
-            }
-        }
-    }
-
     private JournalMouvement trouverJournal(Long id) {
         return journalRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -145,7 +126,7 @@ public class JournalMouvementService {
                         HttpStatus.NOT_FOUND, "Statut de journal introuvable : " + id));
     }
 
-    private Fournisseur trouverFournisseur(Long id) {
+    private Societe trouverFournisseur(Long id) {
         if (id == null) {
             return null;
         }
@@ -175,13 +156,14 @@ public class JournalMouvementService {
     }
 
     private JournalMouvementResponse versResponse(JournalMouvement journal) {
-        Fournisseur fournisseur = journal.getFournisseur();
+        Societe fournisseur = journal.getFournisseur();
         List<DetailJournalResponse> details = journal.getDetails().stream()
                 .map(detail -> new DetailJournalResponse(
                         detail.getId(),
                         detail.getArticle().getId(),
                         detail.getArticle().getNomArticle(),
-                        detail.getQuantite()))
+                        detail.getQuantite(), detail.getJournalMouvement().getId(),
+                        detail.getJournalMouvement().getReference()))
                 .toList();
 
         return new JournalMouvementResponse(
@@ -198,4 +180,36 @@ public class JournalMouvementService {
                 journal.getStatutJournalMouvement().getNomStatut(),
                 details);
     }
+
+    public JournalMouvementResponse updateStatutJournal(Long journalId, Long idStatut) {
+        JournalMouvement journal = trouverJournal(journalId);
+        journal.setStatutJournalMouvement(trouverStatut(idStatut));
+        return versResponse(journalRepository.save(journal));
+    }
+
+    public DetailJournalResponse versResponse(DetailJournal detailJournal) {
+        DetailJournalResponse detailJournalResponse = new DetailJournalResponse(detailJournal.getId(),
+                detailJournal.getArticle().getId(), detailJournal.getArticle().getNomArticle(),
+                detailJournal.getQuantite(), detailJournal.getJournalMouvement().getId(),
+                detailJournal.getJournalMouvement().getReference());
+        return detailJournalResponse;
+    }
+
+    public List<DetailJournalResponse> getAllDetailJournalForAJournal(Long journalId) {
+        return detailJournalRepository
+                .findAllByJournalMouvementId(journalId)
+                .stream()
+                .map(this::versResponse)
+                .toList();
+    }
+
+    public List<DetailJournalResponse> findAllDetailJournal() {
+        return detailJournalRepository
+                .findAll()
+                .stream()
+                .map(this::versResponse)
+                .toList();
+
+    }
+
 }

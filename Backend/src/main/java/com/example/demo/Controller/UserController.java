@@ -1,5 +1,8 @@
 package com.example.demo.Controller;
 
+import java.util.List;
+
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +28,11 @@ public class UserController {
     @PostMapping("/creerCompte")
     public UserResponse creerCompte(@RequestBody CreateUserRequest request) {
         return userService.creerCompte(request);
+    }
+
+    @GetMapping
+    public List<UserResponse> getAll(){
+        return userService.getAll();
     }
 
     @PostMapping("/login")

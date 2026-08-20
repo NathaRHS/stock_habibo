@@ -1,5 +1,6 @@
 package com.example.demo.entity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.Column;
@@ -22,7 +23,10 @@ public class TypeConditionnement {
     private String nomConditionnement;
 
     @OneToMany(mappedBy = "typeConditionnement")
-    private List<Article>articles;
+    private List<Article> articles = new ArrayList<>();
+
+    @OneToMany(mappedBy = "typeConditionnement")
+    private List<ArticleConditionnement> articleConditionnements = new ArrayList<>();
 
     public List<Article> getArticles() {
         return articles;
@@ -30,6 +34,14 @@ public class TypeConditionnement {
 
     public void setArticles(List<Article> articles) {
         this.articles = articles;
+    }
+
+    public List<ArticleConditionnement> getArticleConditionnements() {
+        return articleConditionnements;
+    }
+
+    public void setArticleConditionnements(List<ArticleConditionnement> articleConditionnements) {
+        this.articleConditionnements = articleConditionnements;
     }
 
     public TypeConditionnement() {

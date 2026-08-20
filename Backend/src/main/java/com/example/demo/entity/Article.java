@@ -16,13 +16,12 @@ public class Article {
     @Column(name = "nom_article", nullable = false)
     private String nomArticle;
 
-
     @ManyToOne(optional = false)
-    @JoinColumn(name = "type_conditionnement_id",nullable = false)
-    TypeConditionnement typeConditionnement ;
+    @JoinColumn(name = "type_conditionnement_id", nullable = false)
+    private TypeConditionnement typeConditionnement;
 
-
-  
+    @OneToMany(mappedBy = "article")
+    private List<ArticleConditionnement> articleConditionnements = new ArrayList<>();
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "type_produit_id", nullable = false)
@@ -37,10 +36,12 @@ public class Article {
     public Article() {
     }
 
-    public Article(TypeProduit typeProduit, String codeBar, String nomArticle) {
+    public Article(TypeProduit typeProduit, String codeBar, String nomArticle,
+            TypeConditionnement typeConditionnement) {
         this.typeProduit = typeProduit;
         this.codeBar = codeBar;
         this.nomArticle = nomArticle;
+        this.typeConditionnement = typeConditionnement;
     }
 
     public Long getId() {
@@ -55,7 +56,7 @@ public class Article {
         return typeProduit;
     }
 
-      public String getNomArticle() {
+    public String getNomArticle() {
         return nomArticle;
     }
 
@@ -81,6 +82,14 @@ public class Article {
 
     public void setTypeConditionnement(TypeConditionnement typeConditionnement) {
         this.typeConditionnement = typeConditionnement;
+    }
+
+    public List<ArticleConditionnement> getArticleConditionnements() {
+        return articleConditionnements;
+    }
+
+    public void setArticleConditionnements(List<ArticleConditionnement> articleConditionnements) {
+        this.articleConditionnements = articleConditionnements;
     }
 
     public List<DetailJournal> getDetailsJournal() {

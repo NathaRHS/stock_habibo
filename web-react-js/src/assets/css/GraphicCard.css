@@ -1,0 +1,41 @@
+.graphic-card-container {
+  position: relative;
+  min-height: 122px;
+  padding: 17px 18px 13px;
+  border-radius: 8px;
+}
+
+.graphic-card-icon {
+  position: absolute;
+  top: 6px;
+  right: 16px;
+  display: grid;
+  width: 39px;
+  height: 39px;
+  background: rgb(255 255 255 / 90%);
+  border-radius: 10px;
+  color: var(--color-primary);
+  font-size: 20px;
+  place-items: center;
+}
+
+.graphic-card-title {
+  max-width: calc(100% - 48px);
+  margin-bottom: 31px;
+  color: var(--color-secondary);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.graphic-card-value {
+  margin-bottom: 4px;
+  color: var(--color-text);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.graphic-card-rate { font-size: 11px; font-weight: 700; }
+.graphic-card-rate--positive { color: var(--color-success); }
+.graphic-card-rate--negative { color: var(--color-danger); }

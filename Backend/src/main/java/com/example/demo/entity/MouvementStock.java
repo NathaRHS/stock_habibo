@@ -13,7 +13,7 @@ public class MouvementStock {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "type_mouvement_id")
-    private TypeMouvement typeMouvement;
+    private TypeMouvementStock typeMouvement;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "etage_id", nullable = false)
@@ -33,4 +33,70 @@ public class MouvementStock {
 
     @Column(name = "commentaire", length = 500)
     private String commentaire;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public TypeMouvementStock getTypeMouvement() {
+        return typeMouvement;
+    }
+
+    public void setTypeMouvement(TypeMouvementStock typeMouvement) {
+        this.typeMouvement = typeMouvement;
+    }
+
+    public Etage getEtage() {
+        return etage;
+    }
+
+    public void setEtage(Etage etage) {
+        this.etage = etage;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Integer getNombreConditionnements() {
+        return nombreConditionnements;
+    }
+
+    public void setNombreConditionnements(Integer nombreConditionnements) {
+        this.nombreConditionnements = nombreConditionnements;
+    }
+
+    public Integer getQuantitePiecesReelle() {
+        return quantitePiecesReelle;
+    }
+
+    public void setQuantitePiecesReelle(Integer quantitePiecesReelle) {
+        this.quantitePiecesReelle = quantitePiecesReelle;
+    }
+
+    public LocalDateTime getDateMouvement() {
+        return dateMouvement;
+    }
+
+    public void setDateMouvement(LocalDateTime dateMouvement) {
+        this.dateMouvement = dateMouvement;
+    }
+
+    public String getCommentaire() {
+        return commentaire;
+    }
+
+    public void setCommentaire(String commentaire) {
+        this.commentaire = commentaire;
+    }
+
+    
 }

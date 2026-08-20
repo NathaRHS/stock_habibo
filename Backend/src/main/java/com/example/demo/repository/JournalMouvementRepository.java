@@ -12,4 +12,9 @@ public interface JournalMouvementRepository extends JpaRepository<JournalMouveme
     Optional<JournalMouvement> findByReference(String reference);
 
     boolean existsByTypeMouvementJournalId(Long typeMouvementJournalId);
+
+    boolean existsByStatutJournalMouvementId(Long statutJournalMouvementId);
+
+    boolean existsByFournisseurId(Long fournisseurId);
+
 }
