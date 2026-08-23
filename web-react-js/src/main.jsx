@@ -18,28 +18,30 @@ import CreateTypeMouvementJournal from "./pages/CreateTypeMouvementJournal";
 import ListeTypeMouvementJournal from "./pages/ListeTypeMouvementJournal";
 import UploadFile from "./pages/UploadFile";
 import CreateJournal from "./pages/CreateJournal";
+import ControleJournal from "./pages/ControleJournal";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
+        {/* <Route path="/animate" element={<Animate />} /> */}
+        {/* <Route path="/crud" element={<CrudElement />} /> */}
         <Route path="/" element={<Login />} />
         <Route path="/accueil" element={<Accueil />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/animate" element={<Animate />} />
-        <Route path="/crud" element={<CrudElement />} />
-        <Route path="/listeArticle" element={<ListeArticle />} />
+        <Route path="/article" element={<ListeArticle />} />
         <Route path="/article/create" element={<CreateArticle />} />
-        <Route path="/listeJournal" element={<ListeJournal />} />
-        <Route path="/listeUtilisateur" element={<ListeUtilisateur />} />
+        <Route path="/users" element={<ListeUtilisateur />} />
         <Route path="/type-conditionnement/create" element={<CreateTypeConditionnement />} />
         <Route path="/type-conditionnement" element={<ListeTypeConditionnement />} />
         <Route path="/article-conditionnements" element={<ListeArticleConditionnement />} />
         <Route path="/article-conditionnements/create" element={<CreateArticleConditionnement />} />
         <Route path="/types-mouvements-journal" element={<ListeTypeMouvementJournal />} />
         <Route path="/types-mouvements-journal/create" element={<CreateTypeMouvementJournal />} />
-        <Route path="/upload" element={<UploadFile />} />
+        <Route path="/journaux-mouvements" element={<ListeJournal />} />
         <Route path="/journaux-mouvements/create" element={<CreateJournal />} />
+        <Route path="/journaux-mouvements/:id" element={<ControleJournal />} />
+        <Route path="/upload" element={<UploadFile />} />
 
       </Routes>
     </BrowserRouter>

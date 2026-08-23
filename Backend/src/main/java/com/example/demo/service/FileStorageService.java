@@ -1,11 +1,14 @@
 package com.example.demo.service;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -51,6 +54,43 @@ public class FileStorageService {
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "Impossible d'enregistrer le fichier",
                     exception);
+        }
+    }
+
+    public Resource chargerFichier(String nomFichier) {
+        if (nomFichier == null || nomFichier.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Le nom du fichier est obligatoire");
+        }
+
+        Path fichier = uploadDirectory.resolve(nomFichier).normalize();
+
+        if (!fichier.getParent().equals(uploadDirectory)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Nom de fichier invalide");
+        }
+
+        if (!Files.isRegularFile(fichier) || !Files.isReadable(fichier)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Fichier introuvable : " + nomFichier);
+        }
+
+        try {
+            return new UrlResource(fichier.toUri());
+        } catch (MalformedURLException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Impossible de lire le fichier",
+                    exception);
+        }
+    }
+
+    public String detecterTypeContenu(Resource fichier) {
+        try {
+            String typeContenu = Files.probeContentType(fichier.getFile().toPath());
+            return typeContenu == null ? "application/octet-stream" : typeContenu;
+        } catch (IOException exception) {
+            return "application/octet-stream";
         }
     }
 

@@ -68,4 +68,14 @@ public class JournalMouvementController {
         return service.updateStatutJournal(id, request.statutId());
     }
 
+    @PostMapping("/{id}/valider")
+    public JournalMouvementResponse valider(@PathVariable Long id) {
+        return service.valider(id);
+    }
+
+    @PostMapping("/{id}/demander-modification")
+    public JournalMouvementResponse demanderModification(@PathVariable Long id) {
+        return service.demanderModification(id);
+    }
+
 }

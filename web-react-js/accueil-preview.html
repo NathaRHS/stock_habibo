@@ -1,0 +1,1109 @@
+ <!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Warehouse — Vue opérationnelle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   SYSTÈME
+   ============================================================ */
+:root{
+  --paper:#F2F1ED;
+  --surface:#FFFFFF;
+  --surface-sunk:#FAF9F6;
+
+  --ink:#14181B;
+  --ink-2:#4A545C;
+  --ink-3:#8A9299;
+  --ink-4:#B4BABF;
+
+  --rule:#E4E2DC;          /* filet sur papier */
+  --rule-soft:#EDEBE5;     /* filet interne */
+  --rule-strong:#D3D0C8;
+
+  --accent:#0A3E6B;        /* bleu d'encre */
+  --accent-2:#2B6FA8;
+  --accent-wash:#EBF0F5;
+
+  --pos:#2F6E52;           /* vert forêt */
+  --pos-wash:#E9F0EB;
+  --neg:#A8443C;           /* terracotta */
+  --neg-wash:#F6EAE8;
+  --warn:#9A6B12;          /* ambre */
+  --warn-wash:#F7EFDF;
+
+  --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  font-size:13px;
+  line-height:1.45;
+}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+svg{display:block}
+
+/* micro-typographie ------------------------------------------------ */
+.eyebrow{
+  font-size:9.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+.num{font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ============================================================
+   CHÂSSIS
+   ============================================================ */
+.app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+
+/* ---------- SIDEBAR ---------- */
+.rail{
+  position:sticky;top:0;height:100vh;
+  display:flex;flex-direction:column;
+  background:var(--paper);
+  border-right:1px solid var(--rule);
+  padding:22px 0 16px;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:0 20px 22px}
+.brand-mark{
+  width:26px;height:26px;border-radius:3px;background:var(--ink);
+  display:grid;place-items:center;flex:none;
+}
+.brand-mark svg{width:14px;height:14px;stroke:#fff}
+.brand-name{font-size:13px;font-weight:600;letter-spacing:-.01em}
+.brand-sub{font-size:9.5px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;margin-top:-1px}
+
+.rail-scroll{flex:1;overflow-y:auto;padding:0 12px}
+.rail-group{margin-bottom:24px}
+.rail-group .eyebrow{padding:0 8px;margin-bottom:8px}
+.nav-link{
+  display:flex;align-items:center;gap:10px;
+  height:31px;padding:0 8px;border-radius:3px;
+  font-size:12.5px;color:var(--ink-2);position:relative;
+}
+.nav-link svg{width:15px;height:15px;stroke:var(--ink-3);flex:none}
+.nav-link:hover{background:#EAE8E2;color:var(--ink)}
+.nav-link[aria-current]{background:var(--surface);color:var(--ink);font-weight:500;box-shadow:inset 0 0 0 1px var(--rule)}
+.nav-link[aria-current] svg{stroke:var(--accent)}
+.nav-link[aria-current]::before{
+  content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:2px;background:var(--accent);
+}
+.nav-count{margin-left:auto;font-size:10px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.nav-dot{margin-left:auto;width:5px;height:5px;border-radius:50%;background:var(--neg)}
+
+/* capacité entrepôt en pied de rail */
+.rail-meter{margin:0 12px;padding:14px;background:var(--surface);border:1px solid var(--rule);border-radius:4px}
+.rail-meter-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px}
+.rail-meter-val{font-size:19px;font-weight:500;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.meter-track{display:flex;gap:2px;height:22px;align-items:flex-end}
+.meter-track i{flex:1;background:var(--rule-strong);border-radius:1px}
+.meter-track i.on{background:var(--accent)}
+.meter-track i.hot{background:var(--warn)}
+.rail-meter-foot{display:flex;justify-content:space-between;margin-top:9px;font-size:10px;color:var(--ink-3)}
+
+.rail-foot{padding:14px 20px 0;margin-top:14px;border-top:1px solid var(--rule);display:flex;gap:18px}
+.rail-foot a{font-size:11.5px;color:var(--ink-3)}
+.rail-foot a:hover{color:var(--ink)}
+
+/* ---------- COLONNE PRINCIPALE ---------- */
+.main{min-width:0;background:var(--paper)}
+
+/* topbar */
+.topbar{
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;gap:20px;
+  height:58px;padding:0 28px;
+  background:rgba(242,241,237,.86);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--rule);
+}
+.crumb{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3)}
+.crumb b{font-weight:500;color:var(--ink)}
+.crumb span{color:var(--ink-4)}
+
+.search{
+  margin-left:6px;display:flex;align-items:center;gap:8px;
+  height:30px;width:250px;padding:0 10px;
+  background:var(--surface);border:1px solid var(--rule);border-radius:3px;
+}
+.search svg{width:13px;height:13px;stroke:var(--ink-3);flex:none}
+.search input{flex:1;border:0;outline:0;background:none;font-size:12px;color:var(--ink)}
+.search input::placeholder{color:var(--ink-4)}
+.search kbd{
+  font-family:var(--mono);font-size:9.5px;color:var(--ink-3);
+  border:1px solid var(--rule);border-radius:2px;padding:1px 4px;
+}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.sync{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink-2)}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--pos);position:relative}
+.pulse::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--pos);opacity:.35;animation:ping 2.4s ease-out infinite}
+@keyframes ping{0%{transform:scale(.6);opacity:.5}100%{transform:scale(1.25);opacity:0}}
+.icon-btn{width:30px;height:30px;display:grid;place-items:center;border-radius:3px;border:1px solid transparent;position:relative}
+.icon-btn:hover{background:var(--surface);border-color:var(--rule)}
+.icon-btn svg{width:15px;height:15px;stroke:var(--ink-2)}
+.icon-btn .badge{position:absolute;top:5px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--neg)}
+.vrule{width:1px;height:20px;background:var(--rule)}
+.user{display:flex;align-items:center;gap:9px}
+.avatar{width:27px;height:27px;border-radius:3px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:10px;font-weight:600;letter-spacing:.02em}
+.user-name{font-size:11.5px;font-weight:500;line-height:1.2}
+.user-role{font-size:10px;color:var(--ink-3);line-height:1.2}
+
+/* ---------- EN-TÊTE DE PAGE ---------- */
+.page-head{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:28px;
+  padding:34px 28px 22px;
+}
+.page-title{font-size:29px;font-weight:500;letter-spacing:-.035em;line-height:1.05}
+.page-meta{display:flex;align-items:center;gap:10px;margin-top:9px;font-size:11.5px;color:var(--ink-3)}
+.page-meta .dot{width:3px;height:3px;border-radius:50%;background:var(--ink-4)}
+.head-actions{display:flex;align-items:center;gap:10px}
+.segmented{display:flex;background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:2px}
+.segmented button{padding:0 11px;height:26px;font-size:11.5px;color:var(--ink-3);border-radius:2px;letter-spacing:-.005em}
+.segmented button[data-on]{background:var(--ink);color:#fff}
+.btn-ghost{height:30px;padding:0 12px;border:1px solid var(--rule);border-radius:3px;background:var(--surface);font-size:11.5px;display:inline-flex;align-items:center;gap:7px}
+.btn-ghost:hover{border-color:var(--rule-strong)}
+.btn-ghost svg{width:13px;height:13px;stroke:var(--ink-2)}
+.btn-solid{height:30px;padding:0 13px;border-radius:3px;background:var(--ink);color:#fff;font-size:11.5px;font-weight:500;display:inline-flex;align-items:center;gap:7px}
+.btn-solid:hover{background:#000}
+.btn-solid svg{width:13px;height:13px;stroke:#fff}
+
+/* ============================================================
+   BANDE KPI — un seul bloc divisé par des filets
+   ============================================================ */
+.kpi-band{
+  margin:0 28px;background:var(--surface);
+  border:1px solid var(--rule);border-radius:4px;
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+}
+.kpi{padding:18px 20px 16px;border-left:1px solid var(--rule-soft);position:relative}
+.kpi:first-child{border-left:0}
+.kpi-head{display:flex;align-items:center;gap:7px;margin-bottom:14px}
+.kpi-head svg{width:13px;height:13px;stroke:var(--ink-3)}
+.kpi-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.kpi-val{font-size:34px;font-weight:500;letter-spacing:-.04em;line-height:.92;font-variant-numeric:tabular-nums}
+.kpi-unit{font-size:12px;color:var(--ink-3);margin-left:3px;letter-spacing:0}
+.spark{width:78px;height:26px;flex:none}
+.kpi-foot{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11px;color:var(--ink-3)}
+.delta{display:inline-flex;align-items:center;gap:3px;font-weight:500;font-variant-numeric:tabular-nums}
+.delta svg{width:9px;height:9px}
+.delta.up{color:var(--pos)}
+.delta.down{color:var(--neg)}
+.delta.flat{color:var(--ink-3)}
+
+/* ============================================================
+   GRILLE ASYMÉTRIQUE
+   ============================================================ */
+.grid{
+  display:grid;grid-template-columns:minmax(0,1fr) 372px;
+  gap:18px;padding:18px 28px 40px;align-items:start;
+}
+.col{display:flex;flex-direction:column;gap:18px;min-width:0}
+
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:4px}
+.panel-head{
+  display:flex;align-items:center;gap:12px;
+  padding:15px 18px;border-bottom:1px solid var(--rule-soft);
+}
+.panel-index{font-family:var(--mono);font-size:10px;color:var(--ink-4);letter-spacing:.04em}
+.panel-title{font-size:13px;font-weight:500;letter-spacing:-.012em}
+.panel-sub{font-size:11px;color:var(--ink-3);margin-top:1px}
+.panel-tools{margin-left:auto;display:flex;align-items:center;gap:12px}
+.link{font-size:11px;color:var(--ink-2);display:inline-flex;align-items:center;gap:4px}
+.link:hover{color:var(--accent)}
+.link svg{width:11px;height:11px;stroke:currentColor}
+
+.legend{display:flex;align-items:center;gap:14px}
+.legend i{display:inline-flex;align-items:center;gap:6px;font-style:normal;font-size:11px;color:var(--ink-2)}
+.legend i::before{content:"";width:7px;height:7px;border-radius:1px}
+.legend i.e::before{background:var(--accent)}
+.legend i.s::before{background:#C3CCD4}
+.legend i.a::before{background:var(--warn)}
+
+/* -------- graphique flux -------- */
+.chart-wrap{padding:20px 18px 8px;position:relative}
+#fluxChart{width:100%;height:224px;overflow:visible}
+.gline{stroke:var(--rule-soft);stroke-width:1}
+.gzero{stroke:var(--rule-strong);stroke-width:1}
+.glabel{font-size:9.5px;fill:var(--ink-4);font-family:Inter}
+.bar{transition:opacity .12s}
+.chart-wrap.dim .bar{opacity:.28}
+.chart-wrap.dim .bar.hi{opacity:1}
+.tip{
+  position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-100%);
+  background:var(--ink);color:#fff;border-radius:3px;padding:9px 11px;min-width:132px;
+  transition:opacity .12s;z-index:5;
+}
+.tip.on{opacity:1}
+.tip-d{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#8D959B;margin-bottom:7px}
+.tip-r{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:11.5px;margin-top:3px}
+.tip-r b{font-weight:500;font-variant-numeric:tabular-nums}
+.tip-r span{display:inline-flex;align-items:center;gap:6px;color:#C4CACE}
+.tip-r span::before{content:"";width:6px;height:6px;border-radius:1px;background:currentColor}
+/* pied du graphique : totaux */
+.chart-foot{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--rule-soft)}
+.chart-foot div{padding:12px 18px;border-left:1px solid var(--rule-soft)}
+.chart-foot div:first-child{border-left:0}
+.chart-foot b{display:block;font-size:15px;font-weight:500;letter-spacing:-.025em;margin-top:5px;font-variant-numeric:tabular-nums}
+
+/* -------- occupation des zones -------- */
+.zones{padding:6px 18px 14px}
+.zone{display:grid;grid-template-columns:104px minmax(0,1fr) 92px;align-items:center;gap:16px;padding:11px 0;border-bottom:1px solid var(--rule-soft)}
+.zone:last-child{border-bottom:0}
+.zone-id{display:flex;align-items:baseline;gap:8px}
+.zone-code{font-family:var(--mono);font-size:11.5px;font-weight:500}
+.zone-type{font-size:10px;color:var(--ink-3)}
+.zbar{height:8px;background:var(--surface-sunk);border-radius:1px;position:relative;overflow:hidden}
+.zbar i{position:absolute;left:0;top:0;bottom:0;border-radius:1px;background:var(--accent)}
+.zbar i.warn{background:var(--warn)}
+.zbar i.crit{background:var(--neg)}
+.zbar .mark{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--ink-4)}
+.zone-val{display:flex;align-items:baseline;justify-content:flex-end;gap:7px}
+.zone-pct{font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.zone-abs{font-size:10px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.zones-foot{display:flex;align-items:center;gap:16px;padding:12px 18px;border-top:1px solid var(--rule-soft);font-size:10.5px;color:var(--ink-3)}
+.zones-foot i{font-style:normal;display:inline-flex;align-items:center;gap:6px}
+.zones-foot i::before{content:"";width:7px;height:7px;border-radius:1px;background:var(--accent)}
+.zones-foot i.w::before{background:var(--warn)}
+.zones-foot i.c::before{background:var(--neg)}
+
+/* -------- table journal -------- */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{
+  text-align:left;font-size:9.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-3);padding:10px 18px;border-bottom:1px solid var(--rule-soft);white-space:nowrap;
+}
+.tbl th.r,.tbl td.r{text-align:right}
+.tbl td{padding:12px 18px;border-bottom:1px solid var(--rule-soft);font-size:12px;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr:hover{background:var(--surface-sunk)}
+.ref{font-family:var(--mono);font-size:11.5px;color:var(--ink-2)}
+.art{font-weight:500;letter-spacing:-.01em}
+.art small{display:block;font-weight:400;font-size:10.5px;color:var(--ink-3);letter-spacing:0;margin-top:1px}
+.qty{font-variant-numeric:tabular-nums;font-weight:500}
+.qty.in{color:var(--pos)}
+.qty.out{color:var(--neg)}
+.who{display:flex;align-items:center;gap:8px}
+.mini{width:21px;height:21px;border-radius:3px;background:var(--surface-sunk);border:1px solid var(--rule);display:grid;place-items:center;font-size:9px;font-weight:600;color:var(--ink-2)}
+.tag{
+  display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px;border-radius:2px;
+  font-size:10.5px;font-weight:500;letter-spacing:.01em;
+}
+.tag::before{content:"";width:4px;height:4px;border-radius:50%;background:currentColor}
+.tag.ok{background:var(--pos-wash);color:var(--pos)}
+.tag.wait{background:var(--warn-wash);color:var(--warn)}
+.tag.err{background:var(--neg-wash);color:var(--neg)}
+.tag.info{background:var(--accent-wash);color:var(--accent)}
+.tbl-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--rule-soft);font-size:11px;color:var(--ink-3)}
+.pager{display:flex;gap:4px}
+.pager button{width:24px;height:24px;border:1px solid var(--rule);border-radius:2px;font-size:11px;color:var(--ink-2)}
+.pager button[data-on]{background:var(--ink);border-color:var(--ink);color:#fff}
+
+/* ============================================================
+   RAIL DROIT
+   ============================================================ */
+.alert{display:grid;grid-template-columns:3px minmax(0,1fr);gap:14px;padding:14px 18px;border-bottom:1px solid var(--rule-soft);cursor:pointer}
+.alert:last-of-type{border-bottom:0}
+.alert:hover{background:var(--surface-sunk)}
+.alert .sev{border-radius:1px}
+.alert.crit .sev{background:var(--neg)}
+.alert.warn .sev{background:var(--warn)}
+.alert.info .sev{background:var(--accent-2)}
+.alert-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.alert-t{font-size:12.5px;font-weight:500;letter-spacing:-.01em}
+.alert-time{font-size:10px;color:var(--ink-4);font-variant-numeric:tabular-nums;flex:none}
+.alert-d{font-size:11.5px;color:var(--ink-2);margin-top:3px;line-height:1.4}
+.alert-m{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:10.5px;color:var(--ink-3)}
+.alert-m .chip{font-family:var(--mono);font-size:10px;background:var(--surface-sunk);border:1px solid var(--rule);border-radius:2px;padding:1px 5px}
+
+/* jauge taux de service */
+.gauge-body{padding:20px 18px 18px;display:flex;align-items:center;gap:20px}
+.gauge{width:112px;height:112px;flex:none;position:relative}
+.gauge-center{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.gauge-val{font-size:25px;font-weight:500;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.gauge-lab{font-size:9.5px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+.gauge-list{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+.gauge-item{display:flex;align-items:center;gap:9px;font-size:11.5px}
+.gauge-item .k{width:7px;height:7px;border-radius:1px;flex:none}
+.gauge-item .l{color:var(--ink-2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gauge-item .v{font-variant-numeric:tabular-nums;font-weight:500}
+
+/* réappro */
+.repl{padding:0 18px}
+.repl-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--rule-soft)}
+.repl-row:last-child{border-bottom:0}
+.repl-idx{font-family:var(--mono);font-size:10px;color:var(--ink-4);width:14px;flex:none}
+.repl-body{flex:1;min-width:0}
+.repl-t{font-size:12px;font-weight:500;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.repl-s{font-size:10.5px;color:var(--ink-3);margin-top:2px;display:flex;align-items:center;gap:7px}
+.cover{width:52px;flex:none;text-align:right}
+.cover b{font-size:12.5px;font-weight:500;font-variant-numeric:tabular-nums}
+.cover small{display:block;font-size:9.5px;color:var(--ink-4)}
+.repl-foot{padding:12px 18px;border-top:1px solid var(--rule-soft)}
+.btn-block{width:100%;height:32px;border:1px solid var(--rule);border-radius:3px;font-size:11.5px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn-block:hover{background:var(--surface-sunk);border-color:var(--rule-strong)}
+.btn-block svg{width:13px;height:13px;stroke:var(--ink-2)}
+
+/* opérateurs */
+.ops{padding:4px 18px 6px}
+.op{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--rule-soft)}
+.op:last-child{border-bottom:0}
+.op-name{font-size:12px;font-weight:500;letter-spacing:-.01em}
+.op-task{font-size:10.5px;color:var(--ink-3);margin-top:1px}
+.op-bar{margin-left:auto;display:flex;align-items:center;gap:9px}
+.op-track{width:64px;height:4px;background:var(--surface-sunk);border-radius:2px;overflow:hidden}
+.op-track i{display:block;height:100%;background:var(--ink);border-radius:2px}
+.op-pct{font-size:11px;font-variant-numeric:tabular-nums;color:var(--ink-2);width:30px;text-align:right}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:1320px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:1080px){
+  .app{grid-template-columns:1fr}
+  .rail{position:static;height:auto;flex-direction:row;align-items:center;border-right:0;border-bottom:1px solid var(--rule);padding:12px 20px;gap:20px}
+  .rail-scroll,.rail-meter,.rail-foot{display:none}
+  .kpi-band{grid-template-columns:repeat(2,1fr)}
+  .kpi:nth-child(3),.kpi:nth-child(4){border-top:1px solid var(--rule-soft)}
+  .kpi:nth-child(odd){border-left:0}
+}
+@media (max-width:720px){
+  .search,.sync,.page-meta{display:none}
+  .kpi-band{grid-template-columns:1fr}
+  .kpi{border-left:0;border-top:1px solid var(--rule-soft)}
+  .kpi:first-child{border-top:0}
+  .page-head{flex-direction:column;align-items:flex-start;gap:16px}
+  .chart-foot{grid-template-columns:repeat(2,1fr)}
+  .grid,.kpi-band,.page-head,.topbar{padding-left:16px;padding-right:16px;margin-left:0;margin-right:0}
+  .kpi-band{margin:0 16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- =======================  RAIL  ======================= -->
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 4l9 5.5V20H3z"/><path d="M7 20v-6h10v6"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">Warehouse</div>
+        <div class="brand-sub">Site Antananarivo</div>
+      </div>
+    </div>
+
+    <div class="rail-scroll">
+      <div class="rail-group">
+        <p class="eyebrow">Exploitation</p>
+        <a class="nav-link" href="#" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          Tableau de bord</a>
+        <a class="nav-link" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M20 7 12 3 4 7v10l8 4 8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>
+          Articles <span class="nav-count">1 284</span></a>
+        <a class="nav-link" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M5 3h9l5 5v13H5z"/><path d="M14 3v5h5M8 13h8M8 17h5"/></svg>
+          Journal <span class="nav-count">347</span></a>
+        <a class="nav-link" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          Emplacements</a>
+        <a class="nav-link" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M17 11a3 3 0 1 0 0-6M18 20c0-2.6-1-4.3-2.5-5.2"/></svg>
+          Utilisateurs</a>
+      </div>
+
+      <div class="rail-group">
+        <p class="eyebrow">Optimisation</p>
+        <a class="nav-link" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg>
+          Anomalies <span class="nav-dot"></span></a>
+        <a class="nav-link" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M3 7l6 6 4-4 8 8"/><path d="M21 12v5h-5"/></svg>
+          Risques de rupture <span class="nav-count">7</span></a>
+        <a class="nav-link" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8.5 19H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5"/></svg>
+          Optimisation du picking</a>
+      </div>
+    </div>
+
+    <div class="rail-meter">
+      <div class="rail-meter-top">
+        <p class="eyebrow">Capacité utilisée</p>
+        <span class="rail-meter-val">78<span style="font-size:11px;color:var(--ink-3)">%</span></span>
+      </div>
+      <div class="meter-track" id="capMeter"></div>
+      <div class="rail-meter-foot"><span class="mono">9 412 / 12 000 pal.</span><span>Seuil 85 %</span></div>
+    </div>
+
+    <div class="rail-foot">
+      <a href="#">Aide</a>
+      <a href="#">Paramètres</a>
+    </div>
+  </aside>
+
+  <!-- =======================  MAIN  ======================= -->
+  <div class="main">
+
+    <header class="topbar">
+      <nav class="crumb"><a href="#">Exploitation</a><span>/</span><b>Tableau de bord</b></nav>
+
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" placeholder="Article, référence, emplacement…" />
+        <kbd>⌘K</kbd>
+      </label>
+
+      <div class="top-right">
+        <div class="sync"><span class="pulse"></span>Synchronisé · <span class="mono">08:42</span></div>
+        <div class="vrule"></div>
+        <button class="icon-btn" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M18 9a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6z"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg>
+          <span class="badge"></span>
+        </button>
+        <button class="icon-btn" aria-label="Paramètres">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7.5 19.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14a2 2 0 1 1 0-4 1.6 1.6 0 0 0 1.7-2.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3a2 2 0 1 1 4 0 1.6 1.6 0 0 0 2.6 1.7l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.6 1.6 0 0 0 21 10a2 2 0 1 1 0 4 1.6 1.6 0 0 0-1.6 1z"/></svg>
+        </button>
+        <div class="vrule"></div>
+        <div class="user">
+          <div class="avatar">RA</div>
+          <div>
+            <div class="user-name">R. Andrianasolo</div>
+            <div class="user-role">Responsable d’entrepôt</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="page-head">
+      <div>
+        <h1 class="page-title">Vue opérationnelle</h1>
+        <div class="page-meta">
+          <span>Jeudi 22 août 2026</span><span class="dot"></span>
+          <span>Équipe du matin · 06:00 — 14:00</span><span class="dot"></span>
+          <span class="mono">14 opérateurs actifs</span>
+        </div>
+      </div>
+      <div class="head-actions">
+        <div class="segmented" id="range">
+          <button data-r="7">7 j</button>
+          <button data-r="14" data-on>14 j</button>
+          <button data-r="30">30 j</button>
+        </div>
+        <button class="btn-ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v12M7 11l5 5 5-5M4 21h16"/></svg>
+          Exporter
+        </button>
+        <button class="btn-solid">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Nouveau mouvement
+        </button>
+      </div>
+    </section>
+
+    <!-- ---------- BANDE KPI ---------- -->
+    <section class="kpi-band" aria-label="Indicateurs du jour">
+      <article class="kpi">
+        <div class="kpi-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round"><path d="M3 12h13M11 7l5 5-5 5M21 4v16"/></svg>
+          <span class="eyebrow">Entrées du jour</span>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi-val">418<span class="kpi-unit">réf.</span></div>
+          <svg class="spark" data-spark="34,41,38,52,47,60,55,68,64,72" data-color="#0A3E6B"></svg>
+        </div>
+        <div class="kpi-foot">
+          <span class="delta up"><svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 2l4 6H2z"/></svg>12,4 %</span>
+          <span>vs. moy. 14 j</span>
+        </div>
+      </article>
+
+      <article class="kpi">
+        <div class="kpi-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round"><path d="M21 12H8M13 7l-5 5 5 5M3 4v16"/></svg>
+          <span class="eyebrow">Sorties du jour</span>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi-val">376<span class="kpi-unit">réf.</span></div>
+          <svg class="spark" data-spark="60,58,63,55,61,49,54,48,44,41" data-color="#A8443C"></svg>
+        </div>
+        <div class="kpi-foot">
+          <span class="delta down"><svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 10 2 4h8z"/></svg>5,1 %</span>
+          <span>vs. moy. 14 j</span>
+        </div>
+      </article>
+
+      <article class="kpi">
+        <div class="kpi-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v18M3 8h18M3 16h18"/></svg>
+          <span class="eyebrow">Rotation nette</span>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi-val">+42<span class="kpi-unit">pal.</span></div>
+          <svg class="spark" data-spark="18,22,15,26,20,31,24,36,30,42" data-color="#2F6E52"></svg>
+        </div>
+        <div class="kpi-foot">
+          <span class="delta up"><svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 2l4 6H2z"/></svg>8 pal.</span>
+          <span>solde entrées — sorties</span>
+        </div>
+      </article>
+
+      <article class="kpi">
+        <div class="kpi-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg>
+          <span class="eyebrow">Écarts d’inventaire</span>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi-val">9<span class="kpi-unit">lignes</span></div>
+          <svg class="spark" data-spark="4,6,5,8,6,9,7,11,8,9" data-color="#9A6B12"></svg>
+        </div>
+        <div class="kpi-foot">
+          <span class="delta flat">3 critiques</span>
+          <span>dont 2 &gt; 48 h</span>
+        </div>
+      </article>
+    </section>
+
+    <!-- ---------- GRILLE ---------- -->
+    <div class="grid">
+
+      <!-- ===== COLONNE PRINCIPALE ===== -->
+      <div class="col">
+
+        <!-- 01 · flux -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-index">01</span>
+            <div>
+              <div class="panel-title">Flux de mouvements</div>
+              <div class="panel-sub">Volumes quotidiens par sens d’opération</div>
+            </div>
+            <div class="panel-tools">
+              <div class="legend"><i class="e">Entrées</i><i class="s">Sorties</i><i class="a">Anomalies</i></div>
+            </div>
+          </div>
+
+          <div class="chart-wrap" id="chartWrap">
+            <svg id="fluxChart" role="img" aria-label="Graphique des entrées et sorties"></svg>
+            <div class="tip" id="tip"></div>
+          </div>
+
+          <div class="chart-foot">
+            <div><span class="eyebrow">Total entrées</span><b id="fTotIn">5 214</b></div>
+            <div><span class="eyebrow">Total sorties</span><b id="fTotOut">4 878</b></div>
+            <div><span class="eyebrow">Pic journalier</span><b id="fPeak">612</b></div>
+            <div><span class="eyebrow">Anomalies</span><b id="fAno">31</b></div>
+          </div>
+        </section>
+
+        <!-- 02 · zones -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-index">02</span>
+            <div>
+              <div class="panel-title">Occupation des emplacements</div>
+              <div class="panel-sub">Taux de remplissage par zone · seuil d’alerte 85 %</div>
+            </div>
+            <div class="panel-tools">
+              <a class="link" href="#">Plan d’entrepôt
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+              </a>
+            </div>
+          </div>
+
+          <div class="zones">
+            <div class="zone">
+              <div class="zone-id"><span class="zone-code">A—01</span><span class="zone-type">Palettier</span></div>
+              <div class="zbar"><i style="width:62%"></i><span class="mark" style="left:85%"></span></div>
+              <div class="zone-val"><span class="zone-pct">62 %</span><span class="zone-abs">1 240</span></div>
+            </div>
+            <div class="zone">
+              <div class="zone-id"><span class="zone-code">A—02</span><span class="zone-type">Palettier</span></div>
+              <div class="zbar"><i style="width:74%"></i><span class="mark" style="left:85%"></span></div>
+              <div class="zone-val"><span class="zone-pct">74 %</span><span class="zone-abs">1 480</span></div>
+            </div>
+            <div class="zone">
+              <div class="zone-id"><span class="zone-code">B—01</span><span class="zone-type">Picking</span></div>
+              <div class="zbar"><i class="warn" style="width:88%"></i><span class="mark" style="left:85%"></span></div>
+              <div class="zone-val"><span class="zone-pct">88 %</span><span class="zone-abs">2 112</span></div>
+            </div>
+            <div class="zone">
+              <div class="zone-id"><span class="zone-code">B—02</span><span class="zone-type">Picking</span></div>
+              <div class="zbar"><i class="crit" style="width:96%"></i><span class="mark" style="left:85%"></span></div>
+              <div class="zone-val"><span class="zone-pct">96 %</span><span class="zone-abs">2 304</span></div>
+            </div>
+            <div class="zone">
+              <div class="zone-id"><span class="zone-code">C—01</span><span class="zone-type">Froid positif</span></div>
+              <div class="zbar"><i style="width:53%"></i><span class="mark" style="left:85%"></span></div>
+              <div class="zone-val"><span class="zone-pct">53 %</span><span class="zone-abs">636</span></div>
+            </div>
+            <div class="zone">
+              <div class="zone-id"><span class="zone-code">D—01</span><span class="zone-type">Quai / tampon</span></div>
+              <div class="zbar"><i style="width:41%"></i><span class="mark" style="left:85%"></span></div>
+              <div class="zone-val"><span class="zone-pct">41 %</span><span class="zone-abs">328</span></div>
+            </div>
+          </div>
+
+          <div class="zones-foot">
+            <i>Nominal</i><i class="w">Proche saturation</i><i class="c">Saturé</i>
+            <span style="margin-left:auto" class="mono">6 zones · 312 emplacements libres</span>
+          </div>
+        </section>
+
+        <!-- 03 · journal -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-index">03</span>
+            <div>
+              <div class="panel-title">Journal des mouvements</div>
+              <div class="panel-sub">Dernières opérations enregistrées</div>
+            </div>
+            <div class="panel-tools">
+              <a class="link" href="#">Filtrer</a>
+              <a class="link" href="#">Tout le journal
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+              </a>
+            </div>
+          </div>
+
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="width:96px">Réf.</th>
+                <th>Article</th>
+                <th style="width:96px">Type</th>
+                <th class="r" style="width:82px">Qté</th>
+                <th style="width:88px">Emplac.</th>
+                <th style="width:152px">Opérateur</th>
+                <th style="width:110px">Statut</th>
+                <th class="r" style="width:66px">Heure</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="ref">MVT—4821</td>
+                <td class="art">Carton kraft 400×300<small>SKU 88-2140 · lot L2408</small></td>
+                <td><span class="tag info">Entrée</span></td>
+                <td class="r qty in">+240</td>
+                <td class="ref">A—02—14</td>
+                <td><div class="who"><span class="mini">HR</span>H. Rakoto</div></td>
+                <td><span class="tag ok">Validé</span></td>
+                <td class="r mono">08:34</td>
+              </tr>
+              <tr>
+                <td class="ref">MVT—4820</td>
+                <td class="art">Film étirable 17 µm<small>SKU 44-0912 · lot L2407</small></td>
+                <td><span class="tag err">Sortie</span></td>
+                <td class="r qty out">−86</td>
+                <td class="ref">B—01—07</td>
+                <td><div class="who"><span class="mini">MR</span>M. Rasoa</div></td>
+                <td><span class="tag ok">Validé</span></td>
+                <td class="r mono">08:27</td>
+              </tr>
+              <tr>
+                <td class="ref">MVT—4819</td>
+                <td class="art">Adhésif PP 48 mm<small>SKU 12-7733 · lot L2408</small></td>
+                <td><span class="tag info">Transfert</span></td>
+                <td class="r qty">120</td>
+                <td class="ref">B—02—03</td>
+                <td><div class="who"><span class="mini">JN</span>J. Nirina</div></td>
+                <td><span class="tag wait">En attente</span></td>
+                <td class="r mono">08:19</td>
+              </tr>
+              <tr>
+                <td class="ref">MVT—4818</td>
+                <td class="art">Palette EUR 1200×800<small>SKU 01-0001 · consigné</small></td>
+                <td><span class="tag err">Sortie</span></td>
+                <td class="r qty out">−34</td>
+                <td class="ref">D—01—02</td>
+                <td><div class="who"><span class="mini">TA</span>T. Andria</div></td>
+                <td><span class="tag err">Écart</span></td>
+                <td class="r mono">08:11</td>
+              </tr>
+              <tr>
+                <td class="ref">MVT—4817</td>
+                <td class="art">Étiquette thermique 100×150<small>SKU 63-4501 · lot L2406</small></td>
+                <td><span class="tag info">Entrée</span></td>
+                <td class="r qty in">+1 500</td>
+                <td class="ref">C—01—09</td>
+                <td><div class="who"><span class="mini">HR</span>H. Rakoto</div></td>
+                <td><span class="tag ok">Validé</span></td>
+                <td class="r mono">07:58</td>
+              </tr>
+              <tr>
+                <td class="ref">MVT—4816</td>
+                <td class="art">Cerclage PET 12 mm<small>SKU 27-8890 · lot L2405</small></td>
+                <td><span class="tag err">Sortie</span></td>
+                <td class="r qty out">−12</td>
+                <td class="ref">B—01—21</td>
+                <td><div class="who"><span class="mini">MR</span>M. Rasoa</div></td>
+                <td><span class="tag ok">Validé</span></td>
+                <td class="r mono">07:46</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="tbl-foot">
+            <span>6 lignes sur <b class="mono">347</b> · période du jour</span>
+            <div class="pager">
+              <button data-on>1</button><button>2</button><button>3</button><button>›</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ===== RAIL DROIT ===== -->
+      <div class="col">
+
+        <!-- alertes -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-index">04</span>
+            <div>
+              <div class="panel-title">Alertes actives</div>
+              <div class="panel-sub">3 critiques · 5 à surveiller</div>
+            </div>
+            <div class="panel-tools"><a class="link" href="#">Tout voir</a></div>
+          </div>
+
+          <div class="alert crit">
+            <span class="sev"></span>
+            <div>
+              <div class="alert-top"><span class="alert-t">Rupture imminente</span><span class="alert-time">il y a 6 min</span></div>
+              <p class="alert-d">Film étirable 17 µm — couverture réduite à moins d’une journée de consommation.</p>
+              <div class="alert-m"><span class="chip">SKU 44-0912</span><span>Zone B—01</span></div>
+            </div>
+          </div>
+
+          <div class="alert crit">
+            <span class="sev"></span>
+            <div>
+              <div class="alert-top"><span class="alert-t">Zone saturée</span><span class="alert-time">il y a 24 min</span></div>
+              <p class="alert-d">B—02 atteint 96 % d’occupation. Les réceptions programmées ne pourront pas être stockées.</p>
+              <div class="alert-m"><span class="chip">B—02</span><span>4 réceptions à 11:00</span></div>
+            </div>
+          </div>
+
+          <div class="alert warn">
+            <span class="sev"></span>
+            <div>
+              <div class="alert-top"><span class="alert-t">Écart d’inventaire</span><span class="alert-time">il y a 1 h</span></div>
+              <p class="alert-d">Palette EUR 1200×800 — écart de 34 unités entre stock théorique et comptage.</p>
+              <div class="alert-m"><span class="chip">MVT—4818</span><span>Non résolu</span></div>
+            </div>
+          </div>
+
+          <div class="alert warn">
+            <span class="sev"></span>
+            <div>
+              <div class="alert-top"><span class="alert-t">Lot proche péremption</span><span class="alert-time">il y a 2 h</span></div>
+              <p class="alert-d">Lot L2405 — 18 jours restants sur 6 références en zone froid positif.</p>
+              <div class="alert-m"><span class="chip">L2405</span><span>Zone C—01</span></div>
+            </div>
+          </div>
+
+          <div class="alert info">
+            <span class="sev"></span>
+            <div>
+              <div class="alert-top"><span class="alert-t">Mouvement non validé</span><span class="alert-time">il y a 3 h</span></div>
+              <p class="alert-d">Transfert MVT—4819 en attente de contrôle depuis plus de 30 minutes.</p>
+              <div class="alert-m"><span class="chip">MVT—4819</span><span>J. Nirina</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- taux de service -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-index">05</span>
+            <div>
+              <div class="panel-title">Qualité de préparation</div>
+              <div class="panel-sub">Cumul 30 jours glissants</div>
+            </div>
+          </div>
+          <div class="gauge-body">
+            <div class="gauge">
+              <svg viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#EDEBE5" stroke-width="9"/>
+                <circle id="gaugeArc" cx="60" cy="60" r="48" fill="none" stroke="#0A3E6B" stroke-width="9"
+                        stroke-linecap="butt" stroke-dasharray="301.6" stroke-dashoffset="301.6"
+                        transform="rotate(-90 60 60)"/>
+              </svg>
+              <div class="gauge-center">
+                <div class="gauge-val">94,2<span style="font-size:13px">%</span></div>
+                <div class="gauge-lab">Taux de service</div>
+              </div>
+            </div>
+            <div class="gauge-list">
+              <div class="gauge-item"><span class="k" style="background:#0A3E6B"></span><span class="l">Commandes conformes</span><span class="v">2 841</span></div>
+              <div class="gauge-item"><span class="k" style="background:#9A6B12"></span><span class="l">Litiges quantité</span><span class="v">118</span></div>
+              <div class="gauge-item"><span class="k" style="background:#A8443C"></span><span class="l">Erreurs de picking</span><span class="v">57</span></div>
+              <div class="gauge-item"><span class="k" style="background:#C3CCD4"></span><span class="l">Objectif contractuel</span><span class="v">96,0 %</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- réapprovisionnement -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-index">06</span>
+            <div>
+              <div class="panel-title">Réapprovisionnement</div>
+              <div class="panel-sub">Classé par couverture restante</div>
+            </div>
+          </div>
+          <div class="repl">
+            <div class="repl-row">
+              <span class="repl-idx">01</span>
+              <div class="repl-body">
+                <div class="repl-t">Film étirable 17 µm</div>
+                <div class="repl-s"><span class="mono">44-0912</span> · seuil 400 · stock 86</div>
+              </div>
+              <div class="cover"><b style="color:var(--neg)">0,4 j</b><small>couverture</small></div>
+            </div>
+            <div class="repl-row">
+              <span class="repl-idx">02</span>
+              <div class="repl-body">
+                <div class="repl-t">Cerclage PET 12 mm</div>
+                <div class="repl-s"><span class="mono">27-8890</span> · seuil 250 · stock 190</div>
+              </div>
+              <div class="cover"><b style="color:var(--neg)">1,2 j</b><small>couverture</small></div>
+            </div>
+            <div class="repl-row">
+              <span class="repl-idx">03</span>
+              <div class="repl-body">
+                <div class="repl-t">Adhésif PP 48 mm</div>
+                <div class="repl-s"><span class="mono">12-7733</span> · seuil 600 · stock 540</div>
+              </div>
+              <div class="cover"><b style="color:var(--warn)">2,8 j</b><small>couverture</small></div>
+            </div>
+            <div class="repl-row">
+              <span class="repl-idx">04</span>
+              <div class="repl-body">
+                <div class="repl-t">Carton kraft 400×300</div>
+                <div class="repl-s"><span class="mono">88-2140</span> · seuil 1 000 · stock 1 240</div>
+              </div>
+              <div class="cover"><b>5,1 j</b><small>couverture</small></div>
+            </div>
+          </div>
+          <div class="repl-foot">
+            <button class="btn-block">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+              Générer un ordre de réapprovisionnement
+            </button>
+          </div>
+        </section>
+
+        <!-- opérateurs -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-index">07</span>
+            <div>
+              <div class="panel-title">Charge des opérateurs</div>
+              <div class="panel-sub">Équipe du matin · temps réel</div>
+            </div>
+          </div>
+          <div class="ops">
+            <div class="op">
+              <span class="mini">HR</span>
+              <div><div class="op-name">H. Rakoto</div><div class="op-task">Réception quai 2 · 12 lignes</div></div>
+              <div class="op-bar"><span class="op-track"><i style="width:82%"></i></span><span class="op-pct">82 %</span></div>
+            </div>
+            <div class="op">
+              <span class="mini">MR</span>
+              <div><div class="op-name">M. Rasoa</div><div class="op-task">Picking B—01 · 27 lignes</div></div>
+              <div class="op-bar"><span class="op-track"><i style="width:94%"></i></span><span class="op-pct">94 %</span></div>
+            </div>
+            <div class="op">
+              <span class="mini">JN</span>
+              <div><div class="op-name">J. Nirina</div><div class="op-task">Transferts internes · 8 lignes</div></div>
+              <div class="op-bar"><span class="op-track"><i style="width:61%"></i></span><span class="op-pct">61 %</span></div>
+            </div>
+            <div class="op">
+              <span class="mini">TA</span>
+              <div><div class="op-name">T. Andria</div><div class="op-task">Inventaire tournant C—01</div></div>
+              <div class="op-bar"><span class="op-track"><i style="width:45%"></i></span><span class="op-pct">45 %</span></div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   1. Jauge de capacité (rail)
+   ============================================================ */
+(function(){
+  const el = document.getElementById('capMeter');
+  const n = 26, filled = Math.round(n * .78), hot = Math.round(n * .85);
+  for (let i = 0; i < n; i++){
+    const b = document.createElement('i');
+    b.style.height = (46 + Math.round(Math.abs(Math.sin(i * 1.1)) * 54)) + '%';
+    if (i < filled) b.className = i >= hot - 3 ? 'hot' : 'on';
+    el.appendChild(b);
+  }
+})();
+
+/* ============================================================
+   2. Sparklines des KPI
+   ============================================================ */
+document.querySelectorAll('.spark').forEach(svg => {
+  const pts = svg.dataset.spark.split(',').map(Number);
+  const color = svg.dataset.color;
+  const W = 78, H = 26, P = 3;
+  const min = Math.min(...pts), max = Math.max(...pts), span = (max - min) || 1;
+  const X = i => P + i * (W - P * 2) / (pts.length - 1);
+  const Y = v => H - P - ((v - min) / span) * (H - P * 2);
+  const d = pts.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML =
+    `<path d="${d} L${X(pts.length-1)} ${H} L${X(0)} ${H} Z" fill="${color}" opacity=".07"/>` +
+    `<path d="${d}" fill="none" stroke="${color}" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>` +
+    `<circle cx="${X(pts.length-1)}" cy="${Y(pts[pts.length-1])}" r="2" fill="${color}"/>`;
+});
+
+/* ============================================================
+   3. Graphique des flux — barres appariées + anomalies
+   ============================================================ */
+const SERIES = {
+  7:  [['16/08',372,341,2],['17/08',408,389,1],['18/08',441,402,3],['19/08',394,433,0],
+       ['20/08',487,412,4],['21/08',452,468,2],['22/08',418,376,3]],
+  14: [['09/08',318,301,1],['10/08',344,326,0],['11/08',389,352,2],['12/08',361,377,3],
+       ['13/08',402,368,1],['14/08',428,391,0],['15/08',356,404,2],['16/08',372,341,2],
+       ['17/08',408,389,1],['18/08',441,402,3],['19/08',394,433,0],['20/08',487,412,4],
+       ['21/08',452,468,2],['22/08',418,376,3]],
+  30: Array.from({length:30}, (_, i) => {
+        const d = new Date(2026, 6, 24 + i);
+        const lab = String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+        const e = Math.round(300 + Math.sin(i/2.1)*70 + Math.cos(i/3.4)*55 + (i*3.2));
+        const s = Math.round(295 + Math.cos(i/1.9)*80 + Math.sin(i/4.1)*40 + (i*2.6));
+        return [lab, e, s, i % 5 === 0 ? 3 : (i % 3 === 0 ? 1 : 0)];
+      })
+};
+
+const svgNS = 'http://www.w3.org/2000/svg';
+const chart = document.getElementById('fluxChart');
+const wrap  = document.getElementById('chartWrap');
+const tip   = document.getElementById('tip');
+const nf    = new Intl.NumberFormat('fr-FR');
+
+function drawFlux(range){
+  const data = SERIES[range];
+  const W = wrap.clientWidth - 36, H = 224;
+  const PT = 14, PB = 26, PL = 34, PR = 4;
+  const innerH = H - PT - PB, innerW = W - PL - PR;
+
+  const max = Math.max(...data.map(d => Math.max(d[1], d[2])));
+  const top = Math.ceil(max / 100) * 100;
+  const slot = innerW / data.length;
+  const bw = Math.max(3, Math.min(7, slot * .28));
+  const gap = 2.5;
+
+  chart.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  chart.innerHTML = '';
+  const add = (tag, at) => { const n = document.createElementNS(svgNS, tag);
+    for (const k in at) n.setAttribute(k, at[k]); chart.appendChild(n); return n; };
+
+  /* grille horizontale pointillée + axe */
+  const steps = 4;
+  for (let i = 0; i <= steps; i++){
+    const v = top / steps * i;
+    const y = PT + innerH - (v / top) * innerH;
+    add('line', {x1:PL, x2:W - PR, y1:y, y2:y, class: i ? 'gline' : 'gzero',
+                 'stroke-dasharray': i ? '2 4' : '0'});
+    const t = add('text', {x:PL - 9, y:y + 3.2, class:'glabel', 'text-anchor':'end'});
+    t.textContent = i ? nf.format(v) : '0';
+  }
+
+  data.forEach((d, i) => {
+    const cx = PL + slot * i + slot / 2;
+    const hE = (d[1] / top) * innerH, hS = (d[2] / top) * innerH;
+    const base = PT + innerH;
+
+    add('rect', {x:cx - bw - gap/2, y:base - hE, width:bw, height:hE, rx:1.5,
+                 fill:'#0A3E6B', class:'bar', 'data-i':i});
+    add('rect', {x:cx + gap/2, y:base - hS, width:bw, height:hS, rx:1.5,
+                 fill:'#C3CCD4', class:'bar', 'data-i':i});
+
+    /* marqueur d'anomalie : trait ambre sous l'axe */
+    if (d[3] > 0){
+      add('rect', {x:cx - bw - gap/2, y:base + 3.5, width:bw*2 + gap, height:2, rx:1,
+                   fill:'#9A6B12', opacity: Math.min(1, .35 + d[3]*.2), class:'bar', 'data-i':i});
+    }
+
+    /* étiquettes : espacées automatiquement */
+    const every = data.length > 20 ? 4 : (data.length > 10 ? 2 : 1);
+    if (i % every === 0 || i === data.length - 1){
+      const t = add('text', {x:cx, y:H - 7, class:'glabel', 'text-anchor':'middle'});
+      t.textContent = d[0];
+    }
+
+    /* zone de survol */
+    const hit = add('rect', {x:PL + slot*i, y:PT, width:slot, height:innerH, fill:'transparent'});
+    hit.style.cursor = 'crosshair';
+    hit.addEventListener('mouseenter', () => {
+      wrap.classList.add('dim');
+      chart.querySelectorAll(`.bar[data-i="${i}"]`).forEach(b => b.classList.add('hi'));
+      tip.innerHTML =
+        `<div class="tip-d">${d[0]} · 2026</div>` +
+        `<div class="tip-r"><span style="color:#5B8FBF">Entrées</span><b>${nf.format(d[1])}</b></div>` +
+        `<div class="tip-r"><span style="color:#C3CCD4">Sorties</span><b>${nf.format(d[2])}</b></div>` +
+        `<div class="tip-r"><span style="color:#C79A3E">Anomalies</span><b>${d[3]}</b></div>`;
+      const scale = wrap.clientWidth / W;
+      tip.style.left = (18 + cx * scale) + 'px';
+      tip.style.top  = (20 + (base - Math.max(hE, hS)) * scale - 12) + 'px';
+      tip.classList.add('on');
+    });
+    hit.addEventListener('mouseleave', () => {
+      wrap.classList.remove('dim');
+      chart.querySelectorAll('.bar.hi').forEach(b => b.classList.remove('hi'));
+      tip.classList.remove('on');
+    });
+  });
+
+  /* totaux du pied */
+  const sum = k => data.reduce((a, d) => a + d[k], 0);
+  document.getElementById('fTotIn').textContent  = nf.format(sum(1));
+  document.getElementById('fTotOut').textContent = nf.format(sum(2));
+  document.getElementById('fPeak').textContent   = nf.format(Math.max(...data.map(d => Math.max(d[1], d[2]))));
+  document.getElementById('fAno').textContent    = nf.format(sum(3));
+}
+
+let current = 14;
+drawFlux(current);
+addEventListener('resize', () => drawFlux(current));
+
+document.querySelectorAll('#range button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#range button').forEach(x => x.removeAttribute('data-on'));
+    b.setAttribute('data-on', '');
+    current = +b.dataset.r;
+    drawFlux(current);
+  });
+});
+
+/* ============================================================
+   4. Arc de la jauge (animation d'entrée)
+   ============================================================ */
+(function(){
+  const arc = document.getElementById('gaugeArc'), C = 2 * Math.PI * 48;
+  arc.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(.22,.61,.36,1)';
+  requestAnimationFrame(() => { arc.style.strokeDashoffset = C * (1 - .942); });
+})();
+</script>
+</body>
+</html>

@@ -18,11 +18,8 @@ function Accueil() {
   const sortieIsa = mouvement.filter(
     (mvt) => mvt.nom_type_mouvement === "SORTIE",
   ).length;
-  // setEntree(mouvement.reduce())
   const compterEntreeEtSortie = () => {
     console.log("MOUVV" + mouvement);
-    // setEntree(entreeIsa"MOUVV" + .length);
-    // setSortie(sortieIsa.length);
   };
 
   const token = getAccessToken();

@@ -1,6 +1,8 @@
 package com.example.demo.service;
 
+import java.text.Normalizer;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
@@ -28,6 +30,8 @@ import com.example.demo.repository.TypeMouvementJournalRepository;
 @Service
 @Transactional
 public class JournalMouvementService {
+    private static final String STATUT_EN_COURS = "EN_COURS";
+
     private final JournalMouvementRepository journalRepository;
     private final TypeMouvementJournalRepository typeRepository;
     private final StatutJournalMouvementRepository statutRepository;
@@ -185,6 +189,57 @@ public class JournalMouvementService {
         JournalMouvement journal = trouverJournal(journalId);
         journal.setStatutJournalMouvement(trouverStatut(idStatut));
         return versResponse(journalRepository.save(journal));
+    }
+
+    public JournalMouvementResponse valider(Long journalId) {
+        JournalMouvement journal = trouverJournal(journalId);
+        verifierEnCours(journal);
+        journal.setStatutJournalMouvement(trouverStatutMetier("VALIDEE", "VALIDE"));
+        return versResponse(journalRepository.save(journal));
+    }
+
+    public JournalMouvementResponse demanderModification(Long journalId) {
+        JournalMouvement journal = trouverJournal(journalId);
+        verifierEnCours(journal);
+        journal.setStatutJournalMouvement(trouverStatutMetier("MODIFIE", "A_MODIFIER"));
+        return versResponse(journalRepository.save(journal));
+    }
+
+    private void verifierEnCours(JournalMouvement journal) {
+        String statutActuel = normaliserCodeStatut(journal.getStatutJournalMouvement().getNomStatut());
+        if (!statutActuel.equals(STATUT_EN_COURS)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "La session doit etre EN_COURS pour recevoir une decision. Statut actuel : "
+                            + journal.getStatutJournalMouvement().getNomStatut());
+        }
+    }
+
+    private StatutjournalMouvement trouverStatutMetier(String... codesStatut) {
+        List<String> codesAcceptes = List.of(codesStatut);
+
+        for (StatutjournalMouvement statut : statutRepository.findAll()) {
+            String code = normaliserCodeStatut(statut.getNomStatut());
+
+            if (codesAcceptes.contains(code)) {
+                return statut;
+            }
+        }
+
+        throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Le statut metier " + String.join(" ou ", codesStatut)
+                        + " n'est pas configure");
+    }
+
+    private String normaliserCodeStatut(String statut) {
+        if (statut == null) return "";
+        return Normalizer.normalize(statut, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .trim()
+                .replaceAll("[^A-Za-z0-9]+", "_")
+                .replaceAll("^_+|_+$", "")
+                .toUpperCase(Locale.ROOT);
     }
 
     public DetailJournalResponse versResponse(DetailJournal detailJournal) {
