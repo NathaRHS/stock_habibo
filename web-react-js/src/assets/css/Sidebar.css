@@ -1,0 +1,119 @@
+.sidebar {
+  display: flex;
+  width: 255px;
+  min-height: 100vh;
+  flex: 0 0 255px;
+  flex-direction: column;
+  color: var(--color-secondary);
+  background: var(--color-surface);
+}
+
+.logo {
+  display: flex;
+  min-height: 86px;
+  align-items: center;
+  gap: 16px;
+  padding: 0 27px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 21px;
+}
+
+.logo-mark {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  border-radius: 6px;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  gap: 53px;
+  padding: 49px 27px;
+}
+
+.sidebar-content .content { display: flex; flex-direction: column; }
+
+.content-title {
+  margin-bottom: 13px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.sidebar-content a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 10px;
+  color: var(--color-secondary);
+  border-radius: 6px;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.sidebar-content a .material-symbols-outlined {
+  width: 18px;
+  height: auto;
+  flex: 0 0 18px;
+  background: transparent;
+  font-size: 18px;
+}
+
+.sidebar-content a:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.sidebar-link--active {
+  color: var(--color-primary) !important;
+  background: var(--color-primary-soft);
+  font-weight: 500;
+}
+
+.sidebar-link--active::before {
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 0;
+  width: 3px;
+  background: var(--color-primary);
+  border-radius: 0 4px 4px 0;
+  content: "";
+}
+
+.sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: auto 27px 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.sidebar-footer a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  color: var(--color-secondary);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.sidebar-footer .material-symbols-outlined { font-size: 18px; }
+.sidebar-footer a:hover { color: var(--color-primary); }
+
+@media (max-width: 640px) {
+  .sidebar { width: 100%; min-height: auto; }
+  .logo { min-height: 68px; }
+  .sidebar-content { display: none; }
+}

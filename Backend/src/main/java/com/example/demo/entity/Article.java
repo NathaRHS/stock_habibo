@@ -1,5 +1,8 @@
 package com.example.demo.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -13,7 +16,12 @@ public class Article {
     @Column(name = "nom_article", nullable = false)
     private String nomArticle;
 
-  
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "type_conditionnement_id", nullable = false)
+    private TypeConditionnement typeConditionnement;
+
+    @OneToMany(mappedBy = "article")
+    private List<ArticleConditionnement> articleConditionnements = new ArrayList<>();
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "type_produit_id", nullable = false)
@@ -22,13 +30,18 @@ public class Article {
     @Column(name = "code_bar", nullable = false, unique = true)
     private String codeBar;
 
+    @OneToMany(mappedBy = "article")
+    private List<DetailJournal> detailsJournal = new ArrayList<>();
+
     public Article() {
     }
 
-    public Article(TypeProduit typeProduit, String codeBar, String nomArticle) {
+    public Article(TypeProduit typeProduit, String codeBar, String nomArticle,
+            TypeConditionnement typeConditionnement) {
         this.typeProduit = typeProduit;
         this.codeBar = codeBar;
         this.nomArticle = nomArticle;
+        this.typeConditionnement = typeConditionnement;
     }
 
     public Long getId() {
@@ -43,7 +56,7 @@ public class Article {
         return typeProduit;
     }
 
-      public String getNomArticle() {
+    public String getNomArticle() {
         return nomArticle;
     }
 
@@ -61,6 +74,30 @@ public class Article {
 
     public void setCodeBar(String codeBar) {
         this.codeBar = codeBar;
+    }
+
+    public TypeConditionnement getTypeConditionnement() {
+        return typeConditionnement;
+    }
+
+    public void setTypeConditionnement(TypeConditionnement typeConditionnement) {
+        this.typeConditionnement = typeConditionnement;
+    }
+
+    public List<ArticleConditionnement> getArticleConditionnements() {
+        return articleConditionnements;
+    }
+
+    public void setArticleConditionnements(List<ArticleConditionnement> articleConditionnements) {
+        this.articleConditionnements = articleConditionnements;
+    }
+
+    public List<DetailJournal> getDetailsJournal() {
+        return detailsJournal;
+    }
+
+    public void setDetailsJournal(List<DetailJournal> detailsJournal) {
+        this.detailsJournal = detailsJournal;
     }
 
 }

@@ -1,0 +1,837 @@
+Oui, je vois beaucoup mieux ton projet maintenant. Et surtout, ce n’est **pas juste un CRUD de stock**. Ton WMS est centré autour de **sessions opérationnelles** qui encadrent chaque mouvement physique dans l’entrepôt : entrée, inventaire et sortie. 🏭📦
+
+Je reformule tout ce que j’ai compris, puis je vais te poser les questions qui vont nous permettre de verrouiller le fonctionnement métier.
+
+## 1. Le contexte général
+
+Le groupe **Habibo** possède plusieurs sociétés, par exemple :
+
+* **HH** : produits d’hygiène, couches, etc.
+* **HB** : produits alimentaires.
+* **HM** : autre activité que tu ne m’as pas encore précisée.
+
+Ces sociétés fabriquent ou gèrent leurs propres produits, puis les produits terminés arrivent dans un ou plusieurs entrepôts.
+
+Ton application est donc un **WMS, Warehouse Management System**, qui doit gérer ce qui se passe entre :
+
+**Produit fabriqué → réception → contrôle → rangement → stock → inventaire → préparation de sortie → livraison**
+
+Et il y a deux applications qui travaillent ensemble :
+
+**Web / Desktop**
+→ utilisé surtout par les responsables.
+
+**Application mobile Flutter**
+→ utilisée surtout par les opérateurs dans l’entrepôt.
+
+C’est une architecture qui me paraît très importante pour comprendre le projet :
+
+```text
+                    WMS
+                     │
+          ┌──────────┴──────────┐
+          │                     │
+      WEB / DESKTOP         MOBILE FLUTTER
+          │                     │
+     Responsable             Opérateur
+          │                     │
+  ouvre les sessions       scanne physiquement
+  valide / contrôle        les marchandises
+  choisit emplacement      saisit les quantités
+  reçoit alertes           exécute les tâches
+  génère rapports
+```
+
+---
+
+# 2. Le concept central : la SESSION
+
+C’est probablement **l’un des objets les plus importants de ton système**.
+
+Je comprends qu’on ne peut pas simplement modifier le stock comme ça.
+
+On doit passer par une opération contrôlée appelée **session**.
+
+Il y aurait au minimum trois types :
+
+```text
+Session
+│
+├── Session d'entrée
+├── Session d'inventaire
+└── Session de sortie
+```
+
+Une session pourrait avoir notamment :
+
+```text
+- identifiant
+- type
+- société concernée
+- document associé
+- opérateur
+- responsable
+- date d'ouverture
+- date de fermeture
+- statut
+- articles concernés
+```
+
+Et tu m’as donné trois statuts :
+
+```text
+EN_COURS
+EN_ATTENTE
+VALIDE
+```
+
+⚠️ Mais leur signification exacte doit être clarifiée, parce que dans ton explication il y a quelques moments où je ne sais pas encore précisément quand on passe de l’un à l’autre.
+
+---
+
+# 3. Processus d'ENTRÉE 📥
+
+Voilà comment je comprends le scénario.
+
+Une société du groupe fabrique des produits.
+
+Ils doivent entrer dans l’entrepôt.
+
+Il existe alors un **bon de réception** contenant quelque chose du genre :
+
+```text
+BON DE RÉCEPTION BR-2026-00125
+
+Article             Quantité prévue
+------------------------------------
+Couche bébé M          500
+Savon 200g             300
+Gel douche             150
+```
+
+Une personne **A**, opérateur dans l’entrepôt, reçoit ce document.
+
+Elle demande ensuite à une personne **B**, responsable utilisant le Web/Desktop, d’ouvrir une **session d’entrée** correspondant à ce bon.
+
+Le responsable B crée donc quelque chose comme :
+
+```text
+SESSION ENTREE #ENT-00042
+
+Bon réception : BR-2026-00125
+Société : HH
+Statut : EN COURS
+
+Articles attendus :
+Couche bébé M     500
+Savon             300
+Gel douche        150
+```
+
+---
+
+## Côté mobile
+
+A ouvre son application Flutter.
+
+Il voit la liste des sessions disponibles.
+
+Par exemple :
+
+```text
+MES SESSIONS D'ENTRÉE
+
+ENT-00040    HH     Validée
+ENT-00041    HB     En attente
+ENT-00042    HH     En cours
+```
+
+Il sélectionne :
+
+**ENT-00042**
+
+Puis il commence le contrôle physique.
+
+Il scanne les articles.
+
+Par exemple :
+
+```text
+Scan : 894001245...
+↓
+Article reconnu : Couche bébé M
+
+Quantité comptée : 500
+```
+
+Puis :
+
+```text
+Savon
+Attendu : 300
+Compté : 298
+
+⚠ Écart : -2
+```
+
+Donc le WMS peut comparer :
+
+```text
+Quantité attendue
+        VS
+Quantité réellement reçue
+```
+
+Ça, c’est très important.
+
+---
+
+# 4. Validation de l'entrée
+
+Une fois le comptage terminé, la session change de statut.
+
+C’est là qu’il faut encore préciser ton workflow exact.
+
+Mais j’imagine quelque chose ressemblant à :
+
+```text
+EN COURS
+   ↓
+Opérateur termine le scan
+   ↓
+EN ATTENTE
+   ↓
+Responsable contrôle
+   ↓
+VALIDÉE
+```
+
+Une fois la réception **validée**, les marchandises sont reconnues comme pouvant être intégrées au stock.
+
+Mais elles doivent encore être rangées.
+
+---
+
+# 5. Le rangement dans l'entrepôt 🏗️
+
+Et ici ton projet devient beaucoup plus intéressant qu'un simple :
+
+```text
+Article
+emplacement = "A12"
+```
+
+Ton entrepôt possède une structure physique.
+
+D’après ce que tu m’as expliqué :
+
+```text
+ENTREPÔT
+   │
+   └── RACK
+        │
+        └── EMPLACEMENT
+                 │
+                 └── ÉTAGE
+```
+
+Par exemple :
+
+```text
+Rack 01
+│
+├── Emplacement 01
+│     ├── Étage 1
+│     ├── Étage 2
+│     └── Étage 3
+│
+├── Emplacement 02
+│     ├── Étage 1
+│     ├── Étage 2
+│     └── Étage 3
+│
+└── Emplacement 03
+```
+
+Donc une adresse physique pourrait être :
+
+```text
+R01-E02-N02
+```
+
+qui voudrait dire :
+
+```text
+Rack 1
+Emplacement 2
+Niveau/Étage 2
+```
+
+Et ton exemple :
+
+> Article1 → Rack1 → Emplacement2 → 2e étage
+
+correspondrait donc à cette logique.
+
+Le Web/Desktop voit les emplacements disponibles puis indique à l'opérateur :
+
+```text
+Couche bébé M
+Quantité : 500
+
+📍 Ranger dans :
+Rack 1
+Emplacement 2
+Étage 2
+```
+
+L’opérateur va physiquement déposer la marchandise là-bas.
+
+---
+
+# 6. INVENTAIRE 🔎
+
+À un autre moment, une personne **C** doit contrôler l’entrepôt.
+
+Elle demande au responsable Web d’ouvrir une :
+
+**session d’inventaire**
+
+Le responsable crée la session.
+
+C utilise ensuite le mobile pour recompter physiquement les marchandises.
+
+Le principe serait :
+
+```text
+Stock théorique WMS
+        VS
+Stock réel compté
+```
+
+Par exemple :
+
+```text
+Article : Savon 200g
+
+WMS :     300
+Réel :    297
+
+Écart :    -3
+```
+
+Le système détecte donc une anomalie.
+
+Et le responsable Web reçoit une alerte :
+
+```text
+⚠ Écart d'inventaire
+
+Savon 200g
+Stock théorique : 300
+Stock compté : 297
+Écart : -3
+```
+
+Une fois l'inventaire terminé, le responsable peut générer un **rapport PDF** contenant probablement :
+
+```text
+Rapport inventaire
+
+Date
+Opérateur
+Entrepôt
+Société
+Articles contrôlés
+Quantité théorique
+Quantité réelle
+Écarts
+Commentaires
+etc.
+```
+
+---
+
+# 7. SORTIE 📤
+
+Maintenant Habibo reçoit une commande d'un client.
+
+Il existe un **bon de commande** :
+
+```text
+Commande BC-2051
+
+Couche bébé M      100
+Savon               50
+Gel douche          20
+```
+
+Une **session de sortie** est créée.
+
+Quelqu’un vérifie d'abord si les produits sont disponibles.
+
+Le système pourrait afficher :
+
+```text
+Couche bébé M
+
+Demandé : 100
+Disponible : 500
+
+✓ Stock suffisant
+
+Emplacement :
+Rack 1
+Emplacement 2
+Étage 2
+```
+
+L’opérateur va ensuite physiquement récupérer les produits.
+
+Il les scanne.
+
+```text
+100 / 100 Couche bébé M ✓
+50 / 50 Savon ✓
+20 / 20 Gel douche ✓
+```
+
+Puis il ferme la session de sortie.
+
+Mais ici il y a une règle métier **très importante** que j'ai bien notée :
+
+> Le stock n'est pas définitivement décrémenté immédiatement.
+
+La commande est préparée, mais le produit n'est retiré du stock qu'après une **confirmation liée au bon de livraison / client**.
+
+Donc il existe potentiellement une distinction entre :
+
+```text
+STOCK PHYSIQUE
+STOCK DISPONIBLE
+STOCK RÉSERVÉ
+```
+
+Et ça peut devenir extrêmement important pour ton modèle.
+
+Imagine :
+
+```text
+Stock physique :   500
+Réservé :          100
+Disponible :       400
+```
+
+Même si les 100 unités ne sont pas encore définitivement sorties, **une autre commande ne devrait probablement pas pouvoir les réserver**.
+
+C'est une des choses que je veux absolument clarifier avec toi.
+
+---
+
+# 8. Je vois donc actuellement ces grands objets métier
+
+Sans parler encore de programmation, ton système semble tourner autour de :
+
+```text
+SOCIÉTÉ
+   │
+   ├── ARTICLE
+   │
+   ├── ENTREPÔT
+   │
+   │      └── RACK
+   │              └── EMPLACEMENT
+   │                       └── ÉTAGE / NIVEAU
+   │
+   ├── BON DE RÉCEPTION
+   │
+   ├── BON DE COMMANDE
+   │
+   ├── BON DE LIVRAISON
+   │
+   └── SESSION
+          │
+          ├── ENTRÉE
+          ├── INVENTAIRE
+          └── SORTIE
+```
+
+Et autour de tout ça :
+
+```text
+UTILISATEURS
+RÔLES
+SCANS
+MOUVEMENTS DE STOCK
+ALERTES
+RAPPORTS
+HISTORIQUE
+```
+
+Donc oui, là on commence à voir **le vrai squelette du WMS**. 🧩
+
+---
+
+# Maintenant mes questions
+
+Certaines sont beaucoup plus importantes que d'autres. Je commence par celles qui vont déterminer toute la conception.
+
+### 1. Les sociétés HH / HB / HM partagent-elles le même entrepôt ?
+
+Par exemple est-ce qu'on peut avoir :
+
+```text
+Entrepôt principal Habibo
+
+Rack 1 → produits HH
+Rack 2 → produits HB
+Rack 3 → mélange HH/HB
+```
+
+ou chaque société possède son propre entrepôt ?
+
+---
+
+### 2. Un article appartient-il obligatoirement à une seule société ?
+
+Par exemple :
+
+```text
+Couche Pampy
+→ HH uniquement
+```
+
+ou un même article peut-il être partagé entre plusieurs sociétés ?
+
+---
+
+### 3. Qui scanne réellement pendant une réception ?
+
+Tu m'as dit en gros :
+
+> A utilise le mobile
+
+mais aussi :
+
+> Il scanne les articles et renvoie leurs nombres à A.
+
+Donc je veux juste verrouiller ça.
+
+Est-ce :
+
+```text
+A = opérateur mobile
+A scanne lui-même les articles
+```
+
+ou il existe encore une autre personne ?
+
+---
+
+### 4. Que se passe-t-il exactement lorsqu'il y a un écart pendant la réception ?
+
+Exemple :
+
+```text
+Bon de réception :
+500 cartons
+
+Réel :
+497 cartons
+```
+
+Peut-on quand même valider ?
+
+Est-ce que le responsable reçoit une alerte ?
+
+Est-ce qu'il doit entrer une justification ?
+
+---
+
+### 5. Quand exactement le stock augmente-t-il ?
+
+Ça, c'est crucial.
+
+Est-ce dès que A scanne ?
+
+```text
+500 → scan → stock +500
+```
+
+Ou seulement lorsque le responsable B valide la réception ?
+
+```text
+Scan
+↓
+contrôle
+↓
+validation B
+↓
+stock +500
+```
+
+Je soupçonne fortement que c'est la deuxième solution, mais je veux ton fonctionnement réel.
+
+---
+
+### 6. Pour l'inventaire, C compare-t-il vraiment avec le **bon de réception**, ou avec le stock enregistré dans le WMS ?
+
+Parce que normalement je m'attendrais à :
+
+```text
+Stock WMS = 487
+Stock compté par C = 485
+Écart = -2
+```
+
+plutôt qu'à reprendre les anciens bons de réception.
+
+C'est une distinction très importante.
+
+---
+
+### 7. Lorsqu'un écart d'inventaire est découvert, qui peut corriger le stock ?
+
+Par exemple :
+
+```text
+WMS : 100
+Réel : 97
+```
+
+Après validation de l'inventaire, est-ce que :
+
+```text
+stock = automatiquement 97
+```
+
+ou le responsable doit-il accepter :
+
+```text
+Écart détecté
+-3
+
+[Accepter correction]
+[Refuser]
+```
+
+?
+
+---
+
+### 8. Pour une sortie, les produits deviennent-ils **réservés** dès l'ouverture de la session ?
+
+Exemple :
+
+```text
+Stock : 100
+
+Client A commande : 80
+```
+
+Une session de sortie est ouverte.
+
+Un autre client arrive et commande 50.
+
+Est-ce que le système doit lui dire :
+
+```text
+Stock physique : 100
+Stock réservé : 80
+Stock disponible : 20
+
+❌ Impossible de commander 50
+```
+
+?
+
+Celle-ci est très importante.
+
+---
+
+### 9. Que signifie exactement la « confirmation du client » ?
+
+Tu as écrit :
+
+> Le produit ne sera retiré du stock qu'après confirmation du client (bon de livraison).
+
+Qui confirme cela ?
+
+Le client lui-même ?
+
+Un responsable Habibo ?
+
+Un chauffeur/livreur ?
+
+Et qu'est-ce qui arrive dans le système ?
+
+```text
+Bon de livraison signé
+```
+
+ou simplement :
+
+```text
+Responsable clique "Livraison confirmée"
+```
+
+?
+
+---
+
+### 10. Un article peut-il être stocké à plusieurs endroits ?
+
+Par exemple :
+
+```text
+Savon 200g
+
+100 unités → Rack 1 / Emplacement 2 / Niveau 1
+300 unités → Rack 4 / Emplacement 1 / Niveau 3
+```
+
+Je pense que **oui**, mais je veux confirmation.
+
+Parce que dans ce cas, la relation n'est surtout pas :
+
+```text
+Article → Emplacement
+```
+
+mais plutôt quelque chose du genre :
+
+```text
+Article
+   │
+   ├── Stock emplacement A : 100
+   └── Stock emplacement B : 300
+```
+
+Et ça change beaucoup la base de données.
+
+---
+
+### 11. Un emplacement peut-il contenir plusieurs articles différents ?
+
+Par exemple :
+
+```text
+Rack 1
+Emplacement 2
+Niveau 2
+
+├── 50 Savons
+├── 30 Shampoings
+└── 20 Gels douche
+```
+
+ou un niveau est réservé à **un seul article** ?
+
+---
+
+### 12. Est-ce que vous gérez des lots ?
+
+Exemple :
+
+```text
+Article : Yaourt X
+
+Lot : LOT-2026-0041
+Fabrication : 01/08/2026
+Expiration : 01/09/2026
+Quantité : 500
+```
+
+Vu qu'il y a de l'alimentaire chez HB, c'est potentiellement **très important**.
+
+Et ça nous mène directement au FIFO / FEFO dont on avait parlé.
+
+---
+
+### 13. Le code-barres identifie quoi exactement ?
+
+Quand A scanne quelque chose, le code-barres correspond-il à :
+
+```text
+ARTICLE
+```
+
+ou :
+
+```text
+LOT
+```
+
+ou :
+
+```text
+CARTON / PALETTE
+```
+
+?
+
+Par exemple s'il reçoit **500 bouteilles identiques**, doit-il scanner 500 bouteilles ?
+
+Ou :
+
+```text
+scan bouteille
+→ article reconnu
+→ saisie quantité : 500
+```
+
+?
+
+---
+
+### 14. Les emplacements ont-ils une capacité ?
+
+Par exemple :
+
+```text
+Rack 1 / E2 / N2
+
+Capacité maximale : 500 cartons
+Occupé : 400
+Disponible : 100
+```
+
+Parce que lorsque le Web propose un emplacement à A, il faut savoir ce que signifie réellement **« emplacement disponible »**.
+
+Vide ?
+
+Ou possédant encore de la capacité ?
+
+---
+
+### 15. Et dernière grosse question pour le moment : le Web **choisit manuellement** l'emplacement ou le WMS le propose automatiquement ?
+
+**Version A :**
+
+```text
+Responsable :
+Je choisis Rack 2 / E1 / N3
+```
+
+**Version B :**
+
+```text
+WMS :
+🏭 Emplacement recommandé
+Rack 2 / E1 / N3
+
+Pourquoi :
+- espace disponible
+- article compatible
+- proche de la sortie
+```
+
+Puis le responsable valide.
+
+Cette question est particulièrement intéressante parce qu'elle peut devenir une partie très forte de ton projet et ouvrir la porte plus tard au **slotting intelligent / optimisation des emplacements**.
+
+---
+
+Pour l'instant, ne te préoccupe même pas de React, Flutter, Spring Boot ou des tables SQL. **Je veux d'abord comprendre le métier jusqu'à pouvoir suivre mentalement un carton depuis sa fabrication jusqu'à sa sortie de l'entrepôt.** 📦→🏭→🚚
+
+Et parmi mes questions, les **5, 6, 8, 10, 12, 13 et 15** sont celles dont les réponses risquent le plus de changer toute notre conception.

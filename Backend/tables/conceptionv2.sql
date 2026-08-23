@@ -194,3 +194,7 @@ INSERT IGNORE INTO t_type_conditionnement (nom_conditionnement) VALUES
 INSERT IGNORE INTO t_type_mouvement (nom_type_mouvement, sens) VALUES
     ('ENTREE', 1),
     ('SORTIE', -1);
+
+
+
+

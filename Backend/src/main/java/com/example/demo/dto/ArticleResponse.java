@@ -6,5 +6,6 @@ public record ArticleResponse(
         String nomArticle,
         Long typeProduitId,
         String typeProduit
-) {
+) 
+{
 }

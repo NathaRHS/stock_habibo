@@ -58,4 +58,5 @@ public class TypeProduitService {
     private TypeProduitResponse versResponse(TypeProduit typeProduit) {
         return new TypeProduitResponse(typeProduit.getId(), typeProduit.getNomType());
     }
+    
 }

@@ -1,18 +1,13 @@
 package com.example.demo.service;
 
-import java.math.BigDecimal;
 
 import org.springframework.stereotype.Service;
 
 import com.example.demo.entity.Role;
-import com.example.demo.entity.User;
-import com.example.demo.exception.SoldeInsuffisantException;
 import com.example.demo.repository.RoleRepository;
-import com.example.demo.repository.UserRepository;
 
 import jakarta.persistence.EntityManager;
 
-import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
