@@ -36,7 +36,8 @@ INSERT INTO t_roles (id, nom_role) VALUES
 INSERT INTO t_statut_journal_mouvement (id, nom_statut) VALUES
 (1, 'EN COURS'),
 (2, 'VALIDE'),
-(3, 'MODIFIE')
+(3, 'MODIFIE'),
+(4, 'EN ATTENTE');
 
 INSERT INTO t_type_mouvement (id, nom_type_mouvement, sens) VALUES
 (1, 'ENTREE', 1),

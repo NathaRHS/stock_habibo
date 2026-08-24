@@ -79,6 +79,11 @@ public class JournalMouvementController {
         return service.demanderModification(id);
     }
 
+    @PostMapping("/{id}/soumettre")
+    public JournalMouvementResponse soumettre(@PathVariable Long id) {
+        return service.soumettre(id);
+    }
+
     @PostMapping("/{journalId}/scans")
     public DetailJournalResponse scan(
             @PathVariable Long journalId,

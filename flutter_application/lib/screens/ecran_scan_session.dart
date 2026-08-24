@@ -99,6 +99,51 @@ class _EcranScanSessionState extends State<EcranScanSession> {
     }
   }
 
+  Future<void> _soumettreSession() async {
+    final confirmation = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Terminer le comptage ?'),
+        content: const Text(
+          'La session sera envoyée au responsable et ne pourra plus recevoir de scans.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Soumettre'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmation != true || !mounted) return;
+    setState(() {
+      _enregistrementEnCours = true;
+      _erreur = null;
+    });
+
+    try {
+      await _scanService.soumettreSession(journalId: widget.journalId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Session envoyée au responsable.')),
+      );
+      Navigator.pop(context);
+    } on ScanException catch (erreur) {
+      if (mounted) setState(() => _erreur = erreur.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _erreur = 'Impossible de joindre le serveur.');
+      }
+    } finally {
+      if (mounted) setState(() => _enregistrementEnCours = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -191,6 +236,14 @@ class _EcranScanSessionState extends State<EcranScanSession> {
                           ),
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _enregistrementEnCours
+                          ? null
+                          : _soumettreSession,
+                      icon: const Icon(Icons.send_outlined),
+                      label: const Text('Terminer le comptage'),
                     ),
                   ],
                 ),

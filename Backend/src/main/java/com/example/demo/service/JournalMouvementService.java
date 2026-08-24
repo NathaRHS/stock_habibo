@@ -33,6 +33,7 @@ public class JournalMouvementService {
     private static final String STATUT_EN_COURS = "EN COURS";
     private static final String STATUT_VALIDE = "VALIDE";
     private static final String STATUT_MODIFIE = "MODIFIE";
+    private static final String STATUT_EN_ATTENTE = "EN ATTENTE";
 
     private final JournalMouvementRepository journalRepository;
     private final TypeMouvementJournalRepository typeRepository;
@@ -63,9 +64,7 @@ public class JournalMouvementService {
         String reference = EnleverEspaceReference(request.reference());
         verifierReferenceDisponible(reference, null);
         // validerDetails(request.details());
-        Long idOriginal = Long.valueOf(1);
-        StatutjournalMouvement statutjournalMouvement = statutRepository.findById(idOriginal)
-                .orElseThrow(() -> new RuntimeException("statut original non créé"));
+        StatutjournalMouvement statutjournalMouvement = trouverStatutMetier(STATUT_EN_COURS);
         JournalMouvement journal = new JournalMouvement(
                 trouverFournisseur(request.fournisseurId()),
                 reference,
@@ -201,7 +200,7 @@ public class JournalMouvementService {
     // changer le statut en "validé"
     public JournalMouvementResponse valider(Long journalId) {
         JournalMouvement journal = trouverJournal(journalId);
-        verifierEnCours(journal);
+        verifierStatutActuel(journal, STATUT_EN_ATTENTE);
         journal.setStatutJournalMouvement(trouverStatutMetier(STATUT_VALIDE));
         return versResponse(journalRepository.save(journal));
     }
@@ -209,19 +208,31 @@ public class JournalMouvementService {
     // changer le statut en "modifié"
     public JournalMouvementResponse demanderModification(Long journalId) {
         JournalMouvement journal = trouverJournal(journalId);
-        verifierEnCours(journal);
+        verifierStatutActuel(journal, STATUT_EN_ATTENTE);
         journal.setStatutJournalMouvement(trouverStatutMetier(STATUT_MODIFIE));
         return versResponse(journalRepository.save(journal));
     }
 
-    // verifier le statut du journal actuel
-    private void verifierEnCours(JournalMouvement journal) {
-        String statutActuel = journal.getStatutJournalMouvement().getNomStatut();
-        if (!statutActuel.equals(STATUT_EN_COURS)) {
+    public JournalMouvementResponse soumettre(Long journalId) {
+        JournalMouvement journal = trouverJournal(journalId);
+        verifierStatutActuel(journal, STATUT_EN_COURS, STATUT_MODIFIE);
+
+        if (detailJournalRepository.findAllByJournalMouvementId(journalId).isEmpty()) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "La session doit etre EN COURS pour recevoir une decision. Statut actuel : "
-                            + journal.getStatutJournalMouvement().getNomStatut());
+                    "La session doit contenir au moins un produit avant sa soumission");
+        }
+
+        journal.setStatutJournalMouvement(trouverStatutMetier(STATUT_EN_ATTENTE));
+        return versResponse(journalRepository.save(journal));
+    }
+
+    private void verifierStatutActuel(JournalMouvement journal, String... statutsAutorises) {
+        String statutActuel = journal.getStatutJournalMouvement().getNomStatut();
+        if (!List.of(statutsAutorises).contains(statutActuel)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Transition interdite depuis le statut " + statutActuel);
         }
     }
 
@@ -268,9 +279,7 @@ public class JournalMouvementService {
         JournalMouvement journal = journalRepository.findById(journalId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "journal introuvable"));
 
-        if (!STATUT_EN_COURS.equals(journal.getStatutJournalMouvement().getNomStatut())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Le statut n'est plus EN COURS");
-        }
+        verifierStatutActuel(journal, STATUT_EN_COURS, STATUT_MODIFIE);
 
         if (request.quantite() == null || request.quantite() <= 0) {
             throw new ResponseStatusException(

@@ -144,7 +144,8 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
           final journal = _journaux[index];
           return _CarteJournal(
             journal: journal,
-            onOuvrir: journal.statut == 'EN COURS'
+            onOuvrir:
+                journal.statut == 'EN COURS' || journal.statut == 'MODIFIE'
                 ? () async {
                     await Navigator.of(context).push(
                       MaterialPageRoute(

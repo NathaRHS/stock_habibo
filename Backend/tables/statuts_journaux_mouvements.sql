@@ -8,11 +8,10 @@ START TRANSACTION;
 
 INSERT IGNORE INTO t_statut_journal_mouvement (nom_statut)
 VALUES
-    ('EN_ATTENTE'),
-    ('EN_COURS'),
-    ('A_VALIDER'),
-    ('VALIDEE'),
-    ('CLOTUREE');
+    ('EN COURS'),
+    ('EN ATTENTE'),
+    ('VALIDE'),
+    ('MODIFIE');
 
 COMMIT;
 

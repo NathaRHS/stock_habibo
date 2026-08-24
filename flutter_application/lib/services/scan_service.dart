@@ -9,11 +9,30 @@ class ScanService {
   final String baseUrl;
   final String accessToken;
 
+  Future<void> soumettreSession({required int journalId}) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/journaux-mouvements/$journalId/soumettre'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ScanException(
+        _messageErreur(response.statusCode, response.bodyBytes),
+        response.statusCode,
+      );
+    }
+  }
+
   Future<DetailJournal> enregistrerScan({
     required int journalId,
+
     required String codeBarres,
     required int quantite,
   }) async {
+    //appel api de scan
     final response = await http.post(
       Uri.parse('$baseUrl/journaux-mouvements/$journalId/scans'),
       headers: {
