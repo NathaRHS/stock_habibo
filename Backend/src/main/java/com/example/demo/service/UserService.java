@@ -9,10 +9,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.example.demo.dto.CreateUserRequest;
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.LoginResponse;
-import com.example.demo.dto.StatutJournalMouvementResponse;
 import com.example.demo.dto.UserResponse;
 import com.example.demo.entity.Role;
-import com.example.demo.entity.StatutjournalMouvement;
 import com.example.demo.entity.User;
 
 import com.example.demo.repository.RoleRepository;

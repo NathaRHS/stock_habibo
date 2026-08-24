@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.demo.dto.DetailJournalResponse;
 import com.example.demo.dto.JournalMouvementRequest;
 import com.example.demo.dto.JournalMouvementResponse;
+import com.example.demo.dto.ScanArticleRequest;
 import com.example.demo.dto.UpdateStatutJournalRequest;
 import com.example.demo.service.JournalMouvementService;
 
@@ -76,6 +77,13 @@ public class JournalMouvementController {
     @PostMapping("/{id}/demander-modification")
     public JournalMouvementResponse demanderModification(@PathVariable Long id) {
         return service.demanderModification(id);
+    }
+
+    @PostMapping("/{journalId}/scans")
+    public DetailJournalResponse scan(
+            @PathVariable Long journalId,
+            @RequestBody ScanArticleRequest request) {
+        return service.scanArticle(journalId, request);
     }
 
 }
