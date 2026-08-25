@@ -174,7 +174,8 @@ public class JournalMouvementService {
                         detail.getArticle().getId(),
                         detail.getArticle().getNomArticle(),
                         detail.getQuantite(), detail.getJournalMouvement().getId(),
-                        detail.getJournalMouvement().getReference()))
+                        detail.getJournalMouvement().getReference(),
+                        detail.getQuantiteConditionnement()))
                 .toList();
 
         return new JournalMouvementResponse(
@@ -237,7 +238,8 @@ public class JournalMouvementService {
         DetailJournalResponse detailJournalResponse = new DetailJournalResponse(detailJournal.getId(),
                 detailJournal.getArticle().getId(), detailJournal.getArticle().getNomArticle(),
                 detailJournal.getQuantite(), detailJournal.getJournalMouvement().getId(),
-                detailJournal.getJournalMouvement().getReference());
+                detailJournal.getJournalMouvement().getReference(),
+                detailJournal.getQuantiteConditionnement());
         return detailJournalResponse;
     }
 
@@ -269,10 +271,21 @@ public class JournalMouvementService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "journal introuvable"));
 
         verifierStatutActuel(journal, STATUT_EN_COURS, STATUT_MODIFIE);
-        if (request.quantite() == null || request.quantite() <= 0) {
+        boolean quantiteReelleRenseignee = request.quantite() != null;
+        boolean quantiteConditionnementRenseignee = request.quantiteConditionnement() != null;
+
+        if (quantiteReelleRenseignee == quantiteConditionnementRenseignee) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "La quantité doit être strictement positive");
+                    "Renseignez soit la quantité réelle, soit la quantité de conditionnement");
+        }
+        if (quantiteReelleRenseignee && request.quantite() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La quantité réelle doit être strictement positive");
+        }
+        if (quantiteConditionnementRenseignee && request.quantiteConditionnement() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La quantité de conditionnement doit être strictement positive");
         }
         Article article = articleRepository.findByCodeBar(request.codeBarres()).orElse(null);
 
@@ -284,12 +297,30 @@ public class JournalMouvementService {
 
         }
         if (articleConditionnement != null) {
-
             article = articleConditionnement.getArticle();
         }
 
+        if (quantiteConditionnementRenseignee && articleConditionnement == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La quantité de conditionnement nécessite un code-barres de conditionnement");
+        }
+
+        int quantiteReelle;
+        try {
+            quantiteReelle = quantiteConditionnementRenseignee
+                    ? Math.multiplyExact(request.quantiteConditionnement(),
+                            articleConditionnement.getQuantitePieceStandard())
+                    : request.quantite();
+        } catch (ArithmeticException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La quantité calculée est trop grande");
+        }
+
         userJournalMouvementService.ajouterParticipant(journalId, matricule);
-        detailJournalRepository.ajouterOuIncrementer(journalId, article.getId(), request.quantite());
+        detailJournalRepository.ajouterOuIncrementer(
+                journalId,
+                article.getId(),
+                quantiteReelle,
+                request.quantiteConditionnement());
 
         DetailJournal detailJournalRecherche = detailJournalRepository
                 .findByJournalMouvementIdAndArticleId(journal.getId(), article.getId());

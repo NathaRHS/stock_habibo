@@ -330,3 +330,6 @@ CREATE TABLE t_user_journal_mouvement (
 ALTER TABLE t_detail_journal
 ADD CONSTRAINT uq_detail_journal_article
 UNIQUE (journal_mouvement_id, article_id);
+
+ALTER TABLE t_detail_journal
+ADD COLUMN quantite_conditionnement INT NULL;

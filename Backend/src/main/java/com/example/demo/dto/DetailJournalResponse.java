@@ -5,7 +5,8 @@ public record DetailJournalResponse(
         String nomArticle,
         Integer quantite,
         Long journalId,
-        String reference
+        String reference,
+        Integer quantiteConditionnement
         
 ){
 }

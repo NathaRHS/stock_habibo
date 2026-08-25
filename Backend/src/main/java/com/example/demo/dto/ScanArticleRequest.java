@@ -1,5 +1,5 @@
 package com.example.demo.dto;
 
-public record ScanArticleRequest(String codeBarres, Integer quantite) {
+public record ScanArticleRequest(String codeBarres, Integer quantite, Integer quantiteConditionnement) {
     
 }
