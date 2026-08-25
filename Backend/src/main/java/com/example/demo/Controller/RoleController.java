@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.example.demo.entity.Role;
+import com.example.demo.dto.RoleResponse;
 import com.example.demo.service.RoleService;
 
 @RestController
@@ -19,7 +19,7 @@ public class RoleController {
     }
 
     @GetMapping("/showRoles")
-    public List<Role> showRoles() {
+    public List<RoleResponse> showRoles() {
         return roleService.getAllRoles();
 
     }

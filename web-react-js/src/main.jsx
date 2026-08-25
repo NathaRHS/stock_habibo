@@ -19,6 +19,7 @@ import ListeTypeMouvementJournal from "./pages/ListeTypeMouvementJournal";
 import UploadFile from "./pages/UploadFile";
 import CreateJournal from "./pages/CreateJournal";
 import ControleJournal from "./pages/ControleJournal";
+import CreateUtilisateur from "./pages/CreateUtilisateur";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -32,6 +33,7 @@ createRoot(document.getElementById("root")).render(
         <Route path="/article" element={<ListeArticle />} />
         <Route path="/article/create" element={<CreateArticle />} />
         <Route path="/users" element={<ListeUtilisateur />} />
+        <Route path="/users/create" element={<CreateUtilisateur />} />
         <Route path="/type-conditionnement/create" element={<CreateTypeConditionnement />} />
         <Route path="/type-conditionnement" element={<ListeTypeConditionnement />} />
         <Route path="/article-conditionnements" element={<ListeArticleConditionnement />} />

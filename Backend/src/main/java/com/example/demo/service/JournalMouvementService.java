@@ -2,7 +2,6 @@ package com.example.demo.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +38,7 @@ public class JournalMouvementService {
     private final TypeMouvementJournalRepository typeRepository;
     private final StatutJournalMouvementRepository statutRepository;
     private final SocieteRepository fournisseurRepository;
+    private final UserJournalMouvementService userJournalMouvementService;
     private final ArticleRepository articleRepository;
     private final DetailJournalRepository detailJournalRepository;
     private final ArticleConditionnementRepository articleConditionnementRepository;
@@ -48,10 +48,12 @@ public class JournalMouvementService {
             TypeMouvementJournalRepository typeRepository,
             StatutJournalMouvementRepository statutRepository,
             SocieteRepository fournisseurRepository,
+            UserJournalMouvementService userJournalMouvementService,
             ArticleRepository articleRepository, DetailJournalRepository detailJournalRepository,
             ArticleConditionnementRepository articleConditionnementRepository) {
         this.journalRepository = journalRepository;
         this.typeRepository = typeRepository;
+        this.userJournalMouvementService = userJournalMouvementService;
         this.statutRepository = statutRepository;
         this.fournisseurRepository = fournisseurRepository;
         this.detailJournalRepository = detailJournalRepository;
@@ -213,20 +215,6 @@ public class JournalMouvementService {
         return versResponse(journalRepository.save(journal));
     }
 
-    public JournalMouvementResponse soumettre(Long journalId) {
-        JournalMouvement journal = trouverJournal(journalId);
-        verifierStatutActuel(journal, STATUT_EN_COURS, STATUT_MODIFIE);
-
-        if (detailJournalRepository.findAllByJournalMouvementId(journalId).isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "La session doit contenir au moins un produit avant sa soumission");
-        }
-
-        journal.setStatutJournalMouvement(trouverStatutMetier(STATUT_EN_ATTENTE));
-        return versResponse(journalRepository.save(journal));
-    }
-
     private void verifierStatutActuel(JournalMouvement journal, String... statutsAutorises) {
         String statutActuel = journal.getStatutJournalMouvement().getNomStatut();
         if (!List.of(statutsAutorises).contains(statutActuel)) {
@@ -272,7 +260,8 @@ public class JournalMouvementService {
 
     }
 
-    public DetailJournalResponse scanArticle(Long journalId, ScanArticleRequest request) {
+    // scan article
+    public DetailJournalResponse scanArticle(Long journalId, ScanArticleRequest request, String matricule) {
         if (request.codeBarres() == null || request.codeBarres().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le code barre est obligatoire");
         }
@@ -280,7 +269,6 @@ public class JournalMouvementService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "journal introuvable"));
 
         verifierStatutActuel(journal, STATUT_EN_COURS, STATUT_MODIFIE);
-
         if (request.quantite() == null || request.quantite() <= 0) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -293,21 +281,27 @@ public class JournalMouvementService {
 
         if (article == null && articleConditionnement == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Code barre inconnu");
+
         }
         if (articleConditionnement != null) {
 
             article = articleConditionnement.getArticle();
         }
 
+        userJournalMouvementService.ajouterParticipant(journalId, matricule);
+        detailJournalRepository.ajouterOuIncrementer(journalId, article.getId(), request.quantite());
+
         DetailJournal detailJournalRecherche = detailJournalRepository
                 .findByJournalMouvementIdAndArticleId(journal.getId(), article.getId());
-        if (detailJournalRecherche != null) {
-            detailJournalRecherche.setQuantite(detailJournalRecherche.getQuantite() + request.quantite());
-            return versResponse(detailJournalRepository.save(detailJournalRecherche));
+
+        if (detailJournalRecherche == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Le résultat du scan n'a pas pu être récupéré");
         }
-        detailJournalRecherche = detailJournalRepository
-                .save(new DetailJournal(journal, article, request.quantite()));
+
         return versResponse(detailJournalRecherche);
+
     }
 
 }

@@ -3,6 +3,7 @@ package com.example.demo.Controller;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +20,7 @@ import com.example.demo.dto.JournalMouvementResponse;
 import com.example.demo.dto.ScanArticleRequest;
 import com.example.demo.dto.UpdateStatutJournalRequest;
 import com.example.demo.service.JournalMouvementService;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 @RestController
 @RequestMapping("/journaux-mouvements")
@@ -35,7 +37,6 @@ public class JournalMouvementController {
         return service.create(request);
     }
 
-
     @GetMapping
     public List<JournalMouvementResponse> findAll() {
         return service.findAll();
@@ -45,7 +46,8 @@ public class JournalMouvementController {
     public JournalMouvementResponse findById(@PathVariable Long id) {
         return service.findById(id);
     }
-        @GetMapping("/detailJournal")
+
+    @GetMapping("/detailJournal")
     public List<DetailJournalResponse> findAllDetailJournal() {
         return service.findAllDetailJournal();
     }
@@ -79,16 +81,12 @@ public class JournalMouvementController {
         return service.demanderModification(id);
     }
 
-    @PostMapping("/{id}/soumettre")
-    public JournalMouvementResponse soumettre(@PathVariable Long id) {
-        return service.soumettre(id);
-    }
-
     @PostMapping("/{journalId}/scans")
     public DetailJournalResponse scan(
             @PathVariable Long journalId,
-            @RequestBody ScanArticleRequest request) {
-        return service.scanArticle(journalId, request);
+            @RequestBody ScanArticleRequest request, @AuthenticationPrincipal Jwt jwt) {
+        String matricule = jwt.getSubject();
+        return service.scanArticle(journalId, request,matricule);
     }
 
 }

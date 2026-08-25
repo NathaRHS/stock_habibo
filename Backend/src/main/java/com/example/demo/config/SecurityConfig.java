@@ -53,6 +53,15 @@ public class SecurityConfig {
                         // .hasRole("ADMIN")
 
                         // Toutes les créations : ADMIN
+                        .requestMatchers(HttpMethod.POST, "/journaux-mouvements/*/participants")
+                        .authenticated()
+
+                        .requestMatchers(HttpMethod.POST, "/journaux-mouvements/*/participants/terminer")
+                        .authenticated()
+
+                        .requestMatchers(HttpMethod.POST, "/journaux-mouvements/*/scans")
+                        .authenticated()
+
                         .requestMatchers(HttpMethod.POST, "/**")
                         .hasRole("ADMIN")
 

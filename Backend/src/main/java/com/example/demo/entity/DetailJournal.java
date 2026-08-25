@@ -3,7 +3,10 @@ package com.example.demo.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "t_detail_journal")
+@Table(name = "t_detail_journal", uniqueConstraints = @UniqueConstraint(name = "uq_detail_journal_article", columnNames = {
+        "journal_mouvement_id",
+        "article_id",
+}))
 public class DetailJournal {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -63,7 +66,5 @@ public class DetailJournal {
         }
         this.quantite = quantite;
     }
-
-  
 
 }

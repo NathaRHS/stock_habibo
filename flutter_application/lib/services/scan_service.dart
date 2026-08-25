@@ -9,9 +9,11 @@ class ScanService {
   final String baseUrl;
   final String accessToken;
 
-  Future<void> soumettreSession({required int journalId}) async {
+  Future<void> terminerParticipation({required int journalId}) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/journaux-mouvements/$journalId/soumettre'),
+      Uri.parse(
+        '$baseUrl/journaux-mouvements/$journalId/participants/terminer',
+      ),
       headers: {
         'Accept': 'application/json',
         'Authorization': 'Bearer $accessToken',

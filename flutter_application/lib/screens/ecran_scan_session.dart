@@ -99,13 +99,13 @@ class _EcranScanSessionState extends State<EcranScanSession> {
     }
   }
 
-  Future<void> _soumettreSession() async {
+  Future<void> _terminerParticipation() async {
     final confirmation = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Terminer le comptage ?'),
+        title: const Text('Terminer votre partie ?'),
         content: const Text(
-          'La session sera envoyée au responsable et ne pourra plus recevoir de scans.',
+          'Vous ne pourrez plus scanner dans cette session. Elle restera ouverte si un autre opérateur travaille encore.',
         ),
         actions: [
           TextButton(
@@ -127,10 +127,10 @@ class _EcranScanSessionState extends State<EcranScanSession> {
     });
 
     try {
-      await _scanService.soumettreSession(journalId: widget.journalId);
+      await _scanService.terminerParticipation(journalId: widget.journalId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Session envoyée au responsable.')),
+        const SnackBar(content: Text('Votre participation est terminée.')),
       );
       Navigator.pop(context);
     } on ScanException catch (erreur) {
@@ -241,9 +241,9 @@ class _EcranScanSessionState extends State<EcranScanSession> {
                     OutlinedButton.icon(
                       onPressed: _enregistrementEnCours
                           ? null
-                          : _soumettreSession,
+                          : _terminerParticipation,
                       icon: const Icon(Icons.send_outlined),
-                      label: const Text('Terminer le comptage'),
+                      label: const Text('J’ai terminé ma partie'),
                     ),
                   ],
                 ),
