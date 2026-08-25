@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application/screens/ecran_scan_session.dart';
 import 'package:http/http.dart' as http;
 
 class EcranListeJournaux extends StatefulWidget {
@@ -58,9 +59,8 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
 
       final journaux = donnees
           .map(
-            (element) => JournalMouvement.fromJson(
-              element as Map<String, dynamic>,
-            ),
+            (element) =>
+                JournalMouvement.fromJson(element as Map<String, dynamic>),
           )
           .toList();
 
@@ -141,7 +141,26 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
         itemCount: _journaux.length,
         separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          return _CarteJournal(journal: _journaux[index]);
+          final journal = _journaux[index];
+          return _CarteJournal(
+            journal: journal,
+            onOuvrir:
+                journal.statut == 'EN COURS' || journal.statut == 'MODIFIE'
+                ? () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => EcranScanSession(
+                          journalId: journal.id,
+                          referenceJournal: journal.reference,
+                          baseUrl: widget.baseUrl,
+                          accessToken: widget.accessToken,
+                        ),
+                      ),
+                    );
+                    _chargerJournaux();
+                  }
+                : null,
+          );
         },
       ),
     );
@@ -149,45 +168,62 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
 }
 
 class _CarteJournal extends StatelessWidget {
-  const _CarteJournal({required this.journal});
+  const _CarteJournal({required this.journal, required this.onOuvrir});
 
   final JournalMouvement journal;
+  final VoidCallback? onOuvrir;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.receipt_long, color: Color(0xFF064B9C)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    journal.reference,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onOuvrir,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.receipt_long, color: Color(0xFF064B9C)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      journal.reference,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
+                  Chip(label: Text(journal.statut)),
+                ],
+              ),
+              const Divider(height: 24),
+              _information('Type', journal.typeMouvementJournal),
+              _information('Sens', journal.sens == 1 ? 'Entrée' : 'Sortie'),
+              _information('Client', journal.nomClient ?? '—'),
+              _information('Fournisseur', journal.fournisseur ?? '—'),
+              _information('Pièce jointe', journal.urlPieceJointe ?? 'Aucune'),
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  onOuvrir == null
+                      ? 'Consultation uniquement'
+                      : 'Ouvrir la session →',
+                  style: TextStyle(
+                    color: onOuvrir == null
+                        ? Colors.grey
+                        : const Color(0xFF064B9C),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                Chip(label: Text(journal.statut)),
-              ],
-            ),
-            const Divider(height: 24),
-            _information('Type', journal.typeMouvementJournal),
-            _information('Sens', journal.sens == 1 ? 'Entrée' : 'Sortie'),
-            _information('Client', journal.nomClient ?? '—'),
-            _information('Fournisseur', journal.fournisseur ?? '—'),
-            _information(
-              'Pièce jointe',
-              journal.urlPieceJointe ?? 'Aucune',
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

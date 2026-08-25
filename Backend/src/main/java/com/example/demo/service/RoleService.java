@@ -4,6 +4,7 @@ package com.example.demo.service;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.entity.Role;
+import com.example.demo.dto.RoleResponse;
 import com.example.demo.repository.RoleRepository;
 
 import jakarta.persistence.EntityManager;
@@ -21,8 +22,10 @@ public class RoleService {
 
     }
 
-    public List<Role> getAllRoles() {
-        return roleRepository.findAll();
+    public List<RoleResponse> getAllRoles() {
+        return roleRepository.findAll().stream()
+                .map(role -> new RoleResponse(role.getId(), role.getName()))
+                .toList();
     }
 
   

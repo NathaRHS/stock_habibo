@@ -79,7 +79,7 @@ function ControleJournal() {
   }, [id, springUrl, token]);
 
   const statutActuel = normaliser(journal?.statut);
-  const peutDecider = statutActuel === "EN COURS";
+  const peutDecider = statutActuel === "EN ATTENTE";
 
   async function executerDecision(endpoint, action) {
     if (!window.confirm(`Confirmer : ${action} ?`)) return;

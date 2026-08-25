@@ -1,3 +1,4 @@
+-- Active: 1786994780822@@127.0.0.1@3307@stock_habibo
 ----------------------------+
  select * from  t_article;                  
  select * from  t_article_conditionnement;  
@@ -36,7 +37,8 @@ INSERT INTO t_roles (id, nom_role) VALUES
 INSERT INTO t_statut_journal_mouvement (id, nom_statut) VALUES
 (1, 'EN COURS'),
 (2, 'VALIDE'),
-(3, 'MODIFIE')
+(3, 'MODIFIE'),
+(4, 'EN ATTENTE');
 
 INSERT INTO t_type_mouvement (id, nom_type_mouvement, sens) VALUES
 (1, 'ENTREE', 1),
@@ -288,3 +290,43 @@ INSERT INTO t_mouvement_stock
     ->   AND u.matricule = 'ADM-001'
     -> ORDER BY e.id
     -> LIMIT 1;
+
+
+
+
+-- idJournal - 6
+
+
+ -- journal-1 utilisateur-1  date_premiere_sauvegarde 
+
+
+CREATE TABLE t_user_journal_mouvement (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    journal_mouvement_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+
+    statut_participation VARCHAR(20) NOT NULL DEFAULT 'EN_COURS',
+
+    date_debut DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_fin DATETIME NULL,
+
+    CONSTRAINT uq_user_journal_mouvement
+        UNIQUE (journal_mouvement_id, user_id),
+
+    CONSTRAINT chk_statut_participation
+        CHECK (statut_participation IN ('EN_COURS', 'TERMINE')),
+
+    CONSTRAINT fk_user_journal_journal
+        FOREIGN KEY (journal_mouvement_id)
+        REFERENCES t_journal_mouvement(id),
+
+    CONSTRAINT fk_user_journal_user
+        FOREIGN KEY (user_id)
+        REFERENCES t_user(id)
+);
+
+
+ALTER TABLE t_detail_journal
+ADD CONSTRAINT uq_detail_journal_article
+UNIQUE (journal_mouvement_id, article_id);

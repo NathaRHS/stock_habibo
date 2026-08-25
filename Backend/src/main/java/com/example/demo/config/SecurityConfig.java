@@ -26,8 +26,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 
-
-
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -55,6 +53,15 @@ public class SecurityConfig {
                         // .hasRole("ADMIN")
 
                         // Toutes les créations : ADMIN
+                        .requestMatchers(HttpMethod.POST, "/journaux-mouvements/*/participants")
+                        .authenticated()
+
+                        .requestMatchers(HttpMethod.POST, "/journaux-mouvements/*/participants/terminer")
+                        .authenticated()
+
+                        .requestMatchers(HttpMethod.POST, "/journaux-mouvements/*/scans")
+                        .authenticated()
+
                         .requestMatchers(HttpMethod.POST, "/**")
                         .hasRole("ADMIN")
 
