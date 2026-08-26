@@ -16,8 +16,8 @@ public class MouvementStock {
     private TypeMouvementStock typeMouvement;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "etage_id", nullable = false)
-    private Etage etage;
+    @JoinColumn(name = "emplacement_id", nullable = false)
+    private Emplacement emplacement;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false)
@@ -33,6 +33,12 @@ public class MouvementStock {
 
     @Column(name = "commentaire", length = 500)
     private String commentaire;
+
+    @ManyToOne
+    @JoinColumn(name = "journal_mouvement_id")
+    private JournalMouvement journalMouvement;
+
+    
 
     public Long getId() {
         return id;
@@ -50,12 +56,12 @@ public class MouvementStock {
         this.typeMouvement = typeMouvement;
     }
 
-    public Etage getEtage() {
-        return etage;
+    public Emplacement getEmplacement() {
+        return emplacement;
     }
 
-    public void setEtage(Etage etage) {
-        this.etage = etage;
+    public void setEmplacement(Emplacement emplacement) {
+        this.emplacement = emplacement;
     }
 
     public User getUser() {
@@ -96,6 +102,14 @@ public class MouvementStock {
 
     public void setCommentaire(String commentaire) {
         this.commentaire = commentaire;
+    }
+
+    public JournalMouvement getJournalMouvement() {
+        return journalMouvement;
+    }
+
+    public void setJournalMouvement(JournalMouvement journalMouvement) {
+        this.journalMouvement = journalMouvement;
     }
 
     

@@ -1,4 +1,4 @@
 package com.example.demo.dto;
 
-public record RackRequest(String name) {
+public record RackRequest(String name, Integer nombreEtages) {
 }

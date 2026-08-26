@@ -1,7 +1,5 @@
 package com.example.demo.entity;
 
-import java.util.List;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -9,13 +7,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "t_emplacement", uniqueConstraints = @UniqueConstraint(name = "uk_emplacement_rack_nom", columnNames = {
-        "rack_id", "nom_emplacement" }))
+        "rack_id", "numero_etage", "nom_emplacement" }))
 public class Emplacement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,17 +25,16 @@ public class Emplacement {
     @JoinColumn(name = "rack_id", nullable = false)
     private Rack rack;
 
-
-
-    @OneToMany(mappedBy = "emplacement")
-    private List<Etage>etages;
+    @Column(name = "numero_etage", nullable = false)
+    private Integer numeroEtage;
 
     public Emplacement() {
     }
 
-    public Emplacement(String nomEmplacement, Rack rack) {
+    public Emplacement(String nomEmplacement, Rack rack, Integer numeroEtage) {
         this.nomEmplacement = nomEmplacement;
         this.rack = rack;
+        this.numeroEtage = numeroEtage;
     }
 
     public Long getId() {
@@ -63,5 +59,13 @@ public class Emplacement {
 
     public void setRack(Rack rack) {
         this.rack = rack;
+    }
+
+    public Integer getNumeroEtage() {
+        return numeroEtage;
+    }
+
+    public void setNumeroEtage(Integer numeroEtage) {
+        this.numeroEtage = numeroEtage;
     }
 }

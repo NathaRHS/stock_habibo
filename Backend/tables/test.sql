@@ -4,7 +4,7 @@
  select * from  t_article_conditionnement;  
  select * from  t_detail_journal;           
  select * from  t_emplacement;              
- select * from  t_etage;                    
+ select * from  t_emplacement;
  select * from  t_journal_mouvement;        
  select * from  t_mouvement_stock;          
  select * from  t_rack;                     
@@ -16,7 +16,7 @@
  select * from  t_type_mouvement_journal;   
  select * from  t_type_produit;             
  select * from  t_user;                     
- select * from  v_stock_par_etage;          
+ select * from  v_stock_par_emplacement;
  select * from  v_stock_total_article;      
  select * from  v_structure_entrepot;    
 
@@ -94,23 +94,17 @@ VALUES
 
 -- 5. Structure de l’entrepôt
 
-INSERT INTO t_rack (id, nom_rack) VALUES
-(1, 'RACK-A'),
-(2, 'RACK-B'),
-(3, 'RACK-C');
+INSERT INTO t_rack (id, nom_rack, nombre_etages) VALUES
+(1, 'RACK-A', 2),
+(2, 'RACK-B', 1),
+(3, 'RACK-C', 1);
 
-INSERT INTO t_emplacement (id, nom_emplacement, rack_id) VALUES
-(1, 'ZONE-A1', 1),
-(2, 'ZONE-A2', 1),
-(3, 'ZONE-B1', 2),
-(4, 'ZONE-C1', 3);
-
-INSERT INTO t_etage (id, nom_etage, emplacement_id) VALUES
-(1, 'ETAGE-A1-01', 1),
-(2, 'ETAGE-A1-02', 1),
-(3, 'ETAGE-A2-01', 2),
-(4, 'ETAGE-B1-01', 3),
-(5, 'ETAGE-C1-01', 4);
+INSERT INTO t_emplacement (id, nom_emplacement, rack_id, numero_etage) VALUES
+(1, 'A-01', 1, 1),
+(2, 'A-02', 1, 2),
+(3, 'A-03', 1, 1),
+(4, 'B-01', 2, 1),
+(5, 'C-01', 3, 1);
 
 -- 6. Utilisateur de test
 
@@ -188,7 +182,7 @@ INSERT INTO t_mouvement_stock
     date_mouvement,
     nombre_conditionnements,
     quantite_pieces_reelle,
-    etage_id,
+    emplacement_id,
     type_mouvement_id,
     user_id
 )
@@ -248,7 +242,6 @@ TRUNCATE TABLE t_mouvement_stock;
 TRUNCATE TABLE t_article_conditionnement;
 TRUNCATE TABLE t_journal_mouvement;
 TRUNCATE TABLE t_article;
-TRUNCATE TABLE t_etage;
 TRUNCATE TABLE t_emplacement;
 TRUNCATE TABLE t_rack;
 TRUNCATE TABLE t_user;
@@ -270,7 +263,7 @@ INSERT INTO t_mouvement_stock
     ->     date_mouvement,
     ->     nombre_conditionnements,
     ->     quantite_pieces_reelle,
-    ->     etage_id,
+    ->     emplacement_id,
     ->     type_mouvement_id,
     ->     user_id
     -> )
@@ -283,7 +276,7 @@ INSERT INTO t_mouvement_stock
     ->     e.id,
     ->     tm.id,
     ->     u.id
-    -> FROM t_etage e
+    -> FROM t_emplacement e
     -> CROSS JOIN t_type_mouvement tm
     -> CROSS JOIN t_user u
     -> WHERE tm.nom_type_mouvement = 'ENTREE'
@@ -333,3 +326,11 @@ UNIQUE (journal_mouvement_id, article_id);
 
 ALTER TABLE t_detail_journal
 ADD COLUMN quantite_conditionnement INT NULL;
+
+
+
+
+-- rajout d'une ligne de mouvement stock
+-- designation de l'emplacement
+-- date d'entrée stock
+

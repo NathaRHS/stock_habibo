@@ -9,7 +9,7 @@ import com.example.demo.entity.MouvementStock;
 
 public interface MouvementStockRepository extends JpaRepository<MouvementStock, Long> {
 
-    @Query(value = """
+    @Query(value = """  
                 SELECT * from t_mouvement_stock where type_mouvement_id = 1
             """,nativeQuery = true)
     List<MouvementStock> getAllEntry();

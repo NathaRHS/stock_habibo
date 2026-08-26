@@ -1,6 +1,5 @@
 package com.example.demo.Controller;
 
-import java.lang.annotation.Repeatable;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.StockParEtageResponse;
+import com.example.demo.dto.StockParEmplacementResponse;
 import com.example.demo.service.StockService;
 
 @RestController
@@ -20,17 +19,17 @@ public class StockController {
         this.stockService = stockService;
     }
 
-    @GetMapping("/etages")
-    public List<StockParEtageResponse> showAllStocksParEtage() {
-        return stockService.getAllStocksParEtage();
+    @GetMapping("/emplacements")
+    public List<StockParEmplacementResponse> showAllStocksParEmplacement() {
+        return stockService.getAllStocksParEmplacement();
     }
 
     // @GetMapping("/getListeEmplacementTotal")
     
 
-    @GetMapping("/articles/{articleId}/etages")
-    public List<StockParEtageResponse> showStocksParEtageByArticleId(
+    @GetMapping("/articles/{articleId}/emplacements")
+    public List<StockParEmplacementResponse> showStocksParEmplacementByArticleId(
             @PathVariable Long articleId) {
-        return stockService.getStocksParEtageByArticleId(articleId);
+        return stockService.getStocksParEmplacementByArticleId(articleId);
     }
 }

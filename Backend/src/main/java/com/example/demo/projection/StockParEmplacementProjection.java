@@ -1,9 +1,9 @@
 package com.example.demo.projection;
 
-public interface StockParEtageProjection {
+public interface StockParEmplacementProjection {
     Long getArticleId();
 
-    Long getEtageId();
+    Long getEmplacementId();
 
     Long getQuantiteStock();
 }
