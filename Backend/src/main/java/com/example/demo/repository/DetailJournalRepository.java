@@ -24,18 +24,20 @@ public interface DetailJournalRepository extends JpaRepository<DetailJournal, Lo
                 quantite,
                 quantite_conditionnement
             )
-            VALUES (:journalId, :articleId, :quantite, :quantiteConditionnement)
+            VALUES (
+                :journalId,
+                :articleId,
+                :quantite,
+                CEIL(:quantite / :quantitePieceStandard)
+            )
             ON DUPLICATE KEY UPDATE
-                quantite = quantite + VALUES(quantite),
-                quantite_conditionnement = CASE
-                    WHEN VALUES(quantite_conditionnement) IS NULL
-                        THEN quantite_conditionnement
-                    ELSE COALESCE(quantite_conditionnement, 0)
-                        + VALUES(quantite_conditionnement)
-                END
+                quantite_conditionnement = CEIL(
+                    (quantite + VALUES(quantite)) / :quantitePieceStandard
+                ),
+                quantite = quantite + VALUES(quantite)
                         """, nativeQuery = true)
     int ajouterOuIncrementer(@Param("journalId") Long journalId,
             @Param("articleId") Long articleId,
             @Param("quantite") Integer quantite,
-            @Param("quantiteConditionnement") Integer quantiteConditionnement);
+            @Param("quantitePieceStandard") Integer quantitePieceStandard);
 }

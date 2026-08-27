@@ -305,11 +305,25 @@ public class JournalMouvementService {
                     "La quantité de conditionnement nécessite un code-barres de conditionnement");
         }
 
+        if (articleConditionnement == null) {
+            articleConditionnement = articleConditionnementRepository
+                    .findFirstByArticleIdOrderByIdAsc(article.getId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "Aucun conditionnement n'est configure pour cet article"));
+        }
+
+        Integer quantitePieceStandard = articleConditionnement.getQuantitePieceStandard();
+        if (quantitePieceStandard == null || quantitePieceStandard <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "La quantite standard du conditionnement est invalide");
+        }
+
         int quantiteReelle;
         try {
             quantiteReelle = quantiteConditionnementRenseignee
-                    ? Math.multiplyExact(request.quantiteConditionnement(),
-                            articleConditionnement.getQuantitePieceStandard())
+                    ? Math.multiplyExact(request.quantiteConditionnement(), quantitePieceStandard)
                     : request.quantite();
         } catch (ArithmeticException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La quantité calculée est trop grande");
@@ -320,7 +334,7 @@ public class JournalMouvementService {
                 journalId,
                 article.getId(),
                 quantiteReelle,
-                request.quantiteConditionnement());
+                quantitePieceStandard);
 
         DetailJournal detailJournalRecherche = detailJournalRepository
                 .findByJournalMouvementIdAndArticleId(journal.getId(), article.getId());
@@ -336,3 +350,16 @@ public class JournalMouvementService {
     }
 
 }
+
+/*
+
+
+code-barres
+→ ArticleConditionnement exact
+→ DetailJournal
+→ MouvementStock
+
+
+
+Mais c'est ce que je te dis , un article normalement a qu'un seul conditionnemennt , donc ce qu'on fait c'est prendre l'article et fetch limit 1 même si y a qu'un de base article\_conditionnement
+*/

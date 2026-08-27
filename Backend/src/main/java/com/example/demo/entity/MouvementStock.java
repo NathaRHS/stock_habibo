@@ -15,15 +15,22 @@ public class MouvementStock {
     @JoinColumn(name = "type_mouvement_id")
     private TypeMouvementStock typeMouvement;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "emplacement_id", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "emplacement_id")
     private Emplacement emplacement;
+
+    @Column(name = "en_reserve", nullable = false)
+    private boolean enReserve;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
     @Column(name = "nombre_conditionnements", nullable = false)
     private Integer nombreConditionnements;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "conditionnement_id", nullable = false)
+    private ArticleConditionnement articleConditionnement;
 
     @Column(name = "quantite_pieces_reelle", nullable = false)
     private Integer quantitePiecesReelle;
@@ -34,11 +41,27 @@ public class MouvementStock {
     @Column(name = "commentaire", length = 500)
     private String commentaire;
 
-    @ManyToOne
-    @JoinColumn(name = "journal_mouvement_id")
-    private JournalMouvement journalMouvement;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "detail_journal_id", nullable = false)
+    private DetailJournal detailJournal;
 
-    
+    public MouvementStock() {
+    }
+
+    public MouvementStock(TypeMouvementStock typeMouvement, Emplacement emplacement, User user,
+            Integer nombreConditionnements, ArticleConditionnement articleConditionnement, Integer quantitePiecesReelle,
+            LocalDateTime dateMouvement, String commentaire, DetailJournal detailJournal, boolean enReserve) {
+        this.typeMouvement = typeMouvement;
+        this.emplacement = emplacement;
+        this.user = user;
+        this.nombreConditionnements = nombreConditionnements;
+        this.articleConditionnement = articleConditionnement;
+        this.quantitePiecesReelle = quantitePiecesReelle;
+        this.dateMouvement = dateMouvement;
+        this.commentaire = commentaire;
+        this.detailJournal = detailJournal;
+        this.enReserve = enReserve;
+    }
 
     public Long getId() {
         return id;
@@ -62,6 +85,14 @@ public class MouvementStock {
 
     public void setEmplacement(Emplacement emplacement) {
         this.emplacement = emplacement;
+    }
+
+    public boolean isEnReserve() {
+        return enReserve;
+    }
+
+    public void setEnReserve(boolean enReserve) {
+        this.enReserve = enReserve;
     }
 
     public User getUser() {
@@ -104,13 +135,20 @@ public class MouvementStock {
         this.commentaire = commentaire;
     }
 
-    public JournalMouvement getJournalMouvement() {
-        return journalMouvement;
+    public ArticleConditionnement getArticleConditionnement() {
+        return articleConditionnement;
     }
 
-    public void setJournalMouvement(JournalMouvement journalMouvement) {
-        this.journalMouvement = journalMouvement;
+    public void setArticleConditionnement(ArticleConditionnement articleConditionnement) {
+        this.articleConditionnement = articleConditionnement;
     }
 
-    
+    public DetailJournal getDetailJournal() {
+        return detailJournal;
+    }
+
+    public void setDetailJournal(DetailJournal detailJournal) {
+        this.detailJournal = detailJournal;
+    }
+
 }

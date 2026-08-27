@@ -24,6 +24,9 @@ public class ArticleConditionnement {
     @Column(name = "quantite_piece_standard", nullable = false)
     private Integer quantitePieceStandard;
 
+    @OneToOne(mappedBy = "articleConditionnement", fetch = FetchType.LAZY)
+    private PaletteConditionnement paletteConditionnement;
+
     public ArticleConditionnement() {
     }
 
@@ -76,5 +79,13 @@ public class ArticleConditionnement {
 
     public void setQuantitePieceStandard(Integer quantitePieceStandard) {
         this.quantitePieceStandard = quantitePieceStandard;
+    }
+
+    public PaletteConditionnement getPaletteConditionnement() {
+        return paletteConditionnement;
+    }
+
+    public void setPaletteConditionnement(PaletteConditionnement paletteConditionnement) {
+        this.paletteConditionnement = paletteConditionnement;
     }
 }

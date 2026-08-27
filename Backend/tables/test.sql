@@ -334,3 +334,55 @@ ADD COLUMN quantite_conditionnement INT NULL;
 -- designation de l'emplacement
 -- date d'entrée stock
 
+
+
+CREATE TABLE JournalStock(
+    id 
+    DetailJournalId   -- verification du typeConditionnement si ça rentre 
+    Quantite
+    EmplacementId
+)
+
+
+
+
+
+
+Mouvement-001 / detailJournal-001 / Articleconditionnement-001/ 40 quantitesConditionnement /Emplacement-001/ 12-08-2026
+
+
+Mouvement-002 / detailJournal-001 / Articleconditionnement-001/ 20 quantitesConditionnement /Emplacement-002/ 12-08-2026
+
+
+
+-- Detailjournal-1 /  150 /  emplacement-1 
+
+
+
+DESC t_article;                  
+DESC t_article_conditionnement;  
+DESC t_detail_journal;           
+DESC t_emplacement;              
+DESC t_journal_mouvement;        
+DESC t_mouvement_stock;          
+DESC t_palette_conditionnement;  
+DESC t_rack;                     
+DESC t_roles;                    
+DESC t_societe;                  
+DESC t_statut_journal_mouvement; 
+DESC t_type_conditionnement;     
+DESC t_type_mouvement;           
+DESC t_type_mouvement_journal;   
+DESC t_type_produit;             
+DESC t_user;                     
+DESC t_user_journal_mouvement;   
+DESC v_stock_par_emplacement;    
+DESC v_stock_total_article;      
+DESC v_structure_entrepot;       
+
+
+
+
+SELECT *
+FROM t_mouvement_stock
+ORDER BY id;

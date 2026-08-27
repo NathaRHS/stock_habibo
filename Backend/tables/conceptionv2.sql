@@ -47,6 +47,22 @@ CREATE TABLE IF NOT EXISTS t_article_conditionnement (
         ON UPDATE NO ACTION ON DELETE RESTRICT
 );
 
+-- Regle globale de palettisation : un conditionnement d'article possede
+-- une capacite maximale unique, appliquee a toutes les places palettes.
+CREATE TABLE IF NOT EXISTS t_palette_conditionnement (
+    id INT NOT NULL AUTO_INCREMENT,
+    article_conditionnement_id BIGINT NOT NULL,
+    quantite INT NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_palette_article_conditionnement
+        UNIQUE (article_conditionnement_id),
+    CONSTRAINT ck_palette_conditionnement_quantite CHECK (quantite > 0),
+    CONSTRAINT fk_palette_article_conditionnement
+        FOREIGN KEY (article_conditionnement_id)
+        REFERENCES t_article_conditionnement (id)
+        ON UPDATE NO ACTION ON DELETE RESTRICT
+);
+
 -- Organisation physique : un rack possede plusieurs etages numerotes.
 -- Chaque emplacement appartient a un rack et a un numero d'etage ; il represente une place palette.
 CREATE TABLE IF NOT EXISTS t_rack (
@@ -109,9 +125,11 @@ CREATE TABLE IF NOT EXISTS t_type_mouvement (
 -- quantite_pieces_reelle est la valeur utilisee pour calculer le stock.
 CREATE TABLE IF NOT EXISTS t_mouvement_stock (
     id BIGINT NOT NULL AUTO_INCREMENT,
+    detail_journal_id BIGINT NOT NULL,
     conditionnement_id BIGINT NOT NULL,
     type_mouvement_id BIGINT NOT NULL,
-    emplacement_id BIGINT NOT NULL,
+    emplacement_id BIGINT NULL,
+    en_reserve BOOLEAN NOT NULL DEFAULT FALSE,
     user_id BIGINT NOT NULL,
     nombre_conditionnements INT NOT NULL DEFAULT 1,
     quantite_pieces_reelle INT NOT NULL,
@@ -122,6 +140,14 @@ CREATE TABLE IF NOT EXISTS t_mouvement_stock (
         CHECK (nombre_conditionnements > 0),
     CONSTRAINT ck_mouvement_quantite_reelle
         CHECK (quantite_pieces_reelle > 0),
+    CONSTRAINT ck_mouvement_destination
+        CHECK (
+            (en_reserve = TRUE AND emplacement_id IS NULL)
+            OR (en_reserve = FALSE AND emplacement_id IS NOT NULL)
+        ),
+    CONSTRAINT fk_mouvement_detail_journal
+        FOREIGN KEY (detail_journal_id) REFERENCES t_detail_journal (id)
+        ON UPDATE NO ACTION ON DELETE RESTRICT,
     CONSTRAINT fk_mouvement_conditionnement
         FOREIGN KEY (conditionnement_id) REFERENCES t_article_conditionnement (id)
         ON UPDATE NO ACTION ON DELETE RESTRICT,
@@ -189,6 +215,3 @@ INSERT IGNORE INTO t_type_conditionnement (nom_conditionnement) VALUES
 INSERT IGNORE INTO t_type_mouvement (nom_type_mouvement, sens) VALUES
     ('ENTREE', 1),
     ('SORTIE', -1);
-
-
-
