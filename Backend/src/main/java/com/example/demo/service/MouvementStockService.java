@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.management.RuntimeErrorException;
-
 /*
 Recuperer la liste Affectations
 
@@ -96,6 +94,8 @@ Affectations[
 */
 
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.dto.AffectationStockRequest;
 import com.example.demo.dto.CreerMouvementsStockRequest;
@@ -154,27 +154,37 @@ public class MouvementStockService {
             String matricule) {
 
         if (request == null || request.affectations() == null || request.affectations().isEmpty()) {
-            throw new RuntimeException("La liste des affectations fournie est vide");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La liste des affectations fournie est vide");
         }
 
         List<AffectationStockRequest> listeDesAffectations = request.affectations();
         // verifier si le journal existe
 
         JournalMouvement journalMouvement = journalMouvementRepository.findById(journalId)
-                .orElseThrow(() -> new RuntimeException("journal introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Journal introuvable"));
         // vérifier si le statut du journal est déjà valide
         if (!journalMouvement.getStatutJournalMouvement().getNomStatut().equals(STATUT_VALIDE_JOURNAL)) {
-            throw new RuntimeException("Le statut du journal n'est pas encore VALIDE");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Le statut du journal n'est pas encore VALIDE");
         }
 
         // Recuperer l'utilisateur qui valide l'entree depuis le matricule du JWT.
         User utilisateur = userRepository.findByMatricule(matricule)
-                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "Utilisateur authentifie introuvable"));
 
         // Rechercher le type par son nom et non avec un identifiant fixe.
         TypeMouvementStock typeMouvementEntree = typeMouvementStockRepository
                 .findByNomTypeMouvement(TYPE_MOUVEMENT_ENTREE)
-                .orElseThrow(() -> new RuntimeException("Le type de mouvement ENTREE est introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Le type de mouvement ENTREE n'est pas configure"));
 
         // regroupement liste affectation
         Map<Long, Integer> affectation = new LinkedHashMap<>();
@@ -185,15 +195,22 @@ public class MouvementStockService {
                     || affectationStockRequest.emplacementId() == null
                     || affectationStockRequest.nombreConditionnements() == null
                     || affectationStockRequest.nombreConditionnements() <= 0) {
-                throw new RuntimeException("Une affectation est incomplete ou possede une quantite invalide");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Une affectation est incomplete ou possede une quantite invalide");
             }
 
             Integer quantite = affectationStockRequest.nombreConditionnements();
             DetailJournal detailJournal = detailJournalRepository.findById(affectationStockRequest.detailJournalId())
-                    .orElseThrow(() -> new RuntimeException("detail journal inexistant"));
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Detail journal introuvable : " + affectationStockRequest.detailJournalId()));
             if (detailJournal.getJournalMouvement() == null
                     || !journalMouvement.getId().equals(detailJournal.getJournalMouvement().getId())) {
-                throw new RuntimeException("Le detail journal n'est pas dans le journal ");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Le detail journal " + detailJournal.getId()
+                                + " n'appartient pas au journal " + journalId);
             }
             // regarder si l'id est déjà là si oui on ajoute la quantité si non on insère
             if (!affectation.containsKey(affectationStockRequest.detailJournalId())) {
@@ -210,10 +227,15 @@ public class MouvementStockService {
             Integer quantiteAffectee = entree.getValue();
 
             DetailJournal correspondant = detailJournalRepository.findById(detailJournalId)
-                    .orElseThrow(() -> new RuntimeException("le detail journal n'existe pas"));
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Detail journal introuvable : " + detailJournalId));
 
             if (!correspondant.getQuantiteConditionnement().equals(quantiteAffectee)) {
-                throw new RuntimeException("Les quantités du détails" + detailJournalId + " ne s'alligne pas");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "La quantite affectee au detail " + detailJournalId
+                                + " ne correspond pas a la quantite attendue");
             }
 
             // rechercher le DetailJournal
@@ -224,10 +246,14 @@ public class MouvementStockService {
         // qu'aucune entree n'a deja ete creee pour ce detail.
         for (DetailJournal detailJournal : journalMouvement.getDetails()) {
             if (!affectation.containsKey(detailJournal.getId())) {
-                throw new RuntimeException("Aucune affectation pour le detail " + detailJournal.getId());
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Aucune affectation pour le detail " + detailJournal.getId());
             }
             if (mouvementStockRepository.existsByDetailJournalId(detailJournal.getId())) {
-                throw new RuntimeException("Des mouvements existent deja pour le detail " + detailJournal.getId());
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Des mouvements existent deja pour le detail " + detailJournal.getId());
             }
         }
 
@@ -255,11 +281,15 @@ public class MouvementStockService {
 
             DetailJournal detailJournal = detailJournalRepository
                     .findById(detailJournalId)
-                    .orElseThrow(() -> new RuntimeException("Détail journal introuvable"));
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Detail journal introuvable : " + detailJournalId));
 
             Emplacement emplacement = emplacementRepository
                     .findById(emplacementId)
-                    .orElseThrow(() -> new RuntimeException("Emplacement introuvable"));
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Emplacement introuvable : " + emplacementId));
 
             long stockActuelle = mouvementStockRepository.calculerNombreConditionnementsPresents(emplacementId);
             stockActuelle += quantitesPlanifieesParEmplacement.getOrDefault(emplacementId, 0L);
@@ -269,8 +299,10 @@ public class MouvementStockService {
                     .getArticleConditionnements().get(0);
             PaletteConditionnement paletteConditionnement = palelConditionnementRepository
                     .findByArticleConditionnementId(articleConditionnementAPlacer.getId())
-                    .orElseThrow(() -> new RuntimeException(
-                            "il n'y a pas de palette conditionnement pour ce conditionnement"));
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.INTERNAL_SERVER_ERROR,
+                            "Aucune capacite de palette n'est configuree pour le conditionnement "
+                                    + articleConditionnementAPlacer.getId()));
 
             // AJOUT : capacite maximale de l'emplacement en conditionnements.
             Integer capacitePalette = paletteConditionnement.getQuantite();
@@ -364,8 +396,10 @@ public class MouvementStockService {
         // Verifier que la quantite reelle de chaque detail a ete entierement repartie.
         for (Map.Entry<Long, Integer> entree : piecesRestantesParDetail.entrySet()) {
             if (entree.getValue() != 0) {
-                throw new RuntimeException("Toutes les pieces du detail " + entree.getKey()
-                        + " n'ont pas ete reparties");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Toutes les pieces du detail " + entree.getKey()
+                                + " n'ont pas ete reparties");
             }
         }
 
