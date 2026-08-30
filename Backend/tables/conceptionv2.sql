@@ -47,33 +47,44 @@ CREATE TABLE IF NOT EXISTS t_article_conditionnement (
         ON UPDATE NO ACTION ON DELETE RESTRICT
 );
 
--- Organisation physique : rack > emplacement > etage.
+-- Regle globale de palettisation : un conditionnement d'article possede
+-- une capacite maximale unique, appliquee a toutes les places palettes.
+CREATE TABLE IF NOT EXISTS t_palette_conditionnement (
+    id INT NOT NULL AUTO_INCREMENT,
+    article_conditionnement_id BIGINT NOT NULL,
+    quantite INT NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_palette_article_conditionnement
+        UNIQUE (article_conditionnement_id),
+    CONSTRAINT ck_palette_conditionnement_quantite CHECK (quantite > 0),
+    CONSTRAINT fk_palette_article_conditionnement
+        FOREIGN KEY (article_conditionnement_id)
+        REFERENCES t_article_conditionnement (id)
+        ON UPDATE NO ACTION ON DELETE RESTRICT
+);
+
+-- Organisation physique : un rack possede plusieurs etages numerotes.
+-- Chaque emplacement appartient a un rack et a un numero d'etage ; il represente une place palette.
 CREATE TABLE IF NOT EXISTS t_rack (
     id BIGINT NOT NULL AUTO_INCREMENT,
     nom_rack VARCHAR(100) NOT NULL,
+    nombre_etages INT NOT NULL,
     PRIMARY KEY (id),
-    CONSTRAINT uk_rack_nom UNIQUE (nom_rack)
+    CONSTRAINT uk_rack_nom UNIQUE (nom_rack),
+    CONSTRAINT ck_rack_nombre_etages CHECK (nombre_etages > 0)
 );
 
 CREATE TABLE IF NOT EXISTS t_emplacement (
     id BIGINT NOT NULL AUTO_INCREMENT,
     rack_id BIGINT NOT NULL,
     nom_emplacement VARCHAR(100) NOT NULL,
+    numero_etage INT NOT NULL,
     PRIMARY KEY (id),
-    CONSTRAINT uk_emplacement_rack_nom UNIQUE (rack_id, nom_emplacement),
+    CONSTRAINT uk_emplacement_rack_etage_nom
+        UNIQUE (rack_id, numero_etage, nom_emplacement),
+    CONSTRAINT ck_emplacement_numero_etage CHECK (numero_etage > 0),
     CONSTRAINT fk_emplacement_rack
         FOREIGN KEY (rack_id) REFERENCES t_rack (id)
-        ON UPDATE NO ACTION ON DELETE RESTRICT
-);
-
-CREATE TABLE IF NOT EXISTS t_etage (
-    id BIGINT NOT NULL AUTO_INCREMENT,
-    emplacement_id BIGINT NOT NULL,
-    nom_etage VARCHAR(100) NOT NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT uk_etage_emplacement_nom UNIQUE (emplacement_id, nom_etage),
-    CONSTRAINT fk_etage_emplacement
-        FOREIGN KEY (emplacement_id) REFERENCES t_emplacement (id)
         ON UPDATE NO ACTION ON DELETE RESTRICT
 );
 
@@ -114,9 +125,11 @@ CREATE TABLE IF NOT EXISTS t_type_mouvement (
 -- quantite_pieces_reelle est la valeur utilisee pour calculer le stock.
 CREATE TABLE IF NOT EXISTS t_mouvement_stock (
     id BIGINT NOT NULL AUTO_INCREMENT,
+    detail_journal_id BIGINT NOT NULL,
     conditionnement_id BIGINT NOT NULL,
     type_mouvement_id BIGINT NOT NULL,
-    etage_id BIGINT NOT NULL,
+    emplacement_id BIGINT NULL,
+    en_reserve BOOLEAN NOT NULL DEFAULT FALSE,
     user_id BIGINT NOT NULL,
     nombre_conditionnements INT NOT NULL DEFAULT 1,
     quantite_pieces_reelle INT NOT NULL,
@@ -127,14 +140,22 @@ CREATE TABLE IF NOT EXISTS t_mouvement_stock (
         CHECK (nombre_conditionnements > 0),
     CONSTRAINT ck_mouvement_quantite_reelle
         CHECK (quantite_pieces_reelle > 0),
+    CONSTRAINT ck_mouvement_destination
+        CHECK (
+            (en_reserve = TRUE AND emplacement_id IS NULL)
+            OR (en_reserve = FALSE AND emplacement_id IS NOT NULL)
+        ),
+    CONSTRAINT fk_mouvement_detail_journal
+        FOREIGN KEY (detail_journal_id) REFERENCES t_detail_journal (id)
+        ON UPDATE NO ACTION ON DELETE RESTRICT,
     CONSTRAINT fk_mouvement_conditionnement
         FOREIGN KEY (conditionnement_id) REFERENCES t_article_conditionnement (id)
         ON UPDATE NO ACTION ON DELETE RESTRICT,
     CONSTRAINT fk_mouvement_type
         FOREIGN KEY (type_mouvement_id) REFERENCES t_type_mouvement (id)
         ON UPDATE NO ACTION ON DELETE RESTRICT,
-    CONSTRAINT fk_mouvement_etage
-        FOREIGN KEY (etage_id) REFERENCES t_etage (id)
+    CONSTRAINT fk_mouvement_emplacement
+        FOREIGN KEY (emplacement_id) REFERENCES t_emplacement (id)
         ON UPDATE NO ACTION ON DELETE RESTRICT,
     CONSTRAINT fk_mouvement_user
         FOREIGN KEY (user_id) REFERENCES t_user (id)
@@ -156,18 +177,18 @@ CREATE TABLE IF NOT EXISTS t_journal (
         ON UPDATE NO ACTION ON DELETE RESTRICT
 );
 
--- Stock en pieces par article et par etage.
-CREATE OR REPLACE VIEW v_stock_par_etage AS
+-- Stock en pieces par article et par emplacement (place palette).
+CREATE OR REPLACE VIEW v_stock_par_emplacement AS
 SELECT
     ac.article_id,
-    ms.etage_id,
+    ms.emplacement_id,
     SUM(ms.quantite_pieces_reelle * tm.sens) AS quantite_stock
 FROM t_mouvement_stock ms
 JOIN t_article_conditionnement ac
     ON ac.id = ms.conditionnement_id
 JOIN t_type_mouvement tm
     ON tm.id = ms.type_mouvement_id
-GROUP BY ac.article_id, ms.etage_id;
+GROUP BY ac.article_id, ms.emplacement_id;
 
 -- Stock total en pieces par article, tous emplacements confondus.
 CREATE OR REPLACE VIEW v_stock_total_article AS
@@ -194,7 +215,3 @@ INSERT IGNORE INTO t_type_conditionnement (nom_conditionnement) VALUES
 INSERT IGNORE INTO t_type_mouvement (nom_type_mouvement, sens) VALUES
     ('ENTREE', 1),
     ('SORTIE', -1);
-
-
-
-

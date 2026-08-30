@@ -21,15 +21,23 @@ public interface DetailJournalRepository extends JpaRepository<DetailJournal, Lo
                         INSERT INTO t_detail_journal (
                 journal_mouvement_id,
                 article_id,
-                quantite
+                quantite,
+                quantite_conditionnement
             )
-            VALUES (:journalId,:articleId,:quantite)
+            VALUES (
+                :journalId,
+                :articleId,
+                :quantite,
+                CEIL(:quantite / :quantitePieceStandard)
+            )
             ON DUPLICATE KEY UPDATE
-                quantite = quantite + VALUES(quantite);
+                quantite_conditionnement = CEIL(
+                    (quantite + VALUES(quantite)) / :quantitePieceStandard
+                ),
+                quantite = quantite + VALUES(quantite)
                         """, nativeQuery = true)
     int ajouterOuIncrementer(@Param("journalId") Long journalId,
             @Param("articleId") Long articleId,
-            @Param("quantite") Integer quantite
-
-    );
+            @Param("quantite") Integer quantite,
+            @Param("quantitePieceStandard") Integer quantitePieceStandard);
 }

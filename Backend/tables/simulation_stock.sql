@@ -1,5 +1,5 @@
 -- Simulation complete pour tester :
---   1. v_stock_par_etage
+--   1. v_stock_par_emplacement
 --   2. v_stock_total_article
 --
 -- Resultats attendus :
@@ -100,11 +100,11 @@ SET @admin_id = (
 );
 
 -- ---------------------------------------------------------------------------
--- Rack, emplacement et etages de simulation
+-- Rack et emplacements de simulation (un emplacement represente une palette)
 -- ---------------------------------------------------------------------------
 
-INSERT INTO t_rack (nom_rack)
-SELECT 'RACK-SIMULATION'
+INSERT INTO t_rack (nom_rack, nombre_etages)
+SELECT 'RACK-SIMULATION', 2
 WHERE NOT EXISTS (
     SELECT 1 FROM t_rack WHERE nom_rack = 'RACK-SIMULATION'
 );
@@ -113,50 +113,41 @@ SET @rack_id = (
     SELECT id FROM t_rack WHERE nom_rack = 'RACK-SIMULATION' ORDER BY id LIMIT 1
 );
 
-INSERT INTO t_emplacement (rack_id, nom_emplacement)
-SELECT @rack_id, 'EMPLACEMENT-SIMULATION'
+INSERT INTO t_emplacement (rack_id, nom_emplacement, numero_etage)
+SELECT @rack_id, 'EMPLACEMENT-SIMULATION-1', 1
 WHERE NOT EXISTS (
     SELECT 1
     FROM t_emplacement
     WHERE rack_id = @rack_id
-      AND nom_emplacement = 'EMPLACEMENT-SIMULATION'
+      AND nom_emplacement = 'EMPLACEMENT-SIMULATION-1'
+      AND numero_etage = 1
 );
 
-SET @emplacement_id = (
+INSERT INTO t_emplacement (rack_id, nom_emplacement, numero_etage)
+SELECT @rack_id, 'EMPLACEMENT-SIMULATION-2', 2
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM t_emplacement
+    WHERE rack_id = @rack_id
+      AND nom_emplacement = 'EMPLACEMENT-SIMULATION-2'
+      AND numero_etage = 2
+);
+
+SET @emplacement_1_id = (
     SELECT id
     FROM t_emplacement
     WHERE rack_id = @rack_id
-      AND nom_emplacement = 'EMPLACEMENT-SIMULATION'
+      AND nom_emplacement = 'EMPLACEMENT-SIMULATION-1'
+      AND numero_etage = 1
     LIMIT 1
 );
 
-INSERT INTO t_etage (emplacement_id, nom_etage)
-SELECT @emplacement_id, 'ETAGE-1'
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM t_etage
-    WHERE emplacement_id = @emplacement_id
-      AND nom_etage = 'ETAGE-1'
-);
-
-INSERT INTO t_etage (emplacement_id, nom_etage)
-SELECT @emplacement_id, 'ETAGE-2'
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM t_etage
-    WHERE emplacement_id = @emplacement_id
-      AND nom_etage = 'ETAGE-2'
-);
-
-SET @etage_1_id = (
-    SELECT id FROM t_etage
-    WHERE emplacement_id = @emplacement_id AND nom_etage = 'ETAGE-1'
-    LIMIT 1
-);
-
-SET @etage_2_id = (
-    SELECT id FROM t_etage
-    WHERE emplacement_id = @emplacement_id AND nom_etage = 'ETAGE-2'
+SET @emplacement_2_id = (
+    SELECT id
+    FROM t_emplacement
+    WHERE rack_id = @rack_id
+      AND nom_emplacement = 'EMPLACEMENT-SIMULATION-2'
+      AND numero_etage = 2
     LIMIT 1
 );
 
@@ -271,48 +262,48 @@ WHERE commentaire LIKE 'SIMULATION_VUES:%';
 INSERT INTO t_mouvement_stock (
     conditionnement_id,
     type_mouvement_id,
-    etage_id,
+    emplacement_id,
     user_id,
     nombre_conditionnements,
     quantite_pieces_reelle,
     date_mouvement,
     commentaire
 ) VALUES
-    (@jus_carton_id, @entree_id, @etage_1_id, @admin_id,
+    (@jus_carton_id, @entree_id, @emplacement_1_id, @admin_id,
      5, 120, CURRENT_TIMESTAMP, 'SIMULATION_VUES: entree de 5 cartons de jus'),
-    (@jus_pack_id, @sortie_id, @etage_1_id, @admin_id,
+    (@jus_pack_id, @sortie_id, @emplacement_1_id, @admin_id,
      2, 12, CURRENT_TIMESTAMP, 'SIMULATION_VUES: sortie de 2 packs de jus');
 
 -- JUS, ETAGE-2 : +72 -5 = 67 pieces.
 INSERT INTO t_mouvement_stock (
     conditionnement_id,
     type_mouvement_id,
-    etage_id,
+    emplacement_id,
     user_id,
     nombre_conditionnements,
     quantite_pieces_reelle,
     date_mouvement,
     commentaire
 ) VALUES
-    (@jus_carton_id, @entree_id, @etage_2_id, @admin_id,
+    (@jus_carton_id, @entree_id, @emplacement_2_id, @admin_id,
      3, 72, CURRENT_TIMESTAMP, 'SIMULATION_VUES: entree de 3 cartons de jus'),
-    (@jus_piece_id, @sortie_id, @etage_2_id, @admin_id,
+    (@jus_piece_id, @sortie_id, @emplacement_2_id, @admin_id,
      5, 5, CURRENT_TIMESTAMP, 'SIMULATION_VUES: sortie de 5 pieces de jus');
 
 -- EAU, ETAGE-1 : +100 -15 = 85 pieces.
 INSERT INTO t_mouvement_stock (
     conditionnement_id,
     type_mouvement_id,
-    etage_id,
+    emplacement_id,
     user_id,
     nombre_conditionnements,
     quantite_pieces_reelle,
     date_mouvement,
     commentaire
 ) VALUES
-    (@eau_carton_id, @entree_id, @etage_1_id, @admin_id,
+    (@eau_carton_id, @entree_id, @emplacement_1_id, @admin_id,
      9, 100, CURRENT_TIMESTAMP, 'SIMULATION_VUES: entree reelle de 100 bouteilles'),
-    (@eau_piece_id, @sortie_id, @etage_1_id, @admin_id,
+    (@eau_piece_id, @sortie_id, @emplacement_1_id, @admin_id,
      15, 15, CURRENT_TIMESTAMP, 'SIMULATION_VUES: sortie de 15 bouteilles');
 
 -- Rend la relation obligatoire une fois tous les mouvements correctement lies.
@@ -323,17 +314,17 @@ ALTER TABLE t_mouvement_stock
 -- Vues de stock
 -- ---------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW v_stock_par_etage AS
+CREATE OR REPLACE VIEW v_stock_par_emplacement AS
 SELECT
     ac.article_id,
-    ms.etage_id,
+    ms.emplacement_id,
     SUM(ms.quantite_pieces_reelle * tm.sens) AS quantite_stock
 FROM t_mouvement_stock ms
 JOIN t_article_conditionnement ac
     ON ac.id = ms.conditionnement_id
 JOIN t_type_mouvement tm
     ON tm.id = ms.type_mouvement_id
-GROUP BY ac.article_id, ms.etage_id;
+GROUP BY ac.article_id, ms.emplacement_id;
 
 CREATE OR REPLACE VIEW v_stock_total_article AS
 SELECT
@@ -355,15 +346,14 @@ SELECT
     a.nom_article,
     r.nom_rack,
     e.nom_emplacement,
-    et.nom_etage,
+    e.numero_etage,
     spe.quantite_stock
-FROM v_stock_par_etage spe
+FROM v_stock_par_emplacement spe
 JOIN t_article a ON a.id = spe.article_id
-JOIN t_etage et ON et.id = spe.etage_id
-JOIN t_emplacement e ON e.id = et.emplacement_id
+JOIN t_emplacement e ON e.id = spe.emplacement_id
 JOIN t_rack r ON r.id = e.rack_id
 WHERE a.code_bar IN ('SIM-ARTICLE-JUS', 'SIM-ARTICLE-EAU')
-ORDER BY a.id, et.id;
+ORDER BY a.id, e.numero_etage, e.id;
 
 SELECT
     a.id AS article_id,

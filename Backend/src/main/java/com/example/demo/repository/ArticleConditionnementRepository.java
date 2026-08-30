@@ -11,4 +11,6 @@ import com.example.demo.entity.ArticleConditionnement;
 public interface ArticleConditionnementRepository extends JpaRepository<ArticleConditionnement, Long> {
 
     Optional<ArticleConditionnement> findByCodeBarres(String codeBarres);
+
+    Optional<ArticleConditionnement> findFirstByArticleIdOrderByIdAsc(Long articleId);
 }

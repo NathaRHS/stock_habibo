@@ -27,8 +27,10 @@ public class EmplacementService {
 
     public EmplacementResponse create(EmplacementRequest request) {
         Rack rack = trouverRack(request.rackId());
-        verifierNomDisponible(request.rackId(), request.nomEmplacement());
-        Emplacement emplacement = new Emplacement(request.nomEmplacement(), rack);
+        verifierNumeroEtage(rack, request.numeroEtage());
+        verifierNomDisponible(request.rackId(), request.numeroEtage(), request.nomEmplacement());
+        Emplacement emplacement = new Emplacement(
+                request.nomEmplacement(), rack, request.numeroEtage());
         return versResponse(emplacementRepository.save(emplacement));
     }
 
@@ -45,15 +47,18 @@ public class EmplacementService {
     public EmplacementResponse update(Long id, EmplacementRequest request) {
         Emplacement emplacement = trouverEmplacement(id);
         Rack rack = trouverRack(request.rackId());
+        verifierNumeroEtage(rack, request.numeroEtage());
 
         boolean nomOuRackModifie = !emplacement.getNomEmplacement().equals(request.nomEmplacement())
-                || !emplacement.getRack().getId().equals(request.rackId());
+                || !emplacement.getRack().getId().equals(request.rackId())
+                || !emplacement.getNumeroEtage().equals(request.numeroEtage());
         if (nomOuRackModifie) {
-            verifierNomDisponible(request.rackId(), request.nomEmplacement());
+            verifierNomDisponible(request.rackId(), request.numeroEtage(), request.nomEmplacement());
         }
 
         emplacement.setNomEmplacement(request.nomEmplacement());
         emplacement.setRack(rack);
+        emplacement.setNumeroEtage(request.numeroEtage());
         return versResponse(emplacementRepository.save(emplacement));
     }
 
@@ -76,11 +81,20 @@ public class EmplacementService {
                         HttpStatus.NOT_FOUND, "Rack introuvable : " + id));
     }
 
-    private void verifierNomDisponible(Long rackId, String nomEmplacement) {
-        if (emplacementRepository.existsByRackIdAndNomEmplacement(rackId, nomEmplacement)) {
+    private void verifierNomDisponible(Long rackId, Integer numeroEtage, String nomEmplacement) {
+        if (emplacementRepository.existsByRackIdAndNumeroEtageAndNomEmplacement(
+                rackId, numeroEtage, nomEmplacement)) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "Un emplacement portant ce nom existe deja dans ce rack");
+        }
+    }
+
+    private void verifierNumeroEtage(Rack rack, Integer numeroEtage) {
+        if (numeroEtage == null || numeroEtage < 1 || numeroEtage > rack.getNombreEtages()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le numero d'etage doit etre compris entre 1 et " + rack.getNombreEtages());
         }
     }
 
@@ -89,6 +103,7 @@ public class EmplacementService {
                 emplacement.getId(),
                 emplacement.getNomEmplacement(),
                 emplacement.getRack().getId(),
-                emplacement.getRack().getNomRack());
+                emplacement.getRack().getNomRack(),
+                emplacement.getNumeroEtage());
     }
 }

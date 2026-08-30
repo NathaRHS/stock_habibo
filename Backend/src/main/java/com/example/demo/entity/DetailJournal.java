@@ -23,13 +23,18 @@ public class DetailJournal {
     @Column(name = "quantite", nullable = false)
     private Integer quantite;
 
+    @Column(name = "quantite_conditionnement")
+    private Integer quantiteConditionnement;
+
     public DetailJournal() {
     }
 
-    public DetailJournal(JournalMouvement journalMouvement, Article article, Integer quantite) {
+    public DetailJournal(JournalMouvement journalMouvement, Article article, Integer quantite,
+            Integer quantiteConditionnement) {
         this.journalMouvement = journalMouvement;
         this.article = article;
         setQuantite(quantite);
+        setQuantiteConditionnement(quantiteConditionnement);
     }
 
     public Long getId() {
@@ -65,6 +70,17 @@ public class DetailJournal {
             throw new IllegalArgumentException("La quantite doit etre strictement positive");
         }
         this.quantite = quantite;
+    }
+
+    public Integer getQuantiteConditionnement() {
+        return quantiteConditionnement;
+    }
+
+    public void setQuantiteConditionnement(Integer quantiteConditionnement) {
+        if (quantiteConditionnement != null && quantiteConditionnement <= 0) {
+            throw new IllegalArgumentException("La quantite de conditionnement doit etre strictement positive");
+        }
+        this.quantiteConditionnement = quantiteConditionnement;
     }
 
 }

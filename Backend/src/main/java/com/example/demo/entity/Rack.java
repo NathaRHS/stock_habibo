@@ -17,14 +17,18 @@ public class Rack {
     @Column(name = "nom_rack", nullable = false, unique = true)
     private String nomRack;
 
+    @Column(name = "nombre_etages", nullable = false)
+    private Integer nombreEtages;
+
     @OneToMany(mappedBy = "rack")
     private List<Emplacement> emplacements = new ArrayList<>();
 
     public Rack() {
     }
 
-    public Rack(String nomRack) {
+    public Rack(String nomRack, Integer nombreEtages) {
         this.nomRack = nomRack;
+        setNombreEtages(nombreEtages);
     }
 
     public Long getId() {
@@ -41,6 +45,17 @@ public class Rack {
 
     public void setNomRack(String nomRack) {
         this.nomRack = nomRack;
+    }
+
+    public Integer getNombreEtages() {
+        return nombreEtages;
+    }
+
+    public void setNombreEtages(Integer nombreEtages) {
+        if (nombreEtages == null || nombreEtages <= 0) {
+            throw new IllegalArgumentException("Le nombre d'etages doit etre strictement positif");
+        }
+        this.nombreEtages = nombreEtages;
     }
 
     public List<Emplacement> getEmplacements() {
