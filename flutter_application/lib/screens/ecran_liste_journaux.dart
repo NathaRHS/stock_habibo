@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application/screens/ecran_scan_session.dart';
+import 'package:flutter_application/screens/ecran_choix_emplacement_inventaire.dart';
 import 'package:http/http.dart' as http;
 
 class EcranListeJournaux extends StatefulWidget {
@@ -149,12 +150,22 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
                 ? () async {
                     await Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => EcranScanSession(
-                          journalId: journal.id,
-                          referenceJournal: journal.reference,
-                          baseUrl: widget.baseUrl,
-                          accessToken: widget.accessToken,
-                        ),
+                        builder: (_) =>
+                            journal.typeMouvementJournal.trim().toUpperCase() ==
+                                'INVENTAIRE'
+                            ? EcranChoixEmplacementInventaire(
+                                journalId: journal.id,
+                                referenceJournal: journal.reference,
+                                baseUrl: widget.baseUrl,
+                                accessToken: widget.accessToken,
+                              )
+                            : EcranScanSession(
+                                journalId: journal.id,
+                                referenceJournal: journal.reference,
+                                typeJournal: journal.typeMouvementJournal,
+                                baseUrl: widget.baseUrl,
+                                accessToken: widget.accessToken,
+                              ),
                       ),
                     );
                     _chargerJournaux();

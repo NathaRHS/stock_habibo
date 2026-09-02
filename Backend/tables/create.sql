@@ -204,6 +204,8 @@ CREATE TABLE IF NOT EXISTS t_detail_journal (
     article_id BIGINT NOT NULL,
     quantite INT NOT NULL,
     quantite_conditionnement INT NULL,
+    dlc DATE NULL,
+    dlv DATE NULL,
     PRIMARY KEY (id),
     CONSTRAINT uq_detail_journal_article
         UNIQUE (journal_mouvement_id, article_id),
@@ -213,6 +215,8 @@ CREATE TABLE IF NOT EXISTS t_detail_journal (
             quantite_conditionnement IS NULL
             OR quantite_conditionnement > 0
         ),
+    CONSTRAINT ck_detail_dates
+        CHECK (dlv IS NULL OR dlc IS NULL OR dlv <= dlc),
     CONSTRAINT fk_detail_journal
         FOREIGN KEY (journal_mouvement_id)
         REFERENCES t_journal_mouvement (id)

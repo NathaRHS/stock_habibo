@@ -15,9 +15,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.DetailJournalResponse;
+import com.example.demo.dto.ComptageInventaireResponse;
 import com.example.demo.dto.JournalMouvementRequest;
 import com.example.demo.dto.JournalMouvementResponse;
 import com.example.demo.dto.ScanArticleRequest;
+import com.example.demo.dto.ScanInventaireRequest;
 import com.example.demo.dto.UpdateStatutJournalRequest;
 import com.example.demo.service.JournalMouvementService;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -87,6 +89,15 @@ public class JournalMouvementController {
             @RequestBody ScanArticleRequest request, @AuthenticationPrincipal Jwt jwt) {
         String matricule = jwt.getSubject();
         return service.scanArticle(journalId, request,matricule);
+    }
+
+    @PostMapping("/{journalId}/inventaire/scans")
+    public ComptageInventaireResponse scanInventaire(
+            @PathVariable Long journalId,
+            @RequestBody ScanInventaireRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String matricule = jwt.getSubject();
+        return service.scanArticleInventaire(journalId, request, matricule);
     }
 
 }

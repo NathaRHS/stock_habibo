@@ -386,3 +386,5 @@ DESC v_structure_entrepot;
 SELECT *
 FROM t_mouvement_stock
 ORDER BY id;
+
+

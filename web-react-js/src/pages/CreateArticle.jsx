@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAccessToken } from "../services/authService";
+import Button from "../components/Button";
 
 const initialArticleState = {
   nomArticle: "",
@@ -190,9 +191,9 @@ function CreateArticle() {
           ))}
         </select>
 
-        <button type="submit" disabled={loadingOptions || submitting}>
-          {submitting ? "Création..." : "Créer l'article"}
-        </button>
+        <Button type="submit" loading={submitting} disabled={loadingOptions}>
+          Créer l'article
+        </Button>
       </form>
     </div>
   );

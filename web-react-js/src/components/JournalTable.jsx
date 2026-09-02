@@ -1,4 +1,5 @@
 import "../assets/css/Dashboard.css";
+import Button from "./Button";
 
 function JournalTable() {
   return (
@@ -11,10 +12,10 @@ function JournalTable() {
         <p>Consultez et gérez les derniers mouvements de stock</p>
       </div>
       <div className="journal-actions">
-        <button type="button"><span className="material-symbols-outlined" aria-hidden="true">delete</span><span>Supprimer</span></button>
-        <button type="button"><span className="material-symbols-outlined" aria-hidden="true">filter_list</span><span>Filtres</span></button>
-        <button className="export-button" type="button"><span className="material-symbols-outlined" aria-hidden="true">download</span><span>Exporter</span></button>
-        <button className="primary-button" type="button"><span className="material-symbols-outlined" aria-hidden="true">add</span>Ajouter</button>
+        <Button icon={<span className="material-symbols-outlined" aria-hidden="true">delete</span>} variant="danger">Supprimer</Button>
+        <Button icon={<span className="material-symbols-outlined" aria-hidden="true">filter_list</span>} variant="secondary">Filtres</Button>
+        <Button icon={<span className="material-symbols-outlined" aria-hidden="true">download</span>} variant="secondary">Exporter</Button>
+        <Button icon={<span className="material-symbols-outlined" aria-hidden="true">add</span>}>Ajouter</Button>
       </div>
     </section>
   );

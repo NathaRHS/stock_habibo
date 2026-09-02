@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { setAuthSession } from "../services/authService";
+import Button from "../components/Button";
 import "./css/Login.css";
 
 function Login() {
@@ -90,9 +91,9 @@ function Login() {
             {error}
           </p>
         )}
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? "Connexion..." : "Se connecter"}
-        </button>
+        <Button type="submit" loading={isLoading} fullWidth>
+          Se connecter
+        </Button>
       </form>
     </main>
   );

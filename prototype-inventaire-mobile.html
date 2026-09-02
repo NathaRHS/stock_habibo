@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inventaire mobile — sélection d'un emplacement</title>
+    <style>
+      :root {
+        --ink: #10243e;
+        --muted: #687991;
+        --line: #dce4ee;
+        --surface: #ffffff;
+        --canvas: #edf2f7;
+        --primary: #97b1e4;
+        --primary-soft: #edf4ff;
+        --success: #138a61;
+        --success-soft: #eaf8f2;
+        --warning: #c97412;
+        --warning-soft: #fff6e7;
+        --danger: #ca4453;
+        --danger-soft: #fff0f1;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 32px 16px;
+        background:
+          radial-gradient(circle at 10% 0%, #dfeaff 0, transparent 32%),
+          var(--canvas);
+        color: var(--ink);
+        font-family: "Montserrat";
+      }
+
+      #continueButton{
+        font-weight: 500;
+      }
+      button, input { font: inherit; }
+
+      .phone {
+        width: min(100%, 410px);
+        min-height: 844px;
+        overflow: hidden;
+        background: #f8fafc;
+        border: 1px solid #ccd6e2;
+        border-radius: 30px;
+        box-shadow: 0 30px 80px rgba(26, 44, 70, 0.22);
+      }
+
+      .status-bar {
+        height: 28px;
+        background: #0b1f38;
+      }
+
+      .app-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 18px 20px 16px;
+        color: white;
+        background: #0b1f38;
+      }
+
+      .back {
+        width: 38px;
+        height: 38px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 11px;
+        color: white;
+        background: rgba(255, 255, 255, 0.08);
+        cursor: pointer;
+      }
+
+      .header-copy { flex: 1; }
+      .eyebrow {
+        margin: 0 0 3px;
+        color: #a9c7eb;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .app-header h1 {
+        margin: 0;
+        font-size: 19px;
+        line-height: 1.2;
+      }
+
+      .counter {
+        padding: 6px 9px;
+        border-radius: 999px;
+        color: #bcd4f1;
+        background: rgba(255, 255, 255, 0.08);
+        font-size: 11px;
+        font-weight: 750;
+      }
+
+      main { padding: 18px 16px 110px; }
+
+      .selection-card {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 13px;
+        padding: 15px;
+        border: 1px solid #bad1fb;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #fff 10%, var(--primary-soft));
+        box-shadow: 0 8px 24px rgba(21, 94, 239, 0.08);
+      }
+
+      .slot-code {
+        display: grid;
+        place-items: center;
+        min-width: 70px;
+        padding: 10px;
+        border-radius: 12px;
+        color: white;
+        background: var(--primary);
+        font-size: 16px;
+        font-weight: 850;
+        letter-spacing: 0.02em;
+      }
+
+      .selection-card h2 {
+        margin: 1px 0 3px;
+        font-size: 15px;
+      }
+
+      .selection-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .search {
+        position: relative;
+        margin: 16px 0 14px;
+      }
+
+      .search input {
+        width: 100%;
+        height: 46px;
+        padding: 0 42px 0 15px;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        outline: none;
+        color: var(--ink);
+        background: white;
+        transition: 160ms ease;
+        margin-top: 20px;
+        font-weight: 250;
+      }
+
+      .search input:focus {
+        border-color: #7ca7fa;
+        box-shadow: 0 0 0 3px rgba(21, 94, 239, 0.1);
+      }
+
+      .search span {
+        position: absolute;
+        top: 50%;
+        right: 15px;
+        transform: translateY(-50%);
+        color: #8291a6;
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin: 18px 1px 10px;
+      }
+
+      .section-head h3 {
+        margin: 0;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .section-head span {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .slots {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 9px;
+      }
+
+      .slot {
+        position: relative;
+        min-height: 78px;
+        padding: 10px 8px;
+        border: none;
+        border-radius: 12px;
+        text-align: left;
+        color: var(--ink);
+        background: var(--surface);
+        cursor: pointer;
+        box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.089);
+        transition: transform 140ms ease, border 140ms ease, box-shadow 140ms ease;
+      }
+
+      .slot:hover { transform: translateY(-2px); }
+      .slot strong { display: block; margin-bottom: 5px; font-size: 13px; }
+      .slot small {
+        display: -webkit-box;
+        overflow: hidden;
+        color: var(--muted);
+        font-size: 9.5px;
+        line-height: 1.25;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+
+      .slot::after {
+        content: "";
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #b9c5d4;
+      }
+
+      .slot.selected {
+        border: 2px solid var(--primary);
+        padding: 9px 7px;
+        background: var(--primary-soft);
+        box-shadow: 0 7px 18px rgba(21, 94, 239, 0.16);
+      }
+      .slot.selected::after { background: var(--primary); }
+      .slot.done { border-color: #b8dfcf; background: var(--success-soft); }
+      .slot.done::after { background: var(--success); }
+      .slot.alert { border-color: #f2c58e; background: var(--warning-soft); }
+      .slot.alert::after { background: var(--warning); }
+      .slot.empty small { color: #9aa7b8; }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 11px 15px;
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      .legend span { display: inline-flex; align-items: center; gap: 6px; }
+      .dot { width: 7px; height: 7px; border-radius: 50%; background: #b9c5d4; }
+      .dot.blue { background: var(--primary); }
+      .dot.green { background: var(--success); }
+      .dot.orange { background: var(--warning); }
+
+      .bottom-action {
+        position: sticky;
+        bottom: 0;
+        display: grid;
+        gap: 8px;
+        padding: 14px 16px 20px;
+        border-top: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(12px);
+      }
+
+      .primary-action {
+        height: 50px;
+        border: 0;
+        border-radius: 12px;
+        color: white;
+        background: var(--primary);
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(21, 94, 239, 0.22);
+      }
+
+      .primary-action:disabled {
+        color: #8b99ab;
+        background: #e4e9ef;
+        box-shadow: none;
+        cursor: not-allowed;
+      }
+
+      .bottom-action small { text-align: center; color: var(--muted); }
+
+      @media (max-width: 440px) {
+        body { padding: 0; background: #f8fafc; }
+        .phone { width: 100%; min-height: 100vh; border: 0; border-radius: 0; box-shadow: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="phone">
+      <div class="status-bar"></div>
+      <header class="app-header">
+        <button class="back" aria-label="Retour">&#8592;</button>
+        <div class="header-copy">
+          <p class="eyebrow">Inventaire en cours</p>
+          <h1>Choisir un emplacement</h1>
+        </div>
+        <span class="counter">INV-001</span>
+      </header>
+
+      <main>
+        <section class="selection-card" aria-live="polite">
+          <div class="slot-code" id="selectedCode">A-01</div>
+          <div>
+            <h2 id="selectedProduct">Coca-Cola 30 cl</h2>
+            <p id="selectedMeta">Stock attendu : 150 cartons · Rack A · Niveau 1</p>
+          </div>
+        </section>
+
+        <label class="search">
+          <input id="searchInput" type="search" placeholder="Rechercher un emplacement" />
+          <span aria-hidden="true">⌕</span>
+        </label>
+
+        <div class="section-head">
+          <h3>Rack A</h3>
+          <span>20 emplacements</span>
+        </div>
+
+        <section class="slots" id="slotGrid">
+          <button class="slot selected" data-code="A-01" data-product="Coca-Cola 30 cl" data-stock="150 cartons" data-level="1"><strong>A-01</strong><small>Coca-Cola 30 cl</small></button>
+          <button class="slot done" data-code="A-02" data-product="Candia 1 L" data-stock="80 cartons" data-level="1"><strong>A-02</strong><small>Candia 1 L</small></button>
+          <button class="slot empty" data-code="A-03" data-product="Emplacement libre" data-stock="0 article" data-level="1"><strong>A-03</strong><small>Libre</small></button>
+          <button class="slot" data-code="A-04" data-product="Eau Vive" data-stock="64 packs" data-level="1"><strong>A-04</strong><small>Eau Vive</small></button>
+          <button class="slot" data-code="A-05" data-product="Bonbon JB" data-stock="42 cartons" data-level="2"><strong>A-05</strong><small>Bonbon JB</small></button>
+          <button class="slot alert" data-code="A-06" data-product="Candia 1 L" data-stock="96 cartons" data-level="2"><strong>A-06</strong><small>Candia 1 L</small></button>
+          <button class="slot empty" data-code="A-07" data-product="Emplacement libre" data-stock="0 article" data-level="2"><strong>A-07</strong><small>Libre</small></button>
+          <button class="slot" data-code="A-08" data-product="Coca-Cola 30 cl" data-stock="75 cartons" data-level="2"><strong>A-08</strong><small>Coca-Cola 30 cl</small></button>
+          <button class="slot" data-code="A-09" data-product="Jus Tiko" data-stock="35 packs" data-level="3"><strong>A-09</strong><small>Jus Tiko</small></button>
+          <button class="slot empty" data-code="A-10" data-product="Emplacement libre" data-stock="0 article" data-level="3"><strong>A-10</strong><small>Libre</small></button>
+          <button class="slot" data-code="A-11" data-product="Eau Vive" data-stock="58 packs" data-level="3"><strong>A-11</strong><small>Eau Vive</small></button>
+          <button class="slot done" data-code="A-12" data-product="Candia 1 L" data-stock="60 cartons" data-level="3"><strong>A-12</strong><small>Candia 1 L</small></button>
+          <button class="slot empty" data-code="A-13" data-product="Emplacement libre" data-stock="0 article" data-level="4"><strong>A-13</strong><small>Libre</small></button>
+          <button class="slot" data-code="A-14" data-product="Coca-Cola 30 cl" data-stock="90 cartons" data-level="4"><strong>A-14</strong><small>Coca-Cola 30 cl</small></button>
+          <button class="slot" data-code="A-15" data-product="Bonbon JB" data-stock="50 cartons" data-level="4"><strong>A-15</strong><small>Bonbon JB</small></button>
+          <button class="slot empty" data-code="A-16" data-product="Emplacement libre" data-stock="0 article" data-level="4"><strong>A-16</strong><small>Libre</small></button>
+          <button class="slot" data-code="A-17" data-product="Jus Tiko" data-stock="44 packs" data-level="5"><strong>A-17</strong><small>Jus Tiko</small></button>
+          <button class="slot" data-code="A-18" data-product="Eau Vive" data-stock="72 packs" data-level="5"><strong>A-18</strong><small>Eau Vive</small></button>
+          <button class="slot empty" data-code="A-19" data-product="Emplacement libre" data-stock="0 article" data-level="5"><strong>A-19</strong><small>Libre</small></button>
+          <button class="slot" data-code="A-20" data-product="Candia 1 L" data-stock="84 cartons" data-level="5"><strong>A-20</strong><small>Candia 1 L</small></button>
+        </section>
+
+        <div class="legend">
+          <span><i class="dot blue"></i>Sélectionné</span>
+          <span><i class="dot green"></i>Déjà compté</span>
+          <span><i class="dot orange"></i>À revérifier</span>
+          <span><i class="dot"></i>À compter</span>
+        </div>
+      </main>
+
+      <footer class="bottom-action">
+        <button class="primary-action" id="continueButton">Continuer avec A-01</button>
+        <small>Le scan du produit sera proposé à l’étape suivante</small>
+      </footer>
+    </div>
+
+    <script>
+      const slots = [...document.querySelectorAll('.slot')];
+      const selectedCode = document.getElementById('selectedCode');
+      const selectedProduct = document.getElementById('selectedProduct');
+      const selectedMeta = document.getElementById('selectedMeta');
+      const continueButton = document.getElementById('continueButton');
+      const searchInput = document.getElementById('searchInput');
+
+      slots.forEach((slot) => {
+        slot.addEventListener('click', () => {
+          slots.forEach((item) => item.classList.remove('selected'));
+          slot.classList.add('selected');
+          selectedCode.textContent = slot.dataset.code;
+          selectedProduct.textContent = slot.dataset.product;
+          selectedMeta.textContent = `Stock attendu : ${slot.dataset.stock} · Rack A · Niveau ${slot.dataset.level}`;
+          continueButton.textContent = `Continuer avec ${slot.dataset.code}`;
+        });
+      });
+
+      searchInput.addEventListener('input', (event) => {
+        const query = event.target.value.trim().toLowerCase();
+        slots.forEach((slot) => {
+          const searchable = `${slot.dataset.code} ${slot.dataset.product}`.toLowerCase();
+          slot.hidden = !searchable.includes(query);
+        });
+      });
+    </script>
+  </body>
+</html>

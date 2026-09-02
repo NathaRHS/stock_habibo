@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getAccessToken } from "../services/authService";
+import Button from "../components/Button";
 
 const initialTypeMouvementJournalState = {
   nomTypeMouvement: "",
@@ -116,11 +117,9 @@ function CreateTypeMouvementJournal() {
           <option value="-1">Sortie (-1)</option>
         </select>
 
-        <button type="submit" disabled={submitting}>
-          {submitting
-            ? "Ajout en cours..."
-            : "Ajouter un type de mouvement journal"}
-        </button>
+        <Button type="submit" loading={submitting}>
+          Ajouter un type de mouvement journal
+        </Button>
 
         {error && <p role="alert">{error}</p>}
       </form>
