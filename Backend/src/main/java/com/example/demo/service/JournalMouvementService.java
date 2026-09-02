@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -8,19 +9,25 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.dto.DetailJournalResponse;
+import com.example.demo.dto.ComptageInventaireResponse;
 import com.example.demo.dto.JournalMouvementRequest;
 import com.example.demo.dto.JournalMouvementResponse;
 import com.example.demo.dto.ScanArticleRequest;
+import com.example.demo.dto.ScanInventaireRequest;
 import com.example.demo.entity.Article;
 import com.example.demo.entity.ArticleConditionnement;
+import com.example.demo.entity.ComptageInventaire;
 import com.example.demo.entity.DetailJournal;
+import com.example.demo.entity.Emplacement;
 import com.example.demo.entity.Societe;
 import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.StatutjournalMouvement;
 import com.example.demo.entity.TypeMouvementJournal;
 import com.example.demo.repository.ArticleConditionnementRepository;
 import com.example.demo.repository.ArticleRepository;
+import com.example.demo.repository.ComptageInventaireRepository;
 import com.example.demo.repository.DetailJournalRepository;
+import com.example.demo.repository.EmplacementRepository;
 import com.example.demo.repository.SocieteRepository;
 import com.example.demo.repository.JournalMouvementRepository;
 import com.example.demo.repository.StatutJournalMouvementRepository;
@@ -42,6 +49,8 @@ public class JournalMouvementService {
     private final ArticleRepository articleRepository;
     private final DetailJournalRepository detailJournalRepository;
     private final ArticleConditionnementRepository articleConditionnementRepository;
+    private final EmplacementRepository emplacementRepository;
+    private final ComptageInventaireRepository comptageInventaireRepository;
 
     public JournalMouvementService(
             JournalMouvementRepository journalRepository,
@@ -50,7 +59,9 @@ public class JournalMouvementService {
             SocieteRepository fournisseurRepository,
             UserJournalMouvementService userJournalMouvementService,
             ArticleRepository articleRepository, DetailJournalRepository detailJournalRepository,
-            ArticleConditionnementRepository articleConditionnementRepository) {
+            ArticleConditionnementRepository articleConditionnementRepository,
+            EmplacementRepository emplacementRepository,
+            ComptageInventaireRepository comptageInventaireRepository) {
         this.journalRepository = journalRepository;
         this.typeRepository = typeRepository;
         this.userJournalMouvementService = userJournalMouvementService;
@@ -59,6 +70,8 @@ public class JournalMouvementService {
         this.detailJournalRepository = detailJournalRepository;
         this.articleRepository = articleRepository;
         this.articleConditionnementRepository = articleConditionnementRepository;
+        this.emplacementRepository = emplacementRepository;
+        this.comptageInventaireRepository = comptageInventaireRepository;
 
     }
 
@@ -175,7 +188,9 @@ public class JournalMouvementService {
                         detail.getArticle().getNomArticle(),
                         detail.getQuantite(), detail.getJournalMouvement().getId(),
                         detail.getJournalMouvement().getReference(),
-                        detail.getQuantiteConditionnement()))
+                        detail.getQuantiteConditionnement(),
+                        detail.getDlc(),
+                        detail.getDlv()))
                 .toList();
 
         return new JournalMouvementResponse(
@@ -239,7 +254,9 @@ public class JournalMouvementService {
                 detailJournal.getArticle().getId(), detailJournal.getArticle().getNomArticle(),
                 detailJournal.getQuantite(), detailJournal.getJournalMouvement().getId(),
                 detailJournal.getJournalMouvement().getReference(),
-                detailJournal.getQuantiteConditionnement());
+                detailJournal.getQuantiteConditionnement(),
+                detailJournal.getDlc(),
+                detailJournal.getDlv());
         return detailJournalResponse;
     }
 
@@ -271,6 +288,14 @@ public class JournalMouvementService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "journal introuvable"));
 
         verifierStatutActuel(journal, STATUT_EN_COURS, STATUT_MODIFIE);
+        if (request.dlc() == null || request.dlv() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La DLC et la DLV sont obligatoires pour une reception");
+        }
+        if (request.dlv().isAfter(request.dlc())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La DLV ne peut pas etre posterieure a la DLC");
+        }
         boolean quantiteReelleRenseignee = request.quantite() != null;
         boolean quantiteConditionnementRenseignee = request.quantiteConditionnement() != null;
 
@@ -330,11 +355,23 @@ public class JournalMouvementService {
         }
 
         userJournalMouvementService.ajouterParticipant(journalId, matricule);
+
+        DetailJournal detailExistant = detailJournalRepository
+                .findByJournalMouvementIdAndArticleId(journal.getId(), article.getId());
+        if (detailExistant != null
+                && (!request.dlc().equals(detailExistant.getDlc())
+                        || !request.dlv().equals(detailExistant.getDlv()))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Cet article existe deja dans la reception avec une autre DLC ou DLV");
+        }
+
         detailJournalRepository.ajouterOuIncrementer(
                 journalId,
                 article.getId(),
                 quantiteReelle,
-                quantitePieceStandard);
+                quantitePieceStandard,
+                request.dlc(),
+                request.dlv());
 
         DetailJournal detailJournalRecherche = detailJournalRepository
                 .findByJournalMouvementIdAndArticleId(journal.getId(), article.getId());
@@ -349,17 +386,134 @@ public class JournalMouvementService {
 
     }
 
+    // Enregistre un comptage d'inventaire pour un article et un emplacement.
+    public ComptageInventaireResponse scanArticleInventaire(
+            Long journalId,
+            ScanInventaireRequest request,
+            String matricule) {
+
+        if (request.codeBarres() == null || request.codeBarres().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le code-barres est obligatoire");
+        }
+        if (request.emplacementId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'emplacement est obligatoire");
+        }
+        if (request.quantite() == null || request.quantite() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La quantite doit etre strictement positive");
+        }
+
+        JournalMouvement journal = journalRepository.findById(journalId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Journal introuvable"));
+
+        String typeJournal = journal.getTypeMouvementJournal().getNomTypeMouvement();
+        if (!"INVENTAIRE".equalsIgnoreCase(typeJournal.trim())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Le journal n'est pas de type INVENTAIRE");
+        }
+        verifierStatutActuel(journal, STATUT_EN_COURS, STATUT_MODIFIE);
+
+        Emplacement emplacement = emplacementRepository.findById(request.emplacementId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Emplacement " + request.emplacementId() + " introuvable"));
+
+        Article article = articleRepository.findByCodeBar(request.codeBarres()).orElse(null);
+        ArticleConditionnement conditionnementScanne = articleConditionnementRepository
+                .findByCodeBarres(request.codeBarres())
+                .orElse(null);
+
+        if (article == null && conditionnementScanne == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Code-barres inconnu");
+        }
+        if (conditionnementScanne != null) {
+            article = conditionnementScanne.getArticle();
+        }
+
+        // Le conditionnement standard permet de convertir le comptage en pieces.
+        ArticleConditionnement conditionnementStandard = conditionnementScanne;
+        if (conditionnementStandard == null) {
+            conditionnementStandard = articleConditionnementRepository
+                    .findFirstByArticleIdOrderByIdAsc(article.getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Aucun conditionnement n'est configure pour cet article"));
+        }
+
+        Integer quantitePieceStandard = conditionnementStandard.getQuantitePieceStandard();
+        if (quantitePieceStandard == null || quantitePieceStandard <= 0) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "La quantite standard du conditionnement est invalide");
+        }
+
+        int quantiteReelle;
+        try {
+            int quantiteSaisie = Math.toIntExact(request.quantite());
+            quantiteReelle = conditionnementScanne == null
+                    ? quantiteSaisie
+                    : Math.multiplyExact(quantiteSaisie, quantitePieceStandard);
+        } catch (ArithmeticException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La quantite saisie est trop grande");
+        }
+
+        userJournalMouvementService.ajouterParticipant(journalId, matricule);
+
+        // DetailJournal conserve le total compte pour l'article dans la session.
+        detailJournalRepository.ajouterOuIncrementer(
+                journalId,
+                article.getId(),
+                quantiteReelle,
+                quantitePieceStandard,
+                null,
+                null);
+
+        DetailJournal detailJournal = detailJournalRepository
+                .findByJournalMouvementIdAndArticleId(journalId, article.getId());
+        if (detailJournal == null) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Le detail du comptage n'a pas pu etre recupere");
+        }
+
+        // ComptageInventaire conserve la quantite comptee dans cet emplacement.
+        LocalDateTime dateComptage = LocalDateTime.now();
+        comptageInventaireRepository.ajouterOuIncrementer(
+                detailJournal.getId(),
+                emplacement.getId(),
+                quantiteReelle,
+                dateComptage);
+
+        ComptageInventaire comptage = comptageInventaireRepository
+                .findByDetailJournalIdAndEmplacementId(detailJournal.getId(), emplacement.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Le comptage d'inventaire n'a pas pu etre recupere"));
+
+        return versComptageInventaireResponse(comptage);
+    }
+
+    private ComptageInventaireResponse versComptageInventaireResponse(ComptageInventaire comptage) {
+        DetailJournal detail = comptage.getDetailJournal();
+        return new ComptageInventaireResponse(
+                comptage.getId(),
+                detail.getId(),
+                detail.getArticle().getId(),
+                detail.getArticle().getNomArticle(),
+                comptage.getEmplacement().getId(),
+                comptage.getEmplacement().getNomEmplacement(),
+                comptage.getQuantiteComptee(),
+                comptage.getDateComptage());
+    }
 }
 
 /*
-
-
-code-barres
-→ ArticleConditionnement exact
-→ DetailJournal
-→ MouvementStock
-
-
-
-Mais c'est ce que je te dis , un article normalement a qu'un seul conditionnemennt , donc ce qu'on fait c'est prendre l'article et fetch limit 1 même si y a qu'un de base article\_conditionnement
-*/
+ * 
+ * 
+ * code-barres
+ * → ArticleConditionnement exact
+ * → DetailJournal
+ * → MouvementStock
+ * 
+ * 
+ * 
+ * Mais c'est ce que je te dis , un article normalement a qu'un seul
+ * conditionnemennt , donc ce qu'on fait c'est prendre l'article et fetch limit
+ * 1 même si y a qu'un de base article\_conditionnement
+ */

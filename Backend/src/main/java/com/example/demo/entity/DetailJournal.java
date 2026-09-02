@@ -1,5 +1,7 @@
 package com.example.demo.entity;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -26,15 +28,23 @@ public class DetailJournal {
     @Column(name = "quantite_conditionnement")
     private Integer quantiteConditionnement;
 
+    @Column(name = "dlc")
+    private LocalDate dlc;
+
+    @Column(name = "dlv")
+    private LocalDate dlv;
+
     public DetailJournal() {
     }
 
     public DetailJournal(JournalMouvement journalMouvement, Article article, Integer quantite,
-            Integer quantiteConditionnement) {
+            Integer quantiteConditionnement, LocalDate dlc, LocalDate dlv) {
         this.journalMouvement = journalMouvement;
         this.article = article;
         setQuantite(quantite);
         setQuantiteConditionnement(quantiteConditionnement);
+        this.dlc = dlc;
+        this.dlv = dlv;
     }
 
     public Long getId() {
@@ -81,6 +91,22 @@ public class DetailJournal {
             throw new IllegalArgumentException("La quantite de conditionnement doit etre strictement positive");
         }
         this.quantiteConditionnement = quantiteConditionnement;
+    }
+
+    public LocalDate getDlc() {
+        return dlc;
+    }
+
+    public void setDlc(LocalDate dlc) {
+        this.dlc = dlc;
+    }
+
+    public LocalDate getDlv() {
+        return dlv;
+    }
+
+    public void setDlv(LocalDate dlv) {
+        this.dlv = dlv;
     }
 
 }

@@ -307,12 +307,12 @@ public class MouvementStockService {
             // AJOUT : capacite maximale de l'emplacement en conditionnements.
             Integer capacitePalette = paletteConditionnement.getQuantite();
 
-            List<Article> ListearticlesPresentSurEmplacementEnCours = mouvementStockRepository
+            List<Article> ListeDesArticlesPresentSurEmplacementEnCours = mouvementStockRepository
                     .findArticlesPresentsByEmplacementId(emplacementId);
 
             // Verifier les articles deja en base et ceux deja prepares dans ce JSON.
             boolean autreArticlePresent = false;
-            for (Article articlePresent : ListearticlesPresentSurEmplacementEnCours) {
+            for (Article articlePresent : ListeDesArticlesPresentSurEmplacementEnCours) {
                 if (!detailJournal.getArticle().getId().equals(articlePresent.getId())) {
                     autreArticlePresent = true;
                 }

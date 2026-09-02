@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAccessToken } from "../services/authService";
+import Button from "../components/Button";
 
 const genererReferenceJournal = () => {
   const maintenant = new Date();
@@ -263,12 +264,13 @@ function CreateJournal() {
           required
         />
 
-        <button
+        <Button
           type="submit"
-          disabled={loadingOptions || submitting}
+          loading={submitting}
+          disabled={loadingOptions}
         >
-          {submitting ? "Création en cours..." : "Créer le journal"}
-        </button>
+          Créer le journal
+        </Button>
 
         {error && <p role="alert">{error}</p>}
 

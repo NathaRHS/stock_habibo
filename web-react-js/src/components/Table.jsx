@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import "./Table.css";
+import Button from "./Button";
 
 const PAGE_SIZES = [5, 10, 20, 50];
 
@@ -140,15 +141,16 @@ function Table({ objetsProps, title = "Données", pageSizeInitial = 10 }) {
               value={search}
             />
           </label>
-          <button
+          <Button
             className="table-button"
             disabled={!filteredRows.length}
+            icon={<DownloadIcon />}
             onClick={exportCsv}
             type="button"
+            variant="secondary"
           >
-            <DownloadIcon />
             Exporter
-          </button>
+          </Button>
         </div>
       </header>
 

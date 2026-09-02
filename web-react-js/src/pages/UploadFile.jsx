@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getAccessToken } from "../services/authService";
+import Button from "../components/Button";
 
 function UploadFile() {
   const springUrl = import.meta.env.VITE_SPRING_URL;
@@ -81,9 +82,9 @@ function UploadFile() {
           required
         />
 
-        <button type="submit" disabled={!file || submitting}>
-          {submitting ? "Envoi en cours..." : "Envoyer le fichier"}
-        </button>
+        <Button type="submit" loading={submitting} disabled={!file}>
+          Envoyer le fichier
+        </Button>
 
         {error && <p role="alert">{error}</p>}
 

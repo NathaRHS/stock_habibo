@@ -6,6 +6,8 @@ class DetailJournal {
     required this.quantite,
     required this.journalId,
     required this.reference,
+    this.dlc,
+    this.dlv,
   });
 
   final int id;
@@ -14,6 +16,8 @@ class DetailJournal {
   final int quantite;
   final int journalId;
   final String reference;
+  final String? dlc;
+  final String? dlv;
 
   factory DetailJournal.fromJson(Map<String, dynamic> json) {
     return DetailJournal(
@@ -23,6 +27,8 @@ class DetailJournal {
       quantite: (json['quantite'] as num).toInt(),
       journalId: (json['journalId'] as num).toInt(),
       reference: json['reference'] as String,
+      dlc: json['dlc'] as String?,
+      dlv: json['dlv'] as String?,
     );
   }
 }

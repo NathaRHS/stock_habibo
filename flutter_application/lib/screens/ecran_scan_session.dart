@@ -9,14 +9,28 @@ class EcranScanSession extends StatefulWidget {
     super.key,
     required this.journalId,
     required this.referenceJournal,
+    required this.typeJournal,
     required this.baseUrl,
     required this.accessToken,
+    this.emplacementId,
+    this.nomEmplacement,
+    this.nomRack,
+    this.numeroEtage,
+    this.nomArticleAttendu,
+    this.quantiteStockAttendue,
   });
 
   final int journalId;
   final String referenceJournal;
+  final String typeJournal;
   final String baseUrl;
   final String accessToken;
+  final int? emplacementId;
+  final String? nomEmplacement;
+  final String? nomRack;
+  final int? numeroEtage;
+  final String? nomArticleAttendu;
+  final int? quantiteStockAttendue;
 
   @override
   State<EcranScanSession> createState() => _EcranScanSessionState();
@@ -27,12 +41,17 @@ class _EcranScanSessionState extends State<EcranScanSession> {
   final _codeBarresController = TextEditingController();
   final _nomArticleController = TextEditingController();
   final _quantiteController = TextEditingController();
+  final _dlcController = TextEditingController();
+  final _dlvController = TextEditingController();
   final _quantiteFocusNode = FocusNode();
   late final ScanService _scanService;
 
   bool _enregistrementEnCours = false;
   String? _erreur;
   DetailJournal? _dernierDetail;
+
+  bool get _estInventaire =>
+      widget.typeJournal.trim().toUpperCase() == 'INVENTAIRE';
 
   @override
   void initState() {
@@ -48,6 +67,8 @@ class _EcranScanSessionState extends State<EcranScanSession> {
     _codeBarresController.dispose();
     _nomArticleController.dispose();
     _quantiteController.dispose();
+    _dlcController.dispose();
+    _dlvController.dispose();
     _quantiteFocusNode.dispose();
     super.dispose();
   }
@@ -67,6 +88,10 @@ class _EcranScanSessionState extends State<EcranScanSession> {
   }
 
   Future<void> _ajouterProduit() async {
+    if (_estInventaire && widget.emplacementId == null) {
+      setState(() => _erreur = 'Aucun emplacement n’a été sélectionné.');
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -75,10 +100,25 @@ class _EcranScanSessionState extends State<EcranScanSession> {
     });
 
     try {
+      if (_estInventaire) {
+        await _scanService.enregistrerScanInventaire(
+          journalId: widget.journalId,
+          emplacementId: widget.emplacementId!,
+          codeBarres: _codeBarresController.text.trim(),
+          quantite: int.parse(_quantiteController.text.trim()),
+        );
+
+        if (!mounted) return;
+        Navigator.pop(context, true);
+        return;
+      }
+
       final detail = await _scanService.enregistrerScan(
         journalId: widget.journalId,
         codeBarres: _codeBarresController.text.trim(),
         quantite: int.parse(_quantiteController.text.trim()),
+        dlc: _dlcController.text,
+        dlv: _dlvController.text,
       );
 
       if (!mounted) return;
@@ -87,6 +127,8 @@ class _EcranScanSessionState extends State<EcranScanSession> {
         _nomArticleController.text = detail.nomArticle;
         _codeBarresController.clear();
         _quantiteController.clear();
+        _dlcController.clear();
+        _dlvController.clear();
       });
     } on ScanException catch (erreur) {
       if (mounted) setState(() => _erreur = erreur.message);
@@ -149,7 +191,11 @@ class _EcranScanSessionState extends State<EcranScanSession> {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6F9),
       appBar: AppBar(
-        title: const Text('Enregistrer un produit'),
+        title: Text(
+          _estInventaire
+              ? 'Compter dans ${widget.nomEmplacement ?? ''}'
+              : 'Enregistrer un produit',
+        ),
         backgroundColor: const Color(0xFF063D77),
         foregroundColor: Colors.white,
       ),
@@ -166,6 +212,10 @@ class _EcranScanSessionState extends State<EcranScanSession> {
                   children: [
                     _enteteSession(),
                     const SizedBox(height: 22),
+                    if (_estInventaire) ...[
+                      _resumeEmplacementInventaire(),
+                      const SizedBox(height: 16),
+                    ],
                     _champCodeBarres(),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -177,6 +227,26 @@ class _EcranScanSessionState extends State<EcranScanSession> {
                         icon: Icons.local_drink_outlined,
                       ),
                     ),
+                    if (!_estInventaire) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _champDate(
+                              controller: _dlvController,
+                              label: 'DLV',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _champDate(
+                              controller: _dlcController,
+                              label: 'DLC',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _quantiteController,
@@ -237,14 +307,16 @@ class _EcranScanSessionState extends State<EcranScanSession> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: _enregistrementEnCours
-                          ? null
-                          : _terminerParticipation,
-                      icon: const Icon(Icons.send_outlined),
-                      label: const Text('J’ai terminé ma partie'),
-                    ),
+                    if (!_estInventaire) ...[
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: _enregistrementEnCours
+                            ? null
+                            : _terminerParticipation,
+                        icon: const Icon(Icons.send_outlined),
+                        label: const Text('J’ai terminé ma partie'),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -307,6 +379,107 @@ class _EcranScanSessionState extends State<EcranScanSession> {
       validator: (valeur) => valeur == null || valeur.trim().isEmpty
           ? 'Le code-barres est obligatoire.'
           : null,
+    );
+  }
+
+  Widget _champDate({
+    required TextEditingController controller,
+    required String label,
+  }) {
+    return TextFormField(
+      controller: controller,
+      readOnly: true,
+      enabled: !_enregistrementEnCours,
+      decoration: _decorationChamp(
+        label: label,
+        hint: 'AAAA-MM-JJ',
+        icon: Icons.calendar_today_outlined,
+      ),
+      onTap: () async {
+        final date = await showDatePicker(
+          context: context,
+          initialDate: DateTime.now(),
+          firstDate: DateTime(2020),
+          lastDate: DateTime(2100),
+        );
+        if (date != null) {
+          controller.text = _formaterDate(date);
+        }
+      },
+      validator: (valeur) {
+        if (!_estInventaire && (valeur == null || valeur.isEmpty)) {
+          return '$label obligatoire';
+        }
+        return null;
+      },
+    );
+  }
+
+  String _formaterDate(DateTime date) {
+    final mois = date.month.toString().padLeft(2, '0');
+    final jour = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$mois-$jour';
+  }
+
+  Widget _resumeEmplacementInventaire() {
+    final article = widget.nomArticleAttendu ?? 'Emplacement libre';
+    final stock = widget.quantiteStockAttendue == null
+        ? 'Aucun stock théorique'
+        : 'Stock attendu : ${widget.quantiteStockAttendue} pièces';
+
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEDF4FF),
+        border: Border.all(color: const Color(0xFFBAD1FB)),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 72,
+            height: 58,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: const Color(0xFF97B1E4),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              widget.nomEmplacement ?? '--',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  article,
+                  style: const TextStyle(
+                    color: Color(0xFF10243E),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$stock · ${widget.nomRack ?? ''} · Niveau ${widget.numeroEtage ?? '-'}',
+                  style: const TextStyle(
+                    color: Color(0xFF687991),
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

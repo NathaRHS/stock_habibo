@@ -1,10 +1,10 @@
 package com.example.demo.entity;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import jakarta.persistence.*;
 
+
+    
 @Entity
 @Table(name = "t_statut_journal_mouvement")
 public class StatutjournalMouvement {

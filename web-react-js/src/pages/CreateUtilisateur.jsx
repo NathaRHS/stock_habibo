@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getAccessToken } from "../services/authService";
+import Button from "../components/Button";
 import "./css/CreateUtilisateur.css";
 
 const formulaireInitial = {
@@ -230,9 +231,13 @@ function CreateUtilisateur() {
             <Link className="create-user-cancel" to="/users">
               Annuler
             </Link>
-            <button disabled={chargementRoles || enregistrement} type="submit">
-              {enregistrement ? "Création en cours…" : "Créer le compte"}
-            </button>
+            <Button
+              disabled={chargementRoles}
+              loading={enregistrement}
+              type="submit"
+            >
+              Créer le compte
+            </Button>
           </footer>
         </form>
       </div>

@@ -1,4 +1,7 @@
 package com.example.demo.dto;
+
+import java.time.LocalDate;
+
 public record DetailJournalResponse(
         Long id,
         Long articleId,
@@ -6,7 +9,9 @@ public record DetailJournalResponse(
         Integer quantite,
         Long journalId,
         String reference,
-        Integer quantiteConditionnement
+        Integer quantiteConditionnement,
+        LocalDate dlc,
+        LocalDate dlv
         
 ){
 }

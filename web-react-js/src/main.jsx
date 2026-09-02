@@ -4,8 +4,6 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import "./index.css";
 import Accueil from "./pages/Accueil";
 import Login from "./pages/Login";
-import Animate from "./pages/Animate";
-import CrudElement from "./pages/CrudElement";
 import ListeArticle from "./pages/ListeArticle";
 import ListeJournal from "./pages/ListeJournal";
 import ListeUtilisateur from "./pages/ListeUtilisateur";
@@ -20,6 +18,11 @@ import UploadFile from "./pages/UploadFile";
 import CreateJournal from "./pages/CreateJournal";
 import ControleJournal from "./pages/ControleJournal";
 import CreateUtilisateur from "./pages/CreateUtilisateur";
+import CreatePaletteConditionnement from "./pages/CreatePaletteConditionnement";
+import AffectationStockMine from "./pages/AffectationStockMine";
+import RecapitulatifEntreeStock from "./pages/RecapitulatifEntreeStock";
+import Inventaire from "./pages/Inventaire";
+// import AffectationStock from "./pages/AffectationStock";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -38,16 +41,29 @@ createRoot(document.getElementById("root")).render(
         <Route path="/type-conditionnement" element={<ListeTypeConditionnement />} />
         <Route path="/article-conditionnements" element={<ListeArticleConditionnement />} />
         <Route path="/article-conditionnements/create" element={<CreateArticleConditionnement />} />
+        <Route path="/palettes-conditionnements/create" element={<CreatePaletteConditionnement />} />
         <Route path="/types-mouvements-journal" element={<ListeTypeMouvementJournal />} />
         <Route path="/types-mouvements-journal/create" element={<CreateTypeMouvementJournal />} />
         <Route path="/journaux-mouvements" element={<ListeJournal />} />
         <Route path="/journaux-mouvements/create" element={<CreateJournal />} />
         <Route path="/journaux-mouvements/:id" element={<ControleJournal />} />
+        <Route path="/inventaire/:id" element={<Inventaire />} />
+
+        <Route
+          path="/journaux-mouvements/:journalId/affectation-stock"
+          element={<AffectationStockMine />}
+        />
+        <Route
+          path="/journaux-mouvements/:journalId/entree-stock/recapitulatif"
+          element={<RecapitulatifEntreeStock />}
+        />
+         {/* <Route
+          path="/journaux-mouvementss/:journalId/affectation-stock"
+          element={<AffectationStock />}
+        /> */}
         <Route path="/upload" element={<UploadFile />} />
 
       </Routes>
     </BrowserRouter>
   </StrictMode>,
 );
-
-

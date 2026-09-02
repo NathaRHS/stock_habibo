@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAccessToken } from "../services/authService";
+import Button from "../components/Button";
 import ListeArticleConditionnement from "./ListeArticleConditionnement";
 
 const initialArticleConditionnementState = {
@@ -221,14 +222,13 @@ function CreateArticleConditionnement() {
           required
         />
 
-        <button
+        <Button
           type="submit"
-          disabled={loadingOptions || submitting}
+          loading={submitting}
+          disabled={loadingOptions}
         >
-          {submitting
-            ? "Ajout en cours..."
-            : "Ajouter le conditionnement de l'article"}
-        </button>
+          Ajouter le conditionnement de l'article
+        </Button>
 
         {error && <p role="alert">{error}</p>}
       </form>

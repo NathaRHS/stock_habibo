@@ -31,4 +31,15 @@ public interface StockRepository extends Repository<Article, Long> {
             ORDER BY emplacement_id
             """, nativeQuery = true)
     List<StockParEmplacementProjection> findStocksParEmplacementByArticleId(@Param("articleId") Long articleId);
+
+    @Query(value = """
+            SELECT COALESCE(MAX(quantite_stock), 0)
+            FROM v_stock_par_emplacement
+            WHERE article_id = :articleId
+              AND emplacement_id = :emplacementId
+            """, nativeQuery = true)
+    Integer trouverQuantiteTheorique(
+            @Param("articleId") Long articleId,
+            @Param("emplacementId") Long emplacementId);
+
 }

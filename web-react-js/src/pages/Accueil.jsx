@@ -5,6 +5,7 @@ import Sidebar from "../components/Sidebar";
 import ListeSociete from "./ListeSociete";
 import { useEffect, useState } from "react";
 import { getAccessToken } from "../services/authService";
+import Button from "../components/Button";
 
 function Accueil() {
   const springUrl = import.meta.env.VITE_SPRING_URL;
@@ -73,12 +74,12 @@ function Accueil() {
                 notifications
               </span>
             </button>
-            <button className="primary-button" type="button">
-              <span className="material-symbols-outlined" aria-hidden="true">
-                add
-              </span>
+            <Button
+              icon={<span className="material-symbols-outlined" aria-hidden="true">add</span>}
+              type="button"
+            >
               Ajouter
-            </button>
+            </Button>
           </div>
         </header>
 
@@ -88,15 +89,13 @@ function Accueil() {
               <h1>Statistiques générales</h1>
               <p>Statistique réelle sur la situation d’entrée et de sortie</p>
             </div>
-            <button
-              className="primary-button dashboard-title-action"
+            <Button
+              className="dashboard-title-action"
+              icon={<span className="material-symbols-outlined" aria-hidden="true">add</span>}
               type="button"
             >
-              <span className="material-symbols-outlined" aria-hidden="true">
-                add
-              </span>
               Ajouter un mouvement
-            </button>
+            </Button>
           </div>
 
           <section

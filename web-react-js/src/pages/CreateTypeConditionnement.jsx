@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getAccessToken } from "../services/authService";
+import Button from "../components/Button";
 
 const initialTypeConditionnementState = {
   nomConditionnement: "",
@@ -81,11 +82,9 @@ function CreateTypeConditionnement() {
           disabled={submitting}
         />
 
-        <button type="submit" disabled={submitting}>
-          {submitting
-            ? "Ajout en cours..."
-            : "Ajouter un type de conditionnement"}
-        </button>
+        <Button type="submit" loading={submitting}>
+          Ajouter un type de conditionnement
+        </Button>
 
         {error && <p role="alert">{error}</p>}
       </form>

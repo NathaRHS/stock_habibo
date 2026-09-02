@@ -1,6 +1,7 @@
 package com.example.demo.repository;
 
 import java.util.List;
+import java.time.LocalDate;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -22,13 +23,17 @@ public interface DetailJournalRepository extends JpaRepository<DetailJournal, Lo
                 journal_mouvement_id,
                 article_id,
                 quantite,
-                quantite_conditionnement
+                quantite_conditionnement,
+                dlc,
+                dlv
             )
             VALUES (
                 :journalId,
                 :articleId,
                 :quantite,
-                CEIL(:quantite / :quantitePieceStandard)
+                CEIL(:quantite / :quantitePieceStandard),
+                :dlc,
+                :dlv
             )
             ON DUPLICATE KEY UPDATE
                 quantite_conditionnement = CEIL(
@@ -39,5 +44,7 @@ public interface DetailJournalRepository extends JpaRepository<DetailJournal, Lo
     int ajouterOuIncrementer(@Param("journalId") Long journalId,
             @Param("articleId") Long articleId,
             @Param("quantite") Integer quantite,
-            @Param("quantitePieceStandard") Integer quantitePieceStandard);
+            @Param("quantitePieceStandard") Integer quantitePieceStandard,
+            @Param("dlc") LocalDate dlc,
+            @Param("dlv") LocalDate dlv);
 }
