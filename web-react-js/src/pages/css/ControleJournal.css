@@ -17,14 +17,26 @@
   --radius-lg: 14px;
 }
 
+/* Enveloppe commune avec le dashboard. */
+.controle-shell { display:flex; min-height:100vh; background:var(--color-background); }
+.controle-main-section { min-width:0; flex:1; border-left:1px solid var(--color-border); }
+.controle-global-topbar { display:grid; grid-template-columns:240px minmax(260px,400px) 1fr; min-height:86px; align-items:center; gap:26px; padding:0 38px 0 28px; background:var(--color-surface); border-bottom:1px solid var(--color-border); }
+.controle-global-topbar>p { color:var(--color-text-muted); font-size:12px; }
+.controle-global-topbar>label { display:flex; height:30px; align-items:center; gap:7px; padding:0 13px; color:var(--color-text-muted); background:var(--color-secondary-soft); border-radius:999px; }
+.controle-global-topbar label span { font-size:16px; }
+.controle-global-topbar input { width:100%; border:0; outline:0; background:transparent; color:var(--color-secondary); font-size:12px; }
+.controle-global-user { display:flex; align-items:center; justify-self:end; gap:9px; }
+.controle-global-user>span { display:grid; width:34px; height:34px; color:var(--color-primary); border:1px solid var(--color-border); border-radius:50%; place-items:center; font-weight:600; }
+.controle-global-user strong,.controle-global-user small { display:block; }
+.controle-global-user strong { font-size:11px; }.controle-global-user small { margin-top:3px; color:var(--color-text-muted); font-size:9px; }
+
 /* APP CONTAINER */
-.app {
+.controle-app {
   max-width: 1440px;
-  width: min(1440px, calc(100% - 48px));
-  margin: 24px auto;
+  width: calc(100% - 68px);
+  margin: 32px 34px 48px;
   background: var(--surface);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
   border: 1px solid var(--line);
   display: flex;
   flex-direction: column;
@@ -51,16 +63,16 @@
 }
 
 /* TOPBAR HEADER */
-.topbar {
+.controle-app > .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 36px;
+  padding: 20px 28px;
   border-bottom: 1px solid var(--line);
   background: #fff;
 }
 
-.topbar-left {
+.controle-app .topbar-left {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -68,7 +80,7 @@
 
 
 
-.title-group h1 {
+.controle-app .title-group h1 {
   font-size: 2rem;
   font-weight: 500;
   font-family: "Montserrat";
@@ -80,7 +92,7 @@
   margin: 0;
 }
 
-.badge-status,
+.controle-app .badge-status,
 .controle-status {
   font-size: 11px;
   font-weight: 700;
@@ -97,14 +109,14 @@
   height: max-content;
 }
 
-.meta-info {
+.controle-app .meta-info {
   font-size: 13px;
   color: var(--muted);
   margin-top: 4px;
   font-weight: 500;
 }
 
-.topbar-right,
+.controle-app .topbar-right,
 .controle-buttons {
   display: flex;
   align-items: center;
@@ -112,7 +124,7 @@
 }
 
 /* GLOBAL BUTTONS */
-.btn {
+.controle-app .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -128,13 +140,13 @@
   min-height: 44px;
 }
 
-.btn:disabled,
+.controle-app .btn:disabled,
 .controle-buttons button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-primary,
+.controle-app .btn-primary,
 .controle-buttons .primary {
   background: var(--text);
   color: white;
@@ -142,20 +154,20 @@
   border: 1px solid var(--text);
 }
 
-.btn-primary:hover:not(:disabled),
+.controle-app .btn-primary:hover:not(:disabled),
 .controle-buttons .primary:hover:not(:disabled) {
   background: #000000;
   transform: translateY(-1px);
 }
 
-.btn-accent {
+.controle-app .btn-accent {
   background: var(--primary);
   color: white;
   
   box-shadow: 0 2px 6px rgba(29, 78, 216, 0.25);
 }
 
-.btn-accent:hover:not(:disabled) {
+.controle-app .btn-accent:hover:not(:disabled) {
   background: var(--primary-hover);
   transform: translateY(-1px);
 }
@@ -216,12 +228,12 @@
 }
 
 /* WORKSPACE LAYOUT */
-.workspace {
+.controle-workspace {
   display: grid;
   grid-template-columns: 1fr 440px;
   flex: 1;
 }
-h1{
+.controle-app h1{
   font-weight:520;
 }
 
@@ -469,7 +481,7 @@ h1{
 
 /* RESPONSIVE BREAKPOINTS */
 @media (max-width: 1024px) {
-  .workspace {
+  .controle-workspace {
     grid-template-columns: 1fr;
   }
   .metrics-grid,
@@ -479,7 +491,7 @@ h1{
 }
 
 @media (max-width: 640px) {
-  .app,
+  .controle-app,
   .controle-page {
     width: calc(100% - 24px);
     padding: 12px;

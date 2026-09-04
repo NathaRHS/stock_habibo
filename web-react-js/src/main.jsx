@@ -22,6 +22,7 @@ import CreatePaletteConditionnement from "./pages/CreatePaletteConditionnement";
 import AffectationStockMine from "./pages/AffectationStockMine";
 import RecapitulatifEntreeStock from "./pages/RecapitulatifEntreeStock";
 import Inventaire from "./pages/Inventaire";
+import ListeInventaire from "./pages/ListeInventaire";
 // import AffectationStock from "./pages/AffectationStock";
 
 createRoot(document.getElementById("root")).render(
@@ -48,6 +49,7 @@ createRoot(document.getElementById("root")).render(
         <Route path="/journaux-mouvements/create" element={<CreateJournal />} />
         <Route path="/journaux-mouvements/:id" element={<ControleJournal />} />
         <Route path="/inventaire/:id" element={<Inventaire />} />
+        <Route path="/inventaires" element={<ListeInventaire />} />
 
         <Route
           path="/journaux-mouvements/:journalId/affectation-stock"

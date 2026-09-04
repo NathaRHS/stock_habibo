@@ -6,6 +6,7 @@ import {
 } from "../services/affectationStockService";
 import Button from "../components/Button";
 import Modal from "../components/Modal";
+import Sidebar from "../components/Sidebar";
 import "./css/AffectationStockMine.css";
 
 function AffectationStockMine() {
@@ -284,6 +285,14 @@ function AffectationStockMine() {
   }
 
   return (
+    <div className="affectation-shell">
+      <Sidebar />
+      <section className="affectation-main-section">
+        <header className="affectation-global-topbar">
+          <p>Réceptions / Affectation du stock</p>
+          <label><span className="material-symbols-outlined">search</span><input placeholder="Rechercher" type="search" /></label>
+          <div className="affectation-global-user"><span>AR</span><div><strong>Administrateur</strong><small>Responsable entrepôt</small></div></div>
+        </header>
     <div className="affectation-page main-wrapper">
       <div className="content-container">
         <header className="page-header">
@@ -560,6 +569,8 @@ function AffectationStockMine() {
           les emplacements ont ete mis a jour.
         </p>
       </Modal>
+    </div>
+      </section>
     </div>
   );
 }

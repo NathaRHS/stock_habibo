@@ -6,3 +6,12 @@ public record ScanInventaireRequest(
         Long quantite
 ) {
 }
+
+
+/*
+
+        codeBarres:3664083000103
+        emplacementId:1
+        quantite:150
+
+*/
