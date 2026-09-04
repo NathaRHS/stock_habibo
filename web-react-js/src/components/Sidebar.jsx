@@ -6,6 +6,7 @@ const navigationItems = [
   { label: "Utilisateurs", icon: "group", to: "/users" },
   { label: "Articles", icon: "inventory_2", to: "/article" },
   { label: "Journaux", icon: "receipt_long", to: "/journaux-mouvements" },
+  { label: "Inventaires", icon: "fact_check", to: "/inventaires" },
   { label: "Conditionnements", icon: "package_2", to: "/article-conditionnements" },
   { label: "Capacités palettes", icon: "pallet", to: "/palettes-conditionnements/create" },
 ];

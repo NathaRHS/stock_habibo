@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import Table from "../components/Table";
-import { getAccessToken } from "../services/authService";
 
 function ListeSociete() {
   const springUrl = import.meta.env.VITE_SPRING_URL;

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Button from "../components/Button";
 import PdfViewer from "../components/PdfViewer";
+import Sidebar from "../components/Sidebar";
 import { getAccessToken } from "../services/authService";
 import "./css/ControleJournal.css";
 
@@ -128,7 +129,15 @@ function ControleJournal() {
   const totalQuantite = details.reduce((acc, d) => acc + (Number(d.quantite) || 0), 0);
 
   return (
-    <main className="app">
+    <div className="controle-shell">
+      <Sidebar />
+      <section className="controle-main-section">
+        <header className="controle-global-topbar">
+          <p>Opérations / Contrôle du journal</p>
+          <label><span className="material-symbols-outlined">search</span><input placeholder="Rechercher" type="search" /></label>
+          <div className="controle-global-user"><span>AR</span><div><strong>Administrateur</strong><small>Responsable entrepôt</small></div></div>
+        </header>
+    <main className="controle-app">
       {/* Topbar aux standards du design UI/UX */}
       <header className="topbar">
         <div className="topbar-left">
@@ -221,7 +230,7 @@ function ControleJournal() {
       )}
 
       {/* Workspace en deux colonnes (Document & Résultats) */}
-      <div className="workspace">
+      <div className="controle-workspace">
         {/* Left: Document Viewer */}
         <section className="viewer-pane">
           <div className="pane-header">
@@ -352,6 +361,8 @@ function ControleJournal() {
         </aside>
       </div>
     </main>
+      </section>
+    </div>
   );
 }
 

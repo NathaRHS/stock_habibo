@@ -28,9 +28,6 @@ function CreateTypeConditionnement() {
       body: JSON.stringify(objet),
     });
 
-    if (!response.ok) {
-      
-    }
 
     return response.json();
   };

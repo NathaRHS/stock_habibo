@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAccessToken } from "../services/authService";
+import Sidebar from "../components/Sidebar";
 import "./css/ListeJournal.css";
 
 const FILTRES = ["TOUS", "EN COURS", "EN ATTENTE", "VALIDE", "MODIFIE"];
@@ -40,9 +41,22 @@ function ListeJournal() {
     });
   }, [filtre, journaux, recherche]);
 
-  if (loading) return <div className="journal-list-loading">Chargement des journaux…</div>;
-
   return (
+    <div className="journal-page-shell">
+      <Sidebar />
+      <section className="journal-page-workspace">
+        <header className="journal-page-topbar">
+          <p>Opérations / Journaux</p>
+          <label>
+            <span className="material-symbols-outlined">search</span>
+            <input onChange={(event) => setRecherche(event.target.value)} placeholder="Rechercher un journal" type="search" value={recherche} />
+          </label>
+          <div className="journal-page-user">
+            <span>AR</span>
+            <div><strong>Administrateur</strong><small>Responsable entrepôt</small></div>
+          </div>
+        </header>
+
     <main className="journal-list-page">
       <header className="journal-list-heading">
         <div>
@@ -73,17 +87,19 @@ function ListeJournal() {
           </label>
         </div>
 
-        <div className="journal-table-scroll">
+        {loading ? <div className="journal-list-loading">Chargement des journaux…</div> : <div className="journal-table-scroll">
           <table className="journal-table">
             <thead><tr><th>Référence</th><th>Partenaire</th><th>Type de flux</th><th>Document</th><th>Statut</th><th className="journal-action-cell">Action</th></tr></thead>
             <tbody>{journauxFiltres.map((journal) => <JournalRow journal={journal} key={journal.id} />)}</tbody>
           </table>
-        </div>
+        </div>}
 
-        {!journauxFiltres.length && <div className="journal-list-empty"><span className="material-symbols-outlined">inventory_2</span><strong>Aucun journal trouvé</strong><p>Modifiez la recherche ou choisissez un autre statut.</p></div>}
+        {!loading && !journauxFiltres.length && <div className="journal-list-empty"><span className="material-symbols-outlined">inventory_2</span><strong>Aucun journal trouvé</strong><p>Modifiez la recherche ou choisissez un autre statut.</p></div>}
         <footer className="journal-list-footer"><span>{journauxFiltres.length} affiché{journauxFiltres.length > 1 ? "s" : ""}</span><span>{journaux.length} au total</span></footer>
       </section>
     </main>
+      </section>
+    </div>
   );
 }
 

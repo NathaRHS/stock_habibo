@@ -5,6 +5,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 TRUNCATE TABLE t_mouvement_stock;
 TRUNCATE TABLE t_user_journal_mouvement;
+TRUNCATE TABLE t_user;
 TRUNCATE TABLE t_detail_journal;
 TRUNCATE TABLE t_journal_mouvement;
 TRUNCATE TABLE t_palette_conditionnement;
