@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
-import { getAccessToken } from "../services/authService";
+import { useNavigate } from "react-router-dom";
+import {
+  changerStatutInventaire,
+  chargerDonneesControleInventaire,
+} from "../services/inventaireService";
 import "./css/Inventaire.css";
 
 function Inventaire() {
   const { id } = useParams();
   const springUrl = import.meta.env.VITE_SPRING_URL;
-  const token = getAccessToken();
   const [inventaire, setInventaire] = useState(null);
   const [racks, setRacks] = useState([]);
   const [emplacements, setEmplacements] = useState([]);
@@ -21,26 +24,11 @@ function Inventaire() {
   useEffect(() => {
     async function charger() {
       try {
-        const headers = {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        };
-        const responseInventaire = await fetch(
-          `${springUrl}/inventaire/${id}`,
-          { headers },
-        );
-        const responseRacks = await fetch(`${springUrl}/rack`, { headers });
-        const responseEmplacements = await fetch(`${springUrl}/emplacements`, {
-          headers,
-        });
-        if (!responseInventaire.ok)
-          throw new Error("Impossible de récupérer cet inventaire");
-        if (!responseRacks.ok || !responseEmplacements.ok)
-          throw new Error("Impossible de récupérer la structure de l'entrepôt");
-
-        const dataInventaire = await responseInventaire.json();
-        const dataRacks = await responseRacks.json();
-        const dataEmplacements = await responseEmplacements.json();
+        const {
+          inventaire: dataInventaire,
+          racks: dataRacks,
+          emplacements: dataEmplacements,
+        } = await chargerDonneesControleInventaire(springUrl, id);
         const lignes = (dataInventaire.details || []).map((ligne) => ({
           emplacementId: ligne.emplacementId ?? ligne.EmplacementId,
           nomEmplacement: ligne.nomEmplacement,
@@ -65,7 +53,7 @@ function Inventaire() {
       }
     }
     charger();
-  }, [id, springUrl, token]);
+  }, [id, springUrl]);
 
   const lignes = inventaire?.details || [];
   const lignesAvecEcart = lignes.filter((ligne) => ligne.ecart !== 0);
@@ -128,28 +116,14 @@ function Inventaire() {
   async function changerStatut(action) {
     try {
       setError("");
-      const response = await fetch(
-        `${springUrl}/journaux-mouvements/${id}/${action}`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      if (!response.ok) {
-        const erreur = await response.json().catch(() => null);
-        throw new Error(
-          erreur?.detail || erreur?.message || "L'action a échoué",
-        );
-      }
-      const journal = await response.json();
+      const journal = await changerStatutInventaire(springUrl, id, action);
       setInventaire({ ...inventaire, statut: journal.statut });
     } catch (erreur) {
       setError(erreur.message);
     }
   }
+
+  const navigate = useNavigate();
 
   if (loading) return <div className="inventory-message">Chargement…</div>;
   if (!inventaire) return <div className="inventory-message">{error}</div>;
@@ -361,6 +335,7 @@ function Inventaire() {
               ) : (
                 <p className="inventory-note">Sélectionnez un emplacement.</p>
               )}
+              <button onClick={() => navigate(`/recapitulatif/${inventaire?.journalId}`)} >Rediger le rapport </button>
             </aside>
           </div>
 
@@ -435,9 +410,9 @@ function Inventaire() {
                   <strong>Le comptage doit être repris ?</strong>
                   <small>Le journal passera à l’état MODIFIE.</small>
                 </div>
-                <button onClick={() => changerStatut("demander-modification")}>
+                {/* <button onClick={() => changerStatut("demander-modification")}>
                   Demander une modification
-                </button>
+                </button> */}
               </footer>
             )}
           </section>

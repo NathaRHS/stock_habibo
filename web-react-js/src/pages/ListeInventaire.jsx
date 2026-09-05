@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
-import { getAccessToken } from "../services/authService";
+import { chargerJournauxInventaire } from "../services/inventaireService";
 import "./css/ListeInventaire.css";
 
 function ListeInventaire() {
   const springUrl = import.meta.env.VITE_SPRING_URL;
-  const token = getAccessToken();
-
   const [journaux, setJournaux] = useState([]);
   const [recherche, setRecherche] = useState("");
   const [statutSelectionne, setStatutSelectionne] = useState("TOUS");
@@ -17,18 +15,7 @@ function ListeInventaire() {
   useEffect(() => {
     async function recupererJournaux() {
       try {
-        const response = await fetch(`${springUrl}/journaux-mouvements`, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Impossible de récupérer les journaux d'inventaire");
-        }
-
-        const data = await response.json();
+        const data = await chargerJournauxInventaire(springUrl);
         setJournaux(data);
       } catch (erreur) {
         setError(erreur.message);
@@ -38,7 +25,7 @@ function ListeInventaire() {
     }
 
     recupererJournaux();
-  }, [springUrl, token]);
+  }, [springUrl]);
 
   // On garde uniquement les journaux dont le type est INVENTAIRE.
   const journauxInventaire = journaux.filter(
