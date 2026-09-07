@@ -1,5 +1,7 @@
 package com.example.demo.entity;
 
+import java.util.List;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -16,13 +18,16 @@ public class User {
 
     @Column(name = "email", nullable = false, unique = true)
     private String email;
-    
+
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "role_id", nullable = false)
     private Role role; // admin , inventoriste , superviseur , audit
+
+    @OneToMany(mappedBy = "user")
+    private List<Commande> commandes;
 
     public User() {
     }
@@ -81,6 +86,14 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public List<Commande> getCommandes() {
+        return commandes;
+    }
+
+    public void setCommandes(List<Commande> commandes) {
+        this.commandes = commandes;
     }
 
 }
