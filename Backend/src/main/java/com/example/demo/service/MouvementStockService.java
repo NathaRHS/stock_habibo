@@ -363,8 +363,8 @@ public class MouvementStockService {
 
                 // Memoriser cette quantite pour les lignes suivantes du meme JSON.
                 quantitesPlanifieesParEmplacement.merge(
-                        emplacementId,
-                        quantiteQuiPeutRentrer,
+                        emplacementId,//1
+                        quantiteQuiPeutRentrer,//150
                         Long::sum);
                 articlePlanifieParEmplacement.put(emplacementId, detailJournal.getArticle().getId());
             }

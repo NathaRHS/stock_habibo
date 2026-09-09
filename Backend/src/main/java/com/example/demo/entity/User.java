@@ -1,7 +1,6 @@
 package com.example.demo.entity;
 
 import java.util.List;
-
 import jakarta.persistence.*;
 
 @Entity
@@ -28,6 +27,17 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<Commande> commandes;
+
+    @OneToMany(mappedBy = "user")
+    private List<Prelevement> prelevements;
+
+    public List<Prelevement> getPrelevements() {
+        return prelevements;
+    }
+
+    public void setPrelevements(List<Prelevement> prelevements) {
+        this.prelevements = prelevements;
+    }
 
     public User() {
     }

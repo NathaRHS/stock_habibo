@@ -20,7 +20,7 @@ public class Commande {
     private Article article;
 
     @Column(name = "etat")
-    boolean Etat;
+    boolean Etat = false;
 
     @Column(name = "remarque", length = 255, nullable = true)
     String remarque;
@@ -32,7 +32,7 @@ public class Commande {
     Integer quantiteReel;
 
     @Column(name = "isChecked")
-    private boolean isChecked;
+    private boolean isChecked = true;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

@@ -335,7 +335,13 @@ function Inventaire() {
               ) : (
                 <p className="inventory-note">Sélectionnez un emplacement.</p>
               )}
-              <button onClick={() => navigate(`/recapitulatif/${inventaire?.journalId}`)} >Rediger le rapport </button>
+              <button
+                onClick={() =>
+                  navigate(`/recapitulatif/${inventaire?.journalId}`)
+                }
+              >
+                Rediger le rapport{" "}
+              </button>
             </aside>
           </div>
 
