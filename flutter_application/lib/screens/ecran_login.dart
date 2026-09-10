@@ -5,10 +5,7 @@ import 'package:flutter_application/screens/ecran_liste_journaux.dart';
 import 'package:http/http.dart' as http;
 
 class EcranLogin extends StatefulWidget {
-  const EcranLogin({
-    super.key,
-    required this.baseUrl,
-  });
+  const EcranLogin({super.key, required this.baseUrl});
 
   final String baseUrl;
 
@@ -64,7 +61,8 @@ class _EcranLoginState extends State<EcranLogin> {
       }
 
       final token = donnees['token'] as String?;
-
+      final utilisateur = donnees['user'] as Map<String, dynamic>?;
+      final role = utilisateur?['role'] as String;
       if (token == null || token.isEmpty) {
         throw const FormatException("Le serveur n'a pas renvoyé de token.");
       }
@@ -76,6 +74,7 @@ class _EcranLoginState extends State<EcranLogin> {
           builder: (_) => EcranListeJournaux(
             baseUrl: widget.baseUrl,
             accessToken: token,
+            role: role,
           ),
         ),
       );
@@ -201,8 +200,9 @@ class _EcranLoginState extends State<EcranLogin> {
                           SizedBox(
                             height: 52,
                             child: ElevatedButton(
-                              onPressed:
-                                  _connexionEnCours ? null : _seConnecter,
+                              onPressed: _connexionEnCours
+                                  ? null
+                                  : _seConnecter,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF064B9C),
                                 foregroundColor: Colors.white,
