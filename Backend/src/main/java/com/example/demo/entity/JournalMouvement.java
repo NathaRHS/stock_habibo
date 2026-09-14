@@ -29,6 +29,9 @@ public class JournalMouvement {
     @ManyToOne(optional = false)
     @JoinColumn(name = "statut_journal_mouvement_id", nullable = false)
     private StatutjournalMouvement statutJournalMouvement;
+    
+    @OneToMany (mappedBy = "journalMouvement")
+    private List<Commande> commandes;
 
     @OneToMany(mappedBy = "journalMouvement", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetailJournal> details = new ArrayList<>();

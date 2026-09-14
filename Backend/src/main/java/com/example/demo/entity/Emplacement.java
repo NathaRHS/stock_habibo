@@ -1,5 +1,7 @@
 package com.example.demo.entity;
 
+import java.util.List;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -27,6 +30,9 @@ public class Emplacement {
 
     @Column(name = "numero_etage", nullable = false)
     private Integer numeroEtage;
+
+    @OneToMany(mappedBy = "emplacement")
+    private List<Prelevement> prelevements;
 
     public Emplacement() {
     }
@@ -67,5 +73,13 @@ public class Emplacement {
 
     public void setNumeroEtage(Integer numeroEtage) {
         this.numeroEtage = numeroEtage;
+    }
+
+    public List<Prelevement> getPrelevements() {
+        return prelevements;
+    }
+
+    public void setPrelevements(List<Prelevement> prelevements) {
+        this.prelevements = prelevements;
     }
 }

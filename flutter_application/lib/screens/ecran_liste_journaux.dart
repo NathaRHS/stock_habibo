@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application/screens/ecran_liste_commande.dart';
 import 'package:flutter_application/screens/ecran_scan_session.dart';
 import 'package:flutter_application/screens/ecran_choix_emplacement_inventaire.dart';
 import 'package:http/http.dart' as http;
@@ -10,10 +11,12 @@ class EcranListeJournaux extends StatefulWidget {
     super.key,
     required this.baseUrl,
     required this.accessToken,
+    required this.role,
   });
 
   final String baseUrl;
   final String accessToken;
+  final String role;
 
   @override
   State<EcranListeJournaux> createState() => _EcranListeJournauxState();
@@ -38,7 +41,7 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
 
     try {
       final uri = Uri.parse('${widget.baseUrl}/journaux-mouvements');
-      final response = await http.get(
+      final   response = await http.get(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -65,10 +68,24 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
           )
           .toList();
 
+      final journauxFiltrees = journaux.where((journal) {
+        final type = journal.typeMouvementJournal;
+        if (widget.role.trim().toLowerCase() == 
+            "INVENTORISTE".trim().toLowerCase()) {
+          return type == "INVENTAIRE";
+        }
+
+        if (widget.role.trim().toLowerCase() ==
+            "OPERATEUR".trim().toLowerCase()) {
+          return type == "ENTREE" || type == "SORTIE";
+        }
+        return false;
+      }).toList();
+
       if (!mounted) return;
 
       setState(() {
-        _journaux = journaux;
+        _journaux = journauxFiltrees;
       });
     } catch (erreur) {
       if (!mounted) return;
@@ -148,26 +165,38 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
             onOuvrir:
                 journal.statut == 'EN COURS' || journal.statut == 'MODIFIE'
                 ? () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            journal.typeMouvementJournal.trim().toUpperCase() ==
-                                'INVENTAIRE'
-                            ? EcranChoixEmplacementInventaire(
-                                journalId: journal.id,
-                                referenceJournal: journal.reference,
-                                baseUrl: widget.baseUrl,
-                                accessToken: widget.accessToken,
-                              )
-                            : EcranScanSession(
-                                journalId: journal.id,
-                                referenceJournal: journal.reference,
-                                typeJournal: journal.typeMouvementJournal,
-                                baseUrl: widget.baseUrl,
-                                accessToken: widget.accessToken,
-                              ),
-                      ),
-                    );
+                    final type = journal.typeMouvementJournal
+                        .trim()
+                        .toUpperCase();
+
+                    Widget prochainePage;
+
+                    if (type == 'INVENTAIRE') {
+                      prochainePage = EcranChoixEmplacementInventaire(
+                        journalId: journal.id,
+                        referenceJournal: journal.reference,
+                        baseUrl: widget.baseUrl,
+                        accessToken: widget.accessToken,
+                      );
+                    } else if (type == 'SORTIE') {
+                      prochainePage = EcranListeCommande(
+                        journalId: journal.id,
+                        baseUrl: widget.baseUrl,
+                        accessToken: widget.accessToken,
+                      );
+                    } else {
+                      prochainePage = EcranScanSession(
+                        journalId: journal.id,
+                        referenceJournal: journal.reference,
+                        typeJournal: journal.typeMouvementJournal,
+                        baseUrl: widget.baseUrl,
+                        accessToken: widget.accessToken,
+                      );
+                    }
+
+                    await Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (_) => prochainePage));
+
                     _chargerJournaux();
                   }
                 : null,
@@ -214,6 +243,7 @@ class _CarteJournal extends StatelessWidget {
               ),
               const Divider(height: 24),
               _information('Type', journal.typeMouvementJournal),
+              _information('id', '${journal.id}'),
               _information('Sens', journal.sens == 1 ? 'Entrée' : 'Sortie'),
               _information('Client', journal.nomClient ?? '—'),
               _information('Fournisseur', journal.fournisseur ?? '—'),
@@ -223,7 +253,7 @@ class _CarteJournal extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: Text(
                   onOuvrir == null
-                      ? 'Consultation uniquement'
+                      ? 'Cosultation uniquement'
                       : 'Ouvrir la session →',
                   style: TextStyle(
                     color: onOuvrir == null

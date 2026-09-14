@@ -33,6 +33,9 @@ public class Article {
     @OneToMany(mappedBy = "article")
     private List<DetailJournal> detailsJournal = new ArrayList<>();
 
+    @OneToMany(mappedBy = "article")
+    private List<Commande> commandes;
+
     public Article() {
     }
 

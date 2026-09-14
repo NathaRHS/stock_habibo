@@ -1,16 +1,78 @@
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap");
 
-.affectation-shell { display:flex; min-height:100vh; background:var(--color-background); }
-.affectation-main-section { min-width:0; flex:1; border-left:1px solid var(--color-border); }
-.affectation-global-topbar { display:grid; grid-template-columns:240px minmax(260px,400px) 1fr; min-height:86px; align-items:center; gap:26px; padding:0 38px 0 28px; background:var(--color-surface); border-bottom:1px solid var(--color-border); }
-.affectation-global-topbar>p { color:var(--color-text-muted); font-size:12px; }
-.affectation-global-topbar>label { display:flex; height:30px; align-items:center; gap:7px; padding:0 13px; color:var(--color-text-muted); background:var(--color-secondary-soft); border-radius:999px; }
-.affectation-global-topbar label span { font-size:16px; }
-.affectation-global-topbar input { width:100%; border:0; outline:0; background:transparent; color:var(--color-secondary); font-size:12px; }
-.affectation-global-user { display:flex; align-items:center; justify-self:end; gap:9px; }
-.affectation-global-user>span { display:grid; width:34px; height:34px; color:var(--color-primary); border:1px solid var(--color-border); border-radius:50%; place-items:center; font-weight:600; }
-.affectation-global-user strong,.affectation-global-user small { display:block; }
-.affectation-global-user strong { font-size:11px; }.affectation-global-user small { margin-top:3px; color:var(--color-text-muted); font-size:9px; }
+.affectation-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-background);
+}
+.affectation-main-section {
+  min-width: 0;
+  flex: 1;
+  border-left: 1px solid var(--color-border);
+}
+.affectation-global-topbar {
+  display: grid;
+  grid-template-columns: 240px minmax(260px, 400px) 1fr;
+  min-height: 86px;
+  align-items: center;
+  gap: 26px;
+  padding: 0 38px 0 28px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.affectation-global-topbar > p {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.affectation-global-topbar > label {
+  display: flex;
+  height: 30px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 13px;
+  color: var(--color-text-muted);
+  background: var(--color-secondary-soft);
+  border-radius: 999px;
+}
+.affectation-global-topbar label span {
+  font-size: 16px;
+}
+.affectation-global-topbar input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-secondary);
+  font-size: 12px;
+}
+.affectation-global-user {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 9px;
+}
+.affectation-global-user > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  place-items: center;
+  font-weight: 600;
+}
+.affectation-global-user strong,
+.affectation-global-user small {
+  display: block;
+}
+.affectation-global-user strong {
+  font-size: 11px;
+}
+.affectation-global-user small {
+  margin-top: 3px;
+  color: var(--color-text-muted);
+  font-size: 9px;
+}
 
 .affectation-page {
   --bg-main: var(--color-background);
@@ -88,7 +150,7 @@
   padding: 0;
   color: var(--primary);
   background: transparent;
-  font-size: 11px;
+  font-size: 30px;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -336,6 +398,56 @@
   font-size: 14px;
   font-weight: 700;
 }
+.affectation-page .rack-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 18px;
+  margin-bottom: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-light);
+}
+
+.affectation-page .rack-pagination button {
+  min-width: 88px;
+  padding: 8px 14px;
+  color: var(--text-main);
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.affectation-page .rack-pagination button:hover:not(:disabled) {
+  color: var(--primary);
+  background: var(--surface);
+  border-color: var(--primary);
+}
+
+.affectation-page .rack-pagination button:disabled {
+  color: var(--text-light);
+  background: #f8fafc;
+  border-color: var(--border-light);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.affectation-page .rack-pagination span {
+  min-width: 90px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
 .affectation-page .warehouse-header-bar p {
   margin: 2px 0 0;
   color: var(--text-muted);
