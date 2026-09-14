@@ -13,13 +13,13 @@ class Commande {
   final String nomArticle;
   final int quantiteDemande;
 
-  factory Commande.fromJson(Map<String, dynamic> json) {
-    return Commande(
-      idCommande: (json['idCommande'] as num).toInt(),
-      idJournal: (json['idJournal'] as num).toInt(),
-      idArticle: (json['idArticle'] as num).toInt(),
-      nomArticle: json['nomArticle'] as String,
-      quantiteDemande: (json['quantiteDemande'] as num).toInt(),
-    );
-  }
+    factory Commande.fromJson(Map<String, dynamic> json) {
+      return Commande(
+        idCommande: (json['idCommande'] as num).toInt(),
+        idJournal: (json['idJournal'] as num).toInt(),
+        idArticle: (json['idArticle'] as num).toInt(),
+        nomArticle: json['nomArticle'] as String,
+        quantiteDemande: (json['quantiteDemande'] as num).toInt(),
+      );
+    }
 }
