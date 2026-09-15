@@ -3,6 +3,7 @@ package com.example.demo.service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -32,12 +33,20 @@ public class CommandeService {
         private final StatuPrelevementRepository statuPrelevementRepository;
         private final UserRepository userRepository;
         private final StockRepository stockRepository;
+        private final LignePickingService lignePickingService;
+        private final RackRepository rackRepository;
+        private final ArticleConditionnementRepository articleConditionnementRepository;
+        private final PickingRepository pickingRepository;
 
         public CommandeService(JournalMouvementRepository journalMouvementRepository,
+                        LignePickingService lignePickingService,
+                        RackRepository rackRepository,
                         ArticleRepository articleRepository,
                         EmplacementRepository emplacementRepository, MouvementStockRepository mouvementStockRepository,
                         CommandeRepository commandeRepository, DetailJournalRepository detailJournalRepository,
                         PrelevementRepository prelevementRepository,
+                        ArticleConditionnementRepository articleConditionnementRepository,
+                        PickingRepository pickingRepository,
                         StatuPrelevementRepository statuPrelevementRepository,
                         UserRepository userRepository, StockRepository stockRepository) {
                 this.journalMouvementRepository = journalMouvementRepository;
@@ -50,7 +59,10 @@ public class CommandeService {
                 this.statuPrelevementRepository = statuPrelevementRepository;
                 this.userRepository = userRepository;
                 this.stockRepository = stockRepository;
-
+                this.lignePickingService = lignePickingService;
+                this.rackRepository = rackRepository;
+                this.articleConditionnementRepository = articleConditionnementRepository;
+                this.pickingRepository = pickingRepository;
         }
 
         @Transactional
@@ -128,6 +140,7 @@ public class CommandeService {
                 return new CommandeResponseAll(responses);
         }
 
+        @Transactional
         public List<MeilleurEmplacementResponse> proposerEmplacement(Long idCommande) {
                 // Prendre la commande
                 Commande commande = commandeRepository.findById(idCommande).orElseThrow(
@@ -170,7 +183,10 @@ public class CommandeService {
 
                         MeilleurEmplacementResponse meilleurEmplacementResponse = new MeilleurEmplacementResponse(
                                         emplacementPropose.getId(), emplacementPropose.getNomEmplacement(), rackId,
-                                        nomRack, numeroEtage, commande.getId(), quantiteStocke, quantiteAPrelever, dlc);
+                                        nomRack, numeroEtage, commande.getId(), quantiteStocke, quantiteAPrelever, dlc,
+                                        stockProjection.getDlv(),
+                                        emplacementPropose.getRack().getOrdre(),
+                                        emplacementPropose.getOrdreDansEtage());
 
                         meilleursEmplacements.add(meilleurEmplacementResponse);
                 }
@@ -178,7 +194,6 @@ public class CommandeService {
                 return meilleursEmplacements;
 
         }
-
 
         @Transactional
         public PrelevementResponse UpdateCommandeAndDetailJournal(AjoutCommandeRequest ajoutCommandeRequest) {
@@ -288,6 +303,155 @@ public class CommandeService {
                                 ajoutCommandeRequest.dlv());
                 // detailJournalRepository.ajouterOuIncrementer(ajoutCommandeRequest.idJournal(),ajoutCommandeRequest.ArticleId(),ajoutCommandeRequest.quantiteConditionnement(),)
         }
-        
-        
+
+        @Transactional
+        public List<MeilleurEmplacementResponse> proposerMeilleurParcours(
+                        Long journalId) {
+
+                JournalMouvement journal = journalMouvementRepository.findById(journalId)
+                                .orElseThrow(() -> new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Journal introuvable"));
+
+                // SORTIE est un type de mouvement, pas un statut.
+                if (!"SORTIE".equals(
+                                journal.getTypeMouvementJournal().getNomTypeMouvement())) {
+
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "Le journal n'est pas de type sortie");
+                }
+
+                List<Commande> commandesJournal = journal.getCommandes();
+
+                if (commandesJournal.isEmpty()) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "La liste des commandes est vide");
+                }
+
+                // Une seule liste, et non une liste de listes.
+                List<MeilleurEmplacementResponse> meilleurParcours = new ArrayList<>();
+
+                for (Commande commande : commandesJournal) {
+                        List<MeilleurEmplacementResponse> propositions = proposerEmplacement(commande.getId());
+
+                        // Ajoute chaque proposition individuellement.
+                        meilleurParcours.addAll(propositions);
+                }
+
+                meilleurParcours.sort(
+                                Comparator.comparing(
+                                                MeilleurEmplacementResponse::ordre,
+                                                Comparator.nullsLast(Integer::compareTo))
+                                                .thenComparing(
+                                                                MeilleurEmplacementResponse::numeroEtage,
+                                                                Comparator.nullsLast(Integer::compareTo))
+                                                .thenComparing(
+                                                                MeilleurEmplacementResponse::ordreEmplacement,
+                                                                Comparator.nullsLast(Integer::compareTo)));
+
+                return meilleurParcours;
+        }
+
+        @Transactional
+        public List<LignePickingResponse> genererMeilleurParcours(
+                        Long journalId,
+                        Long userId,
+                        Long rackDepartId) {
+
+                JournalMouvement journal = journalMouvementRepository.findById(journalId)
+                                .orElseThrow(() -> new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Journal introuvable"));
+
+                if (!"SORTIE".equals(
+                                journal.getTypeMouvementJournal().getNomTypeMouvement())) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "Le journal doit etre de type SORTIE");
+                }
+
+                User user = userRepository.findById(userId)
+                                .orElseThrow(() -> new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Utilisateur introuvable"));
+
+                Rack rackDepart = rackRepository.findById(rackDepartId)
+                                .orElseThrow(() -> new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Rack de depart introuvable"));
+
+                if (pickingRepository.existsByJournalMouvementIdAndStatutIn(
+                                journalId,
+                                List.of(StatutPicking.GENERE, StatutPicking.EN_COURS))) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.CONFLICT,
+                                        "Un picking est deja en cours pour ce journal");
+                }
+
+                List<MeilleurEmplacementResponse> propositions = proposerMeilleurParcours(journalId);
+
+                if (propositions.isEmpty()) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.CONFLICT,
+                                        "Aucun stock disponible pour les commandes de ce journal");
+                }
+
+                // On refuse de creer un picking partiel.
+                for (Commande commande : journal.getCommandes()) {
+                        int quantiteProposee = 0;
+
+                        for (MeilleurEmplacementResponse proposition : propositions) {
+                                if (proposition.commandeId().equals(commande.getId())) {
+                                        quantiteProposee += proposition.quantiteAPrelever();
+                                }
+                        }
+
+                        if (quantiteProposee < commande.getQuantiteDemandee()) {
+                                throw new ResponseStatusException(
+                                                HttpStatus.CONFLICT,
+                                                "Stock insuffisant pour l'article : "
+                                                                + commande.getArticle().getNomArticle());
+                        }
+                }
+
+                Picking picking = new Picking(journal, user, rackDepart);
+                Picking pickingSauvegarde = pickingRepository.save(picking);
+
+                List<LignePickingResponse> lignesCreees = new ArrayList<>();
+                int ordrePassage = 1;
+
+                for (MeilleurEmplacementResponse proposition : propositions) {
+                        Commande commande = commandeRepository.findById(
+                                        proposition.commandeId()).orElseThrow(
+                                                        () -> new ResponseStatusException(
+                                                                        HttpStatus.NOT_FOUND,
+                                                                        "Commande introuvable"));
+
+                        ArticleConditionnement conditionnement = articleConditionnementRepository
+                                        .findFirstByArticleIdOrderByIdAsc(
+                                                        commande.getArticle().getId())
+                                        .orElseThrow(() -> new ResponseStatusException(
+                                                        HttpStatus.NOT_FOUND,
+                                                        "Conditionnement introuvable pour l'article"));
+
+                        LignePickingCreateRequest request = new LignePickingCreateRequest(
+                                        pickingSauvegarde.getId(),
+                                        proposition.commandeId(),
+                                        proposition.emplacementId(),
+                                        proposition.dlc(),
+                                        proposition.dlv(),
+                                        conditionnement.getId(),
+                                        ordrePassage,
+                                        proposition.quantiteAPrelever());
+
+                        LignePickingResponse ligne = lignePickingService.creerLigne(request);
+
+                        lignesCreees.add(ligne);
+                        ordrePassage++;
+                }
+
+                return lignesCreees;
+        }
 }

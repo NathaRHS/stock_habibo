@@ -4,3 +4,4 @@ public enum StatutParticipation {
     EN_COURS,
     TERMINE
 }
+

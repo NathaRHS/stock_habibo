@@ -14,8 +14,12 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "t_emplacement", uniqueConstraints = @UniqueConstraint(name = "uk_emplacement_rack_nom", columnNames = {
-        "rack_id", "numero_etage", "nom_emplacement" }))
+@Table(name = "t_emplacement", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_emplacement_rack_nom", columnNames = {
+                "rack_id", "numero_etage", "nom_emplacement" }),
+        @UniqueConstraint(name = "uk_emplacement_rack_etage_ordre", columnNames = {
+                "rack_id", "numero_etage", "ordre_dans_etage" })
+})
 public class Emplacement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,16 +35,24 @@ public class Emplacement {
     @Column(name = "numero_etage", nullable = false)
     private Integer numeroEtage;
 
+    @Column(name = "ordre_dans_etage")
+    private Integer ordreDansEtage;
+
     @OneToMany(mappedBy = "emplacement")
     private List<Prelevement> prelevements;
 
     public Emplacement() {
     }
 
-    public Emplacement(String nomEmplacement, Rack rack, Integer numeroEtage) {
+    public Emplacement(
+            String nomEmplacement,
+            Rack rack,
+            Integer numeroEtage,
+            Integer ordreDansEtage) {
         this.nomEmplacement = nomEmplacement;
         this.rack = rack;
         this.numeroEtage = numeroEtage;
+        this.ordreDansEtage = ordreDansEtage;
     }
 
     public Long getId() {
@@ -73,6 +85,14 @@ public class Emplacement {
 
     public void setNumeroEtage(Integer numeroEtage) {
         this.numeroEtage = numeroEtage;
+    }
+
+    public Integer getOrdreDansEtage() {
+        return ordreDansEtage;
+    }
+
+    public void setOrdreDansEtage(Integer ordreDansEtage) {
+        this.ordreDansEtage = ordreDansEtage;
     }
 
     public List<Prelevement> getPrelevements() {

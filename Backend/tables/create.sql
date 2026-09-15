@@ -108,10 +108,14 @@ CREATE TABLE IF NOT EXISTS t_emplacement (
     nom_emplacement VARCHAR(255) NOT NULL,
     rack_id BIGINT NOT NULL,
     numero_etage INT NOT NULL,
+    ordre_dans_etage INT NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_emplacement_rack_nom
         UNIQUE (rack_id, numero_etage, nom_emplacement),
+    CONSTRAINT uk_emplacement_rack_etage_ordre
+        UNIQUE (rack_id, numero_etage, ordre_dans_etage),
     CONSTRAINT ck_emplacement_numero_etage CHECK (numero_etage > 0),
+    CONSTRAINT ck_emplacement_ordre CHECK (ordre_dans_etage > 0),
     CONSTRAINT fk_emplacement_rack
         FOREIGN KEY (rack_id) REFERENCES t_rack (id)
         ON UPDATE NO ACTION ON DELETE RESTRICT

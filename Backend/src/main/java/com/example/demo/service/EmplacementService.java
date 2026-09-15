@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.dto.EmplacementRequest;
@@ -25,12 +26,18 @@ public class EmplacementService {
         this.rackRepository = rackRepository;
     }
 
+    @Transactional
     public EmplacementResponse create(EmplacementRequest request) {
         Rack rack = trouverRack(request.rackId());
         verifierNumeroEtage(rack, request.numeroEtage());
         verifierNomDisponible(request.rackId(), request.numeroEtage(), request.nomEmplacement());
+
+        Integer ordreMaximum = emplacementRepository.findOrdreMaximumDansEtage(
+                request.rackId(), request.numeroEtage());
+        Integer nouvelOrdre = ordreMaximum == null ? 1 : ordreMaximum + 1;
+
         Emplacement emplacement = new Emplacement(
-                request.nomEmplacement(), rack, request.numeroEtage());
+                request.nomEmplacement(), rack, request.numeroEtage(), nouvelOrdre);
         return versResponse(emplacementRepository.save(emplacement));
     }
 
@@ -44,16 +51,25 @@ public class EmplacementService {
         return versResponse(trouverEmplacement(id));
     }
 
+    @Transactional
     public EmplacementResponse update(Long id, EmplacementRequest request) {
         Emplacement emplacement = trouverEmplacement(id);
         Rack rack = trouverRack(request.rackId());
         verifierNumeroEtage(rack, request.numeroEtage());
 
-        boolean nomOuRackModifie = !emplacement.getNomEmplacement().equals(request.nomEmplacement())
-                || !emplacement.getRack().getId().equals(request.rackId())
+        boolean rackOuEtageModifie = !emplacement.getRack().getId().equals(request.rackId())
                 || !emplacement.getNumeroEtage().equals(request.numeroEtage());
+        boolean nomOuRackModifie = !emplacement.getNomEmplacement().equals(request.nomEmplacement())
+                || rackOuEtageModifie;
         if (nomOuRackModifie) {
             verifierNomDisponible(request.rackId(), request.numeroEtage(), request.nomEmplacement());
+        }
+
+        if (rackOuEtageModifie || emplacement.getOrdreDansEtage() == null) {
+            Integer ordreMaximum = emplacementRepository.findOrdreMaximumDansEtage(
+                    request.rackId(), request.numeroEtage());
+            Integer nouvelOrdre = ordreMaximum == null ? 1 : ordreMaximum + 1;
+            emplacement.setOrdreDansEtage(nouvelOrdre);
         }
 
         emplacement.setNomEmplacement(request.nomEmplacement());
@@ -104,6 +120,7 @@ public class EmplacementService {
                 emplacement.getNomEmplacement(),
                 emplacement.getRack().getId(),
                 emplacement.getRack().getNomRack(),
-                emplacement.getNumeroEtage());
+                emplacement.getNumeroEtage(),
+                emplacement.getOrdreDansEtage());
     }
 }

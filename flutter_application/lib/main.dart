@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/screens/ecran_login.dart';
+import 'package:flutter_application/screens/ecran_parcours_picking_maquette.dart';
 import 'package:flutter_application/screens/ecran_scan_sortie_maquette.dart';
 
 const apiBaseUrl = String.fromEnvironment(
@@ -24,8 +25,8 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Arial',
         useMaterial3: true,
       ),
-      home: const EcranLogin(baseUrl: apiBaseUrl),
-      // home: const EcranScanSortieMaquette()
+      // home: const EcranLogin(baseUrl: apiBaseUrl),
+      home: const EcranParcoursPickingMaquette()
     );
   }
 }

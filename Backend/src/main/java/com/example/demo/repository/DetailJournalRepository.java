@@ -1,6 +1,7 @@
 package com.example.demo.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.time.LocalDate;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,6 +17,11 @@ public interface DetailJournalRepository extends JpaRepository<DetailJournal, Lo
     List<DetailJournal> findAllByJournalMouvementId(Long idJournal);
 
     DetailJournal findByJournalMouvementIdAndArticleId(Long journalId, Long articleId);
+
+    Optional<DetailJournal> findByArticleIdAndDlcAndDlv(
+            Long articleId,
+            LocalDate dlc,
+            LocalDate dlv);
 
     @Modifying(flushAutomatically = true,clearAutomatically = true)
     @Query(value = """

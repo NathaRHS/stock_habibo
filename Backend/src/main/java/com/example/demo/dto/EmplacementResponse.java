@@ -5,6 +5,7 @@ public record EmplacementResponse(
         String nomEmplacement,
         Long rackId,
         String nomRack,
-        Integer numeroEtage
+        Integer numeroEtage,
+        Integer ordreDansEtage
 ) {
 }

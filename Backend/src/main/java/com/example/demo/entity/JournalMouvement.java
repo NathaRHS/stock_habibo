@@ -97,6 +97,7 @@ public class JournalMouvement {
     public void setNomClient(String nomClient) {
         this.nomClient = nomClient;
     }
+    
 
     public StatutjournalMouvement getStatutJournalMouvement() {
         return statutJournalMouvement;
@@ -129,6 +130,14 @@ public class JournalMouvement {
 
     public void setTypeMouvementJournal(TypeMouvementJournal typeMouvementJournal) {
         this.typeMouvementJournal = typeMouvementJournal;
+    }
+
+    public List<Commande> getCommandes() {
+        return commandes;
+    }
+
+    public void setCommandes(List<Commande> commandes) {
+        this.commandes = commandes;
     }
 
 }

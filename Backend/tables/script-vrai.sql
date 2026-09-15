@@ -154,7 +154,9 @@ ON DUPLICATE KEY UPDATE nombre_etages = VALUES(nombre_etages);
 -- Un emplacement correspond directement a une place palette.
 -- ============================================================================
 
-INSERT INTO t_emplacement (nom_emplacement, rack_id, numero_etage)
+INSERT INTO t_emplacement (
+    nom_emplacement, rack_id, numero_etage, ordre_dans_etage
+)
 WITH RECURSIVE numeros AS (
     SELECT 1 AS numero
     UNION ALL
@@ -176,12 +178,14 @@ racks_confirmes AS (
 SELECT
     CONCAT(r.code, '-', LPAD(n.numero, 3, '0')),
     r.id,
-    CEIL(n.numero / 10)
+    CEIL(n.numero / 10),
+    MOD(n.numero - 1, 10) + 1
 FROM racks_confirmes r
 CROSS JOIN numeros n
 WHERE TRUE
 ON DUPLICATE KEY UPDATE
-    numero_etage = VALUES(numero_etage);
+    numero_etage = VALUES(numero_etage),
+    ordre_dans_etage = VALUES(ordre_dans_etage);
 
 -- ============================================================================
 -- 6. CATALOGUE DE DEMONSTRATION

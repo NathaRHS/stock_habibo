@@ -14,5 +14,7 @@ public interface StockProjection {
 
     LocalDate getDlc();
 
+    LocalDate getDlv();
+
     LocalDateTime getDateMouvement();
 }

@@ -3,8 +3,6 @@ package com.example.demo.entity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import org.springframework.cglib.core.Local;
-
 import jakarta.persistence.*;
 
 @Entity
@@ -16,6 +14,14 @@ public class Prelevement {
     @ManyToOne
     @JoinColumn(name = "commande_id")
     private Commande commande;
+
+    /*
+     * Facultatif pendant la transition : l'ancien parcours de scan cree encore
+     * des prelevements sans ligne de picking.
+     */
+    @ManyToOne
+    @JoinColumn(name = "ligne_picking_id")
+    private LignePicking lignePicking;
 
     @ManyToOne
     @JoinColumn(name = "emplacement_id")
@@ -40,6 +46,25 @@ public class Prelevement {
     @Column(name = "dlv")
     LocalDate dlv;
 
+    
+
+    public Prelevement() {
+    }
+
+    public Prelevement(Commande commande, LignePicking lignePicking, Emplacement emplacement,
+            StatutPrelevement statutPrelevement, Integer quantitePiecesPrelevee, User user, LocalDateTime date,
+            LocalDate dlc, LocalDate dlv) {
+        this.commande = commande;
+        this.lignePicking = lignePicking;
+        this.emplacement = emplacement;
+        this.statutPrelevement = statutPrelevement;
+        this.quantitePiecesPrelevee = quantitePiecesPrelevee;
+        this.user = user;
+        this.date = date;
+        this.dlc = dlc;
+        this.dlv = dlv;
+    }
+
     public StatutPrelevement getStatutPrelevement() {
         return statutPrelevement;
     }
@@ -62,6 +87,14 @@ public class Prelevement {
 
     public void setCommande(Commande commande) {
         this.commande = commande;
+    }
+
+    public LignePicking getLignePicking() {
+        return lignePicking;
+    }
+
+    public void setLignePicking(LignePicking lignePicking) {
+        this.lignePicking = lignePicking;
     }
 
     public Emplacement getEmplacement() {
@@ -110,5 +143,9 @@ public class Prelevement {
 
     public void setDlv(LocalDate dlv) {
         this.dlv = dlv;
+    }
+
+    public Integer getQuantitePiecesPrelevee() {
+        return quantitePiecesPrelevee;
     }
 }
