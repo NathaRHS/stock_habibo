@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,6 +52,11 @@ public class LignePickingController {
     @PostMapping("/scan")
     public ScanLigneResponse scan(@RequestBody ScanLigneRequest request) {
         return lignePickingService.scan(request);
+    }
+
+    @GetMapping("/getLignes/{journalId}")
+    public List<LignePickingResponse> getLignes(@PathVariable Long journalId) {
+        return lignePickingService.getPickingResponses(journalId);
     }
 
 }

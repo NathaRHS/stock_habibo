@@ -1,7 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/models/ligne_picking.dart';
+import 'package:flutter_application/models/scan_ligne_response.dart';
+import 'package:flutter_application/screens/ecran_scan_sortie_maquette.dart';
+import 'package:flutter_application/services/picking_service.dart';
 
 class EcranParcoursPickingMaquette extends StatefulWidget {
-  const EcranParcoursPickingMaquette({super.key});
+  const EcranParcoursPickingMaquette({
+    super.key,
+    required this.baseUrl,
+    required this.accessToken,
+    required this.journalId,
+    required this.userId,
+    this.rackDepartId = 1,
+  });
+
+  final String baseUrl;
+  final String accessToken;
+  final int journalId;
+  final int userId;
+  final int rackDepartId;
 
   @override
   State<EcranParcoursPickingMaquette> createState() =>
@@ -13,101 +30,62 @@ class _EcranParcoursPickingMaquetteState
   static const _bleu = Color(0xFF5A91D0);
   static const _bleuTexte = Color(0xFF1970DF);
 
-  final List<_EtapePicking> _etapes = const [
-    _EtapePicking(
-      code: 'A004',
-      rack: 'Rack A',
-      etage: 2,
-      article: 'Lait Candia UHT',
-      quantite: 24,
-      dlc: '14/12/2026',
-      dlv: '17/12/2026',
-    ),
-    _EtapePicking(
-      code: 'A001',
-      rack: 'Rack A',
-      etage: 1,
-      article: 'Lait Candia UHT',
-      quantite: 18,
-      dlc: '20/12/2026',
-      dlv: '12/12/2026',
-    ),
-    _EtapePicking(
-      code: 'A006',
-      rack: 'Rack A',
-      etage: 1,
-      article: 'Coca-Cola 30 cl',
-      quantite: 15,
-      dlc: '15/02/2027',
-      dlv: '01/02/2027',
-    ),
-    _EtapePicking(
-      code: 'A009',
-      rack: 'Rack A',
-      etage: 2,
-      article: 'Coca-Cola 30 cl',
-      quantite: 10,
-      dlc: '15/02/2027',
-      dlv: '01/02/2027',
-    ),
-    _EtapePicking(
-      code: 'A011',
-      rack: 'Rack A',
-      etage: 3,
-      article: 'Eau Vive 1,5 L',
-      quantite: 8,
-      dlc: '30/04/2027',
-      dlv: '15/04/2027',
-    ),
-    _EtapePicking(
-      code: 'B004',
-      rack: 'Rack B',
-      etage: 2,
-      article: 'Eau Vive 1,5 L',
-      quantite: 12,
-      dlc: '30/04/2027',
-      dlv: '15/04/2027',
-    ),
-    _EtapePicking(
-      code: 'B001',
-      rack: 'Rack B',
-      etage: 1,
-      article: 'Farine T45',
-      quantite: 6,
-      dlc: '04/11/2027',
-      dlv: '20/10/2027',
-    ),
-    _EtapePicking(
-      code: 'B006',
-      rack: 'Rack B',
-      etage: 2,
-      article: 'Riz long grain',
-      quantite: 9,
-      dlc: '18/08/2027',
-      dlv: '04/08/2027',
-    ),
-    _EtapePicking(
-      code: 'B009',
-      rack: 'Rack B',
-      etage: 3,
-      article: 'Café moulu',
-      quantite: 14,
-      dlc: '11/06/2027',
-      dlv: '28/05/2027',
-    ),
-    _EtapePicking(
-      code: 'B011',
-      rack: 'Rack B',
-      etage: 1,
-      article: 'Sucre en poudre',
-      quantite: 20,
-      dlc: '03/02/2028',
-      dlv: '20/01/2028',
-    ),
-  ];
+  late final PickingService _pickingService;
+  List<LignePicking> _etapes = [];
+  bool _chargement = true;
+  bool _scanEnCours = false;
+  String? _erreur;
 
   bool _overlayOuvert = false;
   int _etapeSelectionnee = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pickingService = PickingService(
+      baseUrl: widget.baseUrl,
+      accessToken: widget.accessToken,
+    );
+    _chargerParcours();
+  }
+
+  Future<void> _chargerParcours() async {
+    setState(() {
+      _chargement = true;
+      _erreur = null;
+    });
+    try {
+      final parcoursActif = await _pickingService.chargerParcoursActif(
+        journalId: widget.journalId,
+      );
+
+      final List<LignePicking> lignes;
+      if (parcoursActif != null) {
+        lignes = parcoursActif;
+      } else {
+        lignes = await _pickingService.genererMeilleurParcours(
+          journalId: widget.journalId,
+          userId: widget.userId,
+          rackDepartId: widget.rackDepartId,
+        );
+      }
+      if (!mounted) return;
+      setState(() {
+        _etapes = lignes;
+        final premiereNonTerminee = lignes.indexWhere(
+          (ligne) => ligne.statut != 'PRELEVEE',
+        );
+        _etapeSelectionnee = premiereNonTerminee >= 0 ? premiereNonTerminee : 0;
+      });
+    } catch (erreur) {
+      if (!mounted) return;
+      setState(() {
+        _erreur = erreur.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) setState(() => _chargement = false);
+    }
+  }
 
   void _ouvrirProgression() {
     setState(() => _overlayOuvert = true);
@@ -121,17 +99,76 @@ class _EcranParcoursPickingMaquetteState
     setState(() => _etapeSelectionnee = index);
   }
 
-  void _simulerScan() {
+  String _formaterDate(DateTime date) {
+    final jour = date.day.toString().padLeft(2, '0');
+    final mois = date.month.toString().padLeft(2, '0');
+    return '$jour/$mois/${date.year}';
+  }
+
+  Future<void> _scannerEtape() async {
     final etape = _etapes[_etapeSelectionnee];
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Simulation : ouverture du scanner pour ${etape.code}'),
+    setState(() => _scanEnCours = true);
+    final resultat = await Navigator.of(context).push<ScanLigneResponse>(
+      MaterialPageRoute(
+        builder: (_) => EcranScanSortieMaquette(
+          baseUrl: widget.baseUrl,
+          accessToken: widget.accessToken,
+          ligne: etape,
+        ),
       ),
     );
+    if (!mounted) return;
+    setState(() {
+      _scanEnCours = false;
+      if (resultat?.ligneTerminee == true) {
+        _etapes[_etapeSelectionnee] = etape.copierAvec(statut: 'PRELEVEE');
+        final prochaine = _etapes.indexWhere(
+          (ligne) => ligne.statut != 'PRELEVEE',
+        );
+        if (prochaine >= 0) _etapeSelectionnee = prochaine;
+      }
+    });
+    if (resultat != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            resultat.ligneTerminee
+                ? 'Prélèvement terminé.'
+                : '${resultat.quantiteRestante} conditionnement(s) restant(s).',
+          ),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_chargement) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_erreur != null) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_erreur!, textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: _chargerParcours,
+                  child: const Text('Réessayer'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    if (_etapes.isEmpty) {
+      return const Scaffold(body: Center(child: Text('Parcours vide.')));
+    }
     final etape = _etapes[_etapeSelectionnee];
 
     return Scaffold(
@@ -186,7 +223,7 @@ class _EcranParcoursPickingMaquetteState
     );
   }
 
-  Widget _construirePage(_EtapePicking etape) {
+  Widget _construirePage(LignePicking etape) {
     return ColoredBox(
       color: _bleu,
       child: SafeArea(
@@ -289,34 +326,28 @@ class _EcranParcoursPickingMaquetteState
   }
 
   Widget _construireParcours() {
-    final premiereLigne = _etapes.take(5).toList();
-    final deuxiemeLigne = _etapes.skip(5).take(5).toList();
+    final lignes = <Widget>[];
+    for (var debut = 0; debut < _etapes.length; debut += 5) {
+      final fin = (debut + 5).clamp(0, _etapes.length);
+      lignes.add(
+        _LigneParcours(
+          etapes: _etapes.sublist(debut, fin),
+          indexDepart: debut,
+          indexSelectionne: _etapeSelectionnee,
+          onSelection: _selectionnerEtape,
+        ),
+      );
+      if (fin < _etapes.length) lignes.add(const SizedBox(height: 38));
+    }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(23, 62, 23, 0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _LigneParcours(
-            etapes: premiereLigne,
-            indexDepart: 0,
-            indexSelectionne: _etapeSelectionnee,
-            onSelection: _selectionnerEtape,
-          ),
-          const SizedBox(height: 38),
-          _LigneParcours(
-            etapes: deuxiemeLigne,
-            indexDepart: 5,
-            indexSelectionne: _etapeSelectionnee,
-            onSelection: _selectionnerEtape,
-          ),
-        ],
-      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: lignes),
     );
   }
 
   Widget _construireFiche(
-    _EtapePicking etape,
+    LignePicking etape,
     ScrollController scrollController,
   ) {
     return Container(
@@ -342,7 +373,7 @@ class _EcranParcoursPickingMaquetteState
               ),
             ),
             Text(
-              'Emplacement ${etape.code}',
+              'Emplacement ${etape.nomEmplacement}',
               style: const TextStyle(
                 color: Color(0xFF303030),
                 fontSize: 29,
@@ -363,7 +394,7 @@ class _EcranParcoursPickingMaquetteState
                 ),
                 const SizedBox(width: 13),
                 Text(
-                  '${etape.quantite} packs',
+                  '${etape.quantiteConditionnementsAPrelever} packs',
                   style: const TextStyle(color: _bleuTexte, fontSize: 13),
                 ),
               ],
@@ -378,14 +409,14 @@ class _EcranParcoursPickingMaquetteState
                 ),
                 const SizedBox(width: 7),
                 Text(
-                  '${etape.rack} , ${etape.code}',
+                  etape.nomEmplacement,
                   style: const TextStyle(color: _bleuTexte, fontSize: 12),
                 ),
                 const SizedBox(width: 8),
                 Container(width: 20, height: 1, color: const Color(0xFF909090)),
                 const SizedBox(width: 8),
                 Text(
-                  'Etage ${etape.etage}',
+                  'Ordre ${etape.ordrePassage}',
                   style: const TextStyle(color: _bleuTexte, fontSize: 12),
                 ),
               ],
@@ -400,7 +431,7 @@ class _EcranParcoursPickingMaquetteState
                 ),
                 const SizedBox(width: 9),
                 Text(
-                  'DLC : ${etape.dlc}\nDLV : ${etape.dlv}',
+                  'DLC : ${_formaterDate(etape.dlc)}\nDLV : ${_formaterDate(etape.dlv)}',
                   style: const TextStyle(fontSize: 12, height: 1.25),
                 ),
               ],
@@ -410,7 +441,9 @@ class _EcranParcoursPickingMaquetteState
               width: double.infinity,
               height: 54,
               child: FilledButton(
-                onPressed: _simulerScan,
+                onPressed: _scanEnCours || etape.statut == 'PRELEVEE'
+                    ? null
+                    : _scannerEtape,
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF76A9D6),
                   shape: const RoundedRectangleBorder(
@@ -419,18 +452,18 @@ class _EcranParcoursPickingMaquetteState
                     ),
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Scanner',
-                      style: TextStyle(
+                      etape.statut == 'PRELEVEE' ? 'Prélevé' : 'Scanner',
+                      style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    SizedBox(width: 9),
-                    Text('+', style: TextStyle(fontSize: 22)),
+                    const SizedBox(width: 9),
+                    const Text('+', style: TextStyle(fontSize: 22)),
                   ],
                 ),
               ),
@@ -474,25 +507,38 @@ class _EcranParcoursPickingMaquetteState
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(14, 4, 14, 12),
-                itemCount: 8,
+                itemCount: _etapes.length,
                 itemBuilder: (context, index) {
-                  return const SizedBox(
+                  final etape = _etapes[index];
+                  final terminee = etape.statut == 'PRELEVEE';
+                  return SizedBox(
                     height: 43,
                     child: Row(
                       children: [
                         SizedBox(
                           width: 108,
                           child: Text(
-                            'Lait Candia UHT',
+                            etape.nomArticle,
                             maxLines: 1,
-                            style: TextStyle(color: _bleuTexte, fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: _bleuTexte,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
-                        Expanded(child: _ProgressionCommande()),
-                        SizedBox(width: 8),
+                        Expanded(
+                          child: _ProgressionCommande(
+                            progression: terminee ? 1 : 0,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Text(
-                          '150 boîtes',
-                          style: TextStyle(color: _bleuTexte, fontSize: 13),
+                          '${etape.quantiteConditionnementsAPrelever} packs',
+                          style: const TextStyle(
+                            color: _bleuTexte,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -515,7 +561,7 @@ class _LigneParcours extends StatelessWidget {
     required this.onSelection,
   });
 
-  final List<_EtapePicking> etapes;
+  final List<LignePicking> etapes;
   final int indexDepart;
   final int indexSelectionne;
   final ValueChanged<int> onSelection;
@@ -529,7 +575,7 @@ class _LigneParcours extends StatelessWidget {
             width: 51,
             height: 51,
             child: _NoeudParcours(
-              code: etapes[index].code,
+              code: etapes[index].nomEmplacement,
               selectionne: indexDepart + index == indexSelectionne,
               onTap: () => onSelection(indexDepart + index),
             ),
@@ -606,40 +652,22 @@ class _ConnexionParcours extends StatelessWidget {
 }
 
 class _ProgressionCommande extends StatelessWidget {
-  const _ProgressionCommande();
+  const _ProgressionCommande({required this.progression});
+
+  final double progression;
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(4),
-      child: const SizedBox(
+      child: SizedBox(
         height: 6,
         child: LinearProgressIndicator(
-          value: 0.4,
-          color: Color(0xFF3688ED),
-          backgroundColor: Color(0xFFD7D7D7),
+          value: progression,
+          color: const Color(0xFF3688ED),
+          backgroundColor: const Color(0xFFD7D7D7),
         ),
       ),
     );
   }
-}
-
-class _EtapePicking {
-  const _EtapePicking({
-    required this.code,
-    required this.rack,
-    required this.etage,
-    required this.article,
-    required this.quantite,
-    required this.dlc,
-    required this.dlv,
-  });
-
-  final String code;
-  final String rack;
-  final int etage;
-  final String article;
-  final int quantite;
-  final String dlc;
-  final String dlv;
 }

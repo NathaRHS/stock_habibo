@@ -12,11 +12,13 @@ class EcranListeJournaux extends StatefulWidget {
     required this.baseUrl,
     required this.accessToken,
     required this.role,
+    required this.userId,
   });
 
   final String baseUrl;
   final String accessToken;
   final String role;
+  final int userId;
 
   @override
   State<EcranListeJournaux> createState() => _EcranListeJournauxState();
@@ -41,7 +43,7 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
 
     try {
       final uri = Uri.parse('${widget.baseUrl}/journaux-mouvements');
-      final   response = await http.get(
+      final response = await http.get(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -70,7 +72,7 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
 
       final journauxFiltrees = journaux.where((journal) {
         final type = journal.typeMouvementJournal;
-        if (widget.role.trim().toLowerCase() == 
+        if (widget.role.trim().toLowerCase() ==
             "INVENTORISTE".trim().toLowerCase()) {
           return type == "INVENTAIRE";
         }
@@ -183,6 +185,7 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
                         journalId: journal.id,
                         baseUrl: widget.baseUrl,
                         accessToken: widget.accessToken,
+                        userId: widget.userId,
                       );
                     } else {
                       prochainePage = EcranScanSession(

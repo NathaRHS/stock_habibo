@@ -1,7 +1,11 @@
 package com.example.demo.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+
+import com.example.demo.dto.*;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -9,14 +13,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.LignePickingCreateRequest;
-import com.example.demo.dto.LignePickingResponse;
-import com.example.demo.dto.ScanLigneRequest;
-import com.example.demo.dto.ScanLigneResponse;
 import com.example.demo.entity.ArticleConditionnement;
 import com.example.demo.entity.Commande;
 import com.example.demo.entity.DetailJournal;
 import com.example.demo.entity.Emplacement;
+import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.LignePicking;
 import com.example.demo.entity.Picking;
 import com.example.demo.entity.Prelevement;
@@ -27,6 +28,7 @@ import com.example.demo.repository.ArticleConditionnementRepository;
 import com.example.demo.repository.CommandeRepository;
 import com.example.demo.repository.DetailJournalRepository;
 import com.example.demo.repository.EmplacementRepository;
+import com.example.demo.repository.JournalMouvementRepository;
 import com.example.demo.repository.LignePickingRepository;
 import com.example.demo.repository.MouvementStockRepository;
 import com.example.demo.repository.PickingRepository;
@@ -46,11 +48,13 @@ public class LignePickingService {
         private final MouvementStockRepository mouvementStockRepository;
         private final StockRepository stockRepository;
         private final StatutPrelevementRepository statutPrelevementRepository;
+        private final JournalMouvementRepository journalMouvementRepository;
         private final PrelevementRepository prelevementRepository;
 
         public LignePickingService(
                         LignePickingRepository lignePickingRepository,
                         PickingRepository pickingRepository,
+                        JournalMouvementRepository journalMouvementRepository,
                         PrelevementRepository prelevementRepository,
                         CommandeRepository commandeRepository,
                         EmplacementRepository emplacementRepository,
@@ -69,6 +73,7 @@ public class LignePickingService {
                 this.stockRepository = stockRepository;
                 this.statutPrelevementRepository = statutPrelevementRepository;
                 this.prelevementRepository = prelevementRepository;
+                this.journalMouvementRepository = journalMouvementRepository;
         }
 
         @Transactional
@@ -299,6 +304,7 @@ public class LignePickingService {
                                 ligneSauvegardee.getStatut());
         }
 
+        @Transactional
         public ScanLigneResponse scan(ScanLigneRequest scanLigneRequest) {
                 if (scanLigneRequest == null) {
                         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "la requete est vide");
@@ -321,7 +327,7 @@ public class LignePickingService {
                                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                                                 "conditionnement introuvable !"));
 
-                if (lignePicking.getArticleConditionnement().getId() != articleConditionnement.getId()) {
+                if (!lignePicking.getArticleConditionnement().getId().equals(articleConditionnement.getId())) {
                         throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                                         "l'article conditionnement n'appartient pas à la ligne -> "
                                                         + lignePicking.getId());
@@ -333,7 +339,7 @@ public class LignePickingService {
                                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                                                 "le detail journal contenant cette article n'existe pas"));
 
-                if (detailJournal.getId() != lignePicking.getId()) {
+                if (!detailJournal.getId().equals(lignePicking.getDetailJournalSource().getId())) {
                         throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                                         "le detail journal n'est pas dans la ligne");
                 }
@@ -342,10 +348,12 @@ public class LignePickingService {
                                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                                                 "statut confirmé introuvable"));
 
-                // Prelevement prelevement = new Prelevement(lignePicking.getCommande(), lignePicking,
-                //                 lignePicking.getEmplacement(), statutPrelevement,
-                //                 scanLigneRequest.quantiteConditionnement(), lignePicking.getPicking().getUser(),
-                //                 LocalDateTime.now(), scanLigneRequest.dlc(), scanLigneRequest.dlv());
+                // Prelevement prelevement = new Prelevement(lignePicking.getCommande(),
+                // lignePicking,
+                // lignePicking.getEmplacement(), statutPrelevement,
+                // scanLigneRequest.quantiteConditionnement(),
+                // lignePicking.getPicking().getUser(),
+                // LocalDateTime.now(), scanLigneRequest.dlc(), scanLigneRequest.dlv());
 
                 int quantitePiecesScannee = Math.multiplyExact(
                                 scanLigneRequest.quantiteConditionnement(),
@@ -404,6 +412,57 @@ public class LignePickingService {
                                 quantitePiecesPreleveesApres / quantitePieceStandard,
                                 quantitePiecesRestante / quantitePieceStandard,
                                 ligneTerminee);
+
+        }
+
+        @Transactional
+        public List<LignePickingResponse> getPickingResponses(Long idJournal) {
+                JournalMouvement journal = journalMouvementRepository.findById(idJournal)
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                                "le journal n'a pas été trouvé"));
+                if (!journal.getTypeMouvementJournal().getNomTypeMouvement().equals("SORTIE")) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                        "Le journal n'est pas de type sortie");
+
+                }
+
+                List<StatutPicking> statutsActifs = List.of(
+                                StatutPicking.GENERE,
+                                StatutPicking.EN_COURS);
+
+                Picking pickingCorrespondant = pickingRepository
+                                .findFirstByJournalMouvementIdAndStatutInOrderByIdDesc(idJournal, statutsActifs)
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                                "picking introuvable"));
+
+                if (pickingCorrespondant.getLignes().isEmpty()) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                        "La ligne de details picking est vide veuillez regenerer");
+
+                }
+                List<LignePickingResponse> lignePickingResponses = new ArrayList<>();
+                for (LignePicking ligne : pickingCorrespondant.getLignes()) {
+                        lignePickingResponses.add(
+                                        new LignePickingResponse(
+                                                        ligne.getId(),
+                                                        ligne.getPicking().getId(),
+                                                        ligne.getCommande().getId(),
+                                                        ligne.getCommande().getArticle().getNomArticle(),
+                                                        ligne.getEmplacement().getId(),
+                                                        ligne.getEmplacement().getNomEmplacement(),
+                                                        ligne.getDetailJournalSource().getDlc(),
+                                                        ligne.getDetailJournalSource().getDlv(),
+                                                        ligne.getArticleConditionnement().getId(),
+                                                        ligne.getOrdrePassage(),
+                                                        ligne.getQuantiteConditionnementsAPrelever(),
+                                                        ligne.getQuantitePiecesAPrelever(),
+                                                        ligne.getStatut()));
+                }
+
+                lignePickingResponses.sort(
+                                Comparator.comparing(LignePickingResponse::ordrePassage));
+
+                return lignePickingResponses;
 
         }
 }

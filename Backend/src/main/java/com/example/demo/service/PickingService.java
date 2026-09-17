@@ -255,4 +255,6 @@ public class PickingService {
                 picking.getStatut(),
                 picking.getLignes().size());
     }
+
+        
 }

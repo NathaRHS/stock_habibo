@@ -62,6 +62,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/journaux-mouvements/*/scans")
                         .authenticated()
 
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/lignes-picking/generer-meilleur-parcours",
+                                "/lignes-picking/scan")
+                        .hasAnyRole("OPERATEUR", "ADMIN")
+
                         .requestMatchers(HttpMethod.POST, "/**")
                         .hasRole("ADMIN")
 

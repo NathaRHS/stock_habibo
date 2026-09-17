@@ -25,6 +25,7 @@ import Inventaire from "./pages/Inventaire";
 import ListeInventaire from "./pages/ListeInventaire";
 import Recapitulatif from "./pages/Recapitulatif";
 import CreateCommande from "./pages/CreateCommande";
+import AffectationSortie from "./pages/AffectationSortie";
 // import AffectationStock from "./pages/AffectationStock";
 
 createRoot(document.getElementById("root")).render(
@@ -54,6 +55,8 @@ createRoot(document.getElementById("root")).render(
         <Route path="/inventaires" element={<ListeInventaire />} />
         <Route path="/recapitulatif/:id" element={<Recapitulatif />} />
         <Route path="/createListeArticle/:id" element={<CreateCommande />} />
+        <Route path="/sortie/:id" element={<AffectationSortie />} />
+
         
 
         <Route
