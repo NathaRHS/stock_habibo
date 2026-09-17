@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/screens/ecran_login.dart';
-import 'package:flutter_application/screens/ecran_scan_sortie_maquette.dart';
 
 const apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
@@ -25,7 +24,6 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const EcranLogin(baseUrl: apiBaseUrl),
-      // home: const EcranScanSortieMaquette()
     );
   }
 }

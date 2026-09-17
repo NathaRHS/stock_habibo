@@ -166,7 +166,6 @@ function Inventaire() {
               </Link>
               {inventaire.statut !== "VALIDE" && (
                 <button onClick={() => changerStatut("valider")}>
-                  <span className="material-symbols-outlined">check</span>
                   Valider l’inventaire
                 </button>
               )}

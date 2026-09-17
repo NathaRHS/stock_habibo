@@ -23,6 +23,17 @@ public class Rack {
     @OneToMany(mappedBy = "rack")
     private List<Emplacement> emplacements = new ArrayList<>();
 
+    @Column (name = "ordre")
+    Integer ordre;
+
+    public Integer getOrdre() {
+        return ordre;
+    }
+
+    public void setOrdre(Integer ordre) {
+        this.ordre = ordre;
+    }
+
     public Rack() {
     }
 

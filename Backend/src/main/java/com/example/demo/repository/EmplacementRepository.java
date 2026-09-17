@@ -15,5 +15,15 @@ public interface EmplacementRepository extends JpaRepository<Emplacement, Long> 
     @Query("SELECT MAX(e.numeroEtage) FROM Emplacement e WHERE e.rack.id = :rackId")
     Integer findNumeroEtageMaximumByRackId(@Param("rackId") Long rackId);
 
+    @Query("""
+            SELECT MAX(e.ordreDansEtage)
+            FROM Emplacement e
+            WHERE e.rack.id = :rackId
+              AND e.numeroEtage = :numeroEtage
+            """)
+    Integer findOrdreMaximumDansEtage(
+            @Param("rackId") Long rackId,
+            @Param("numeroEtage") Integer numeroEtage);
+
     // Emplacement calculStock(Long emplacementId);
 }

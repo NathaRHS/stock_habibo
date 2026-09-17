@@ -215,7 +215,7 @@ public class JournalMouvementService {
         return versResponse(journalRepository.save(journal));
     }
 
-    // changer le statut en "validé"
+    // changer lxe statut en "validé"
     public JournalMouvementResponse valider(Long journalId) {
         JournalMouvement journal = trouverJournal(journalId);
         verifierStatutActuel(journal, STATUT_EN_ATTENTE);
@@ -330,29 +330,12 @@ public class JournalMouvementService {
                     "La quantité de conditionnement nécessite un code-barres de conditionnement");
         }
 
-        if (articleConditionnement == null) {
-            articleConditionnement = articleConditionnementRepository
-                    .findFirstByArticleIdOrderByIdAsc(article.getId())
-                    .orElseThrow(() -> new ResponseStatusException(
-                            HttpStatus.BAD_REQUEST,
-                            "Aucun conditionnement n'est configure pour cet article"));
-        }
+        articleConditionnement = resoudreConditionnementStandard(articleConditionnement, article);
+        int quantitePieceStandard = articleConditionnement.getQuantitePieceStandard();
 
-        Integer quantitePieceStandard = articleConditionnement.getQuantitePieceStandard();
-        if (quantitePieceStandard == null || quantitePieceStandard <= 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "La quantite standard du conditionnement est invalide");
-        }
-
-        int quantiteReelle;
-        try {
-            quantiteReelle = quantiteConditionnementRenseignee
-                    ? Math.multiplyExact(request.quantiteConditionnement(), quantitePieceStandard)
-                    : request.quantite();
-        } catch (ArithmeticException exception) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La quantité calculée est trop grande");
-        }
+        int quantiteReelle = quantiteConditionnementRenseignee
+                ? convertirEnQuantitePiece(request.quantiteConditionnement(), quantitePieceStandard)
+                : request.quantite();
 
         userJournalMouvementService.ajouterParticipant(journalId, matricule);
 
@@ -430,30 +413,19 @@ public class JournalMouvementService {
         }
 
         // Le conditionnement standard permet de convertir le comptage en pieces.
-        ArticleConditionnement conditionnementStandard = conditionnementScanne;
-        if (conditionnementStandard == null) {
-            conditionnementStandard = articleConditionnementRepository
-                    .findFirstByArticleIdOrderByIdAsc(article.getId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            "Aucun conditionnement n'est configure pour cet article"));
-        }
+        ArticleConditionnement conditionnementStandard = resoudreConditionnementStandard(conditionnementScanne,
+                article);
+        int quantitePieceStandard = conditionnementStandard.getQuantitePieceStandard();
 
-        Integer quantitePieceStandard = conditionnementStandard.getQuantitePieceStandard();
-        if (quantitePieceStandard == null || quantitePieceStandard <= 0) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "La quantite standard du conditionnement est invalide");
-        }
-
-        int quantiteReelle;
+        int quantiteSaisie;
         try {
-            int quantiteSaisie = Math.toIntExact(request.quantite());
-            quantiteReelle = conditionnementScanne == null
-                    ? quantiteSaisie
-                    : Math.multiplyExact(quantiteSaisie, quantitePieceStandard);
+            quantiteSaisie = Math.toIntExact(request.quantite());
         } catch (ArithmeticException exception) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "La quantite saisie est trop grande");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La quantite saisie est trop grande");
         }
+        int quantiteReelle = conditionnementScanne == null
+                ? quantiteSaisie
+                : convertirEnQuantitePiece(quantiteSaisie, quantitePieceStandard);
 
         userJournalMouvementService.ajouterParticipant(journalId, matricule);
 
@@ -487,6 +459,36 @@ public class JournalMouvementService {
                         "Le comptage d'inventaire n'a pas pu etre recupere"));
 
         return versComptageInventaireResponse(comptage);
+    }
+
+    // Résout le conditionnement standard d'un article (celui scanné, sinon le premier configuré)
+    // et vérifie que sa quantité par pièce est valide.
+    private ArticleConditionnement resoudreConditionnementStandard(
+            ArticleConditionnement conditionnementScanne, Article article) {
+        ArticleConditionnement conditionnement = conditionnementScanne;
+        if (conditionnement == null) {
+            conditionnement = articleConditionnementRepository
+                    .findFirstByArticleIdOrderByIdAsc(article.getId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "Aucun conditionnement n'est configure pour cet article"));
+        }
+        Integer quantitePieceStandard = conditionnement.getQuantitePieceStandard();
+        if (quantitePieceStandard == null || quantitePieceStandard <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "La quantite standard du conditionnement est invalide");
+        }
+        return conditionnement;
+    }
+
+    // Convertit une quantité de conditionnements en quantité de pièces, en détectant le dépassement.
+    private int convertirEnQuantitePiece(int quantiteConditionnements, int quantitePieceStandard) {
+        try {
+            return Math.multiplyExact(quantiteConditionnements, quantitePieceStandard);
+        } catch (ArithmeticException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La quantité calculée est trop grande");
+        }
     }
 
     private ComptageInventaireResponse versComptageInventaireResponse(ComptageInventaire comptage) {

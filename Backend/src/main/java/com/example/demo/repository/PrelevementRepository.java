@@ -16,6 +16,8 @@ public interface PrelevementRepository extends JpaRepository<Prelevement, Long> 
 
     boolean existsByStatutPrelevementId(Long statutPrelevementId);
 
+    boolean existsByLignePickingId(Long lignePickingId);
+
     @Modifying
     @Query(value = """
             INSERT INTO t_prelevement (
@@ -47,5 +49,7 @@ public interface PrelevementRepository extends JpaRepository<Prelevement, Long> 
             @Param("userId") Long userId, @Param("dlc") LocalDate dlc, @Param("dlv") LocalDate dlv);
 
     List<Prelevement> findAllByCommandeId(Long id);
+
+    List<Prelevement> findAllByLignePickingId(Long id);
 
 }

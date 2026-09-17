@@ -63,8 +63,14 @@ class _EcranLoginState extends State<EcranLogin> {
       final token = donnees['token'] as String?;
       final utilisateur = donnees['user'] as Map<String, dynamic>?;
       final role = utilisateur?['role'] as String;
+      final userId = (utilisateur?['id'] as num?)?.toInt();
       if (token == null || token.isEmpty) {
         throw const FormatException("Le serveur n'a pas renvoyé de token.");
+      }
+      if (userId == null) {
+        throw const FormatException(
+          "Le serveur n'a pas renvoyé l'utilisateur.",
+        );
       }
 
       if (!mounted) return;
@@ -75,6 +81,7 @@ class _EcranLoginState extends State<EcranLogin> {
             baseUrl: widget.baseUrl,
             accessToken: token,
             role: role,
+            userId: userId,
           ),
         ),
       );

@@ -3,7 +3,7 @@ package com.example.demo.dto;
 import java.time.LocalDate;
 
 public record DetailJournalResponse(
-        Long id,
+         Long id,
         Long articleId,
         String nomArticle,
         Integer quantite,

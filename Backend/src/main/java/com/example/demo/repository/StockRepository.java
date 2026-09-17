@@ -34,25 +34,38 @@ public interface StockRepository extends Repository<Article, Long> {
         List<StockParEmplacementProjection> findStocksParEmplacementByArticleId(@Param("articleId") Long articleId);
 
         @Query(value = """
-                                   SELECT
-                            vs.article_id AS articleId,
-                            vs.emplacement_id AS emplacementId,
-                            vs.quantite_stock AS quantiteStock,
-                            detail.dlc,
-                            mouvement.date_mouvement
-                        FROM v_stock_par_emplacement vs
-                        JOIN t_mouvement_stock mouvement
-                            ON mouvement.emplacement_id = vs.emplacement_id
+                        SELECT
+                            conditionnement.article_id AS articleId,
+                            mouvement.emplacement_id AS emplacementId,
+                            SUM(mouvement.quantite_pieces_reelle * type_mouvement.sens)
+                                AS quantiteStock,
+                            detail.dlc AS dlc,
+                            detail.dlv AS dlv,
+                            MIN(mouvement.date_mouvement) AS dateMouvement
+                        FROM t_mouvement_stock mouvement
+                        JOIN t_article_conditionnement conditionnement
+                            ON conditionnement.id = mouvement.conditionnement_id
+                        JOIN t_type_mouvement type_mouvement
+                            ON type_mouvement.id = mouvement.type_mouvement_id
                         JOIN t_detail_journal detail
                             ON detail.id = mouvement.detail_journal_id
-                            AND detail.article_id = vs.article_id
-                        WHERE vs.article_id = :articleId
-                          AND detail.dlc IS NOT NULL
+                        WHERE conditionnement.article_id = :articleId
+                          AND mouvement.en_reserve = FALSE
+                          AND mouvement.emplacement_id IS NOT NULL
+                        GROUP BY
+                            detail.id,
+                            conditionnement.article_id,
+                            mouvement.emplacement_id,
+                            detail.dlc,
+                            detail.dlv
+                        HAVING SUM(mouvement.quantite_pieces_reelle * type_mouvement.sens) > 0
                         ORDER BY
+                            detail.dlc IS NULL,
                             detail.dlc ASC,
-                            mouvement.date_mouvement ASC,
-                            vs.emplacement_id ASC
-                                    """, nativeQuery = true)
+                            detail.dlv ASC,
+                            MIN(mouvement.date_mouvement) ASC,
+                            mouvement.emplacement_id ASC
+                        """, nativeQuery = true)
         List<StockProjection> findBestArticle(@Param("articleId") Long articleId);
 
         /*

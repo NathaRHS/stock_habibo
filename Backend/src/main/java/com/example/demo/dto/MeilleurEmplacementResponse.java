@@ -11,5 +11,8 @@ public record MeilleurEmplacementResponse(
         Long commandeId,
         Integer quantiteDisponible,
         Integer quantiteAPrelever,
-        LocalDate dlc) {
+        LocalDate dlc,
+        LocalDate dlv,
+        Integer ordre,
+        Integer ordreEmplacement) {
 }

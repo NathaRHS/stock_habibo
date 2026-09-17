@@ -34,13 +34,13 @@ public class CommandeController {
         return commandeService.InsertAllCommande(commandes, idJournal);
     }
 
-    @GetMapping("/proposerEmplacement/{id}")
-    public List<MeilleurEmplacementResponse> proposerEmplacement(@PathVariable Long idCommande) {
+    @GetMapping("/proposerEmplacement/{idCommande}")
+    public List<MeilleurEmplacementResponse> proposerEmplacement(
+            @PathVariable Long idCommande) {
         return commandeService.proposerEmplacement(idCommande);
-
     }
 
-    @PostMapping ("/savePrelevement")
+    @PostMapping("/savePrelevement")
     public PrelevementResponse savePrelevement(@RequestBody AjoutCommandeRequest ajoutCommandeRequest) {
         return commandeService.UpdateCommandeAndDetailJournal(ajoutCommandeRequest);
 

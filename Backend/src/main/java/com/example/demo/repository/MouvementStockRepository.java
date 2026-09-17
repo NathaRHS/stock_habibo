@@ -15,6 +15,10 @@ public interface MouvementStockRepository extends JpaRepository<MouvementStock, 
 
     boolean existsByDetailJournalId(Long detailJournalId);
 
+    boolean existsByDetailJournalIdAndEmplacementId(
+            Long detailJournalId,
+            Long emplacementId);
+
     @Query(value = """
             SELECT COUNT(*)
             FROM (
