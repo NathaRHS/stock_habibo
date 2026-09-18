@@ -11,7 +11,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.service.*;
-import com.example.demo.dto.*;
+import com.example.demo.dto.commande.AjoutCommandeRequest;
+import com.example.demo.dto.commande.CommandeCreateRequest;
+import com.example.demo.dto.commande.CommandeResponseAll;
+import com.example.demo.dto.picking.MeilleurEmplacementResponse;
+import com.example.demo.dto.stock.PrelevementResponse;
 
 @RestController
 @RequestMapping("/commande")

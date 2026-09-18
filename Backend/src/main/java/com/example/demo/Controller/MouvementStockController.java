@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import com.example.demo.dto.CreerMouvementsStockRequest;
-import com.example.demo.dto.MouvementStockResponse;
+import com.example.demo.dto.stock.CreerMouvementsStockRequest;
+import com.example.demo.dto.stock.MouvementStockResponse;
 import com.example.demo.service.MouvementStockService;
 
 @RestController
@@ -46,6 +46,11 @@ public class MouvementStockController {
 
         String matricule = jwt.getSubject();
         return mouvementStockService.creerEntreeStock(journalId, request, matricule);
+    }
+
+    @PostMapping ("/validerSortie/{journalId}")
+    public List<MouvementStockResponse> validerSortie(@PathVariable  Long journalId){
+        return mouvementStockService.validerSortie(journalId);
     }
 
 }

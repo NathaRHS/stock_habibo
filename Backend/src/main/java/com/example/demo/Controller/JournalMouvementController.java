@@ -14,13 +14,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.DetailJournalResponse;
-import com.example.demo.dto.ComptageInventaireResponse;
-import com.example.demo.dto.JournalMouvementRequest;
-import com.example.demo.dto.JournalMouvementResponse;
-import com.example.demo.dto.ScanArticleRequest;
-import com.example.demo.dto.ScanInventaireRequest;
-import com.example.demo.dto.UpdateStatutJournalRequest;
+import com.example.demo.dto.journal.DetailJournalResponse;
+import com.example.demo.dto.inventaire.ComptageInventaireResponse;
+import com.example.demo.dto.journal.JournalMouvementRequest;
+import com.example.demo.dto.journal.JournalMouvementResponse;
+import com.example.demo.dto.journal.ScanArticleRequest;
+import com.example.demo.dto.inventaire.ScanInventaireRequest;
+import com.example.demo.dto.journal.UpdateStatutJournalRequest;
 import com.example.demo.service.JournalMouvementService;
 import org.springframework.security.oauth2.jwt.Jwt;
 

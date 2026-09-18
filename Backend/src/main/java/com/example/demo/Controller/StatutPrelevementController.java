@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.StatutPrelevementRequest;
-import com.example.demo.dto.StatutPrelevementResponse;
+import com.example.demo.dto.stock.StatutPrelevementRequest;
+import com.example.demo.dto.stock.StatutPrelevementResponse;
 import com.example.demo.service.StatutPrelevementService;
 
 @RestController

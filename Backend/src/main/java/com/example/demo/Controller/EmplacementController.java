@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.EmplacementRequest;
-import com.example.demo.dto.EmplacementResponse;
+import com.example.demo.dto.emplacement.EmplacementRequest;
+import com.example.demo.dto.emplacement.EmplacementResponse;
 import com.example.demo.service.EmplacementService;
 
 @RestController

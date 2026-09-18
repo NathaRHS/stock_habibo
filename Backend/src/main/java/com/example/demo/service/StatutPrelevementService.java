@@ -6,8 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.StatutPrelevementRequest;
-import com.example.demo.dto.StatutPrelevementResponse;
+import com.example.demo.dto.stock.StatutPrelevementRequest;
+import com.example.demo.dto.stock.StatutPrelevementResponse;
 import com.example.demo.entity.StatutPrelevement;
 import com.example.demo.repository.PrelevementRepository;
 import com.example.demo.repository.StatutPrelevementRepository;

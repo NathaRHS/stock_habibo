@@ -9,9 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.PickingCreateRequest;
-import com.example.demo.dto.PickingResponse;
-import com.example.demo.dto.PickingUpdateRequest;
+import com.example.demo.dto.picking.PickingCreateRequest;
+import com.example.demo.dto.picking.PickingResponse;
+import com.example.demo.dto.picking.PickingUpdateRequest;
 import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.LignePicking;
 import com.example.demo.entity.Picking;

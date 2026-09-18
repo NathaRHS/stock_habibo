@@ -6,8 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.TypeMouvementJournalRequest;
-import com.example.demo.dto.TypeMouvementJournalResponse;
+import com.example.demo.dto.journal.TypeMouvementJournalRequest;
+import com.example.demo.dto.journal.TypeMouvementJournalResponse;
 import com.example.demo.entity.TypeMouvementJournal;
 import com.example.demo.repository.JournalMouvementRepository;
 import com.example.demo.repository.TypeMouvementJournalRepository;

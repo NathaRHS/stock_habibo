@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.ArticleConditionnementResponse;
-import com.example.demo.dto.CreateArticleConditionnementRequest;
+import com.example.demo.dto.article.ArticleConditionnementResponse;
+import com.example.demo.dto.article.CreateArticleConditionnementRequest;
 import com.example.demo.service.ArticleConditionnementService;
 
 @RestController

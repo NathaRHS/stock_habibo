@@ -11,11 +11,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.LignePickingCreateRequest;
-import com.example.demo.dto.LignePickingResponse;
-import com.example.demo.dto.PickingCreateRequest;
-import com.example.demo.dto.ScanLigneRequest;
-import com.example.demo.dto.ScanLigneResponse;
+import com.example.demo.dto.picking.LignePickingCreateRequest;
+import com.example.demo.dto.picking.LignePickingResponse;
+import com.example.demo.dto.picking.PickingCreateRequest;
+import com.example.demo.dto.picking.ScanLigneRequest;
+import com.example.demo.dto.picking.ScanLigneResponse;
 import com.example.demo.service.CommandeService;
 import com.example.demo.service.LignePickingService;
 

@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.CreateUserRequest;
-import com.example.demo.dto.LoginRequest;
-import com.example.demo.dto.LoginResponse;
-import com.example.demo.dto.UserResponse;
+import com.example.demo.dto.utilisateur.CreateUserRequest;
+import com.example.demo.dto.utilisateur.LoginRequest;
+import com.example.demo.dto.utilisateur.LoginResponse;
+import com.example.demo.dto.utilisateur.UserResponse;
 import com.example.demo.service.UserService;
 
 @RestController

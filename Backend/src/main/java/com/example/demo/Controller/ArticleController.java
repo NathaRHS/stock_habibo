@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.ArticleResponse;
-import com.example.demo.dto.CreateArticleRequest;
+import com.example.demo.dto.article.ArticleResponse;
+import com.example.demo.dto.article.CreateArticleRequest;
 import com.example.demo.service.ArticleService;
 
 @RestController

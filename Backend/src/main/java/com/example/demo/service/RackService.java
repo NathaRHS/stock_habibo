@@ -8,8 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.RackRequest;
-import com.example.demo.dto.RackResponse;
+import com.example.demo.dto.emplacement.RackRequest;
+import com.example.demo.dto.emplacement.RackResponse;
 import com.example.demo.entity.Rack;
 import com.example.demo.repository.RackRepository;
 import com.example.demo.repository.EmplacementRepository;

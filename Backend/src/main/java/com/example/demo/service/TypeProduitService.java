@@ -6,8 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.CreateTypeProduitRequest;
-import com.example.demo.dto.TypeProduitResponse;
+import com.example.demo.dto.article.CreateTypeProduitRequest;
+import com.example.demo.dto.article.TypeProduitResponse;
 import com.example.demo.entity.TypeProduit;
 import com.example.demo.repository.ArticleRepository;
 import com.example.demo.repository.TypeProduitRepository;

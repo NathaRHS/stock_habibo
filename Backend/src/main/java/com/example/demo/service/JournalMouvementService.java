@@ -8,12 +8,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.DetailJournalResponse;
-import com.example.demo.dto.ComptageInventaireResponse;
-import com.example.demo.dto.JournalMouvementRequest;
-import com.example.demo.dto.JournalMouvementResponse;
-import com.example.demo.dto.ScanArticleRequest;
-import com.example.demo.dto.ScanInventaireRequest;
+import com.example.demo.dto.journal.DetailJournalResponse;
+import com.example.demo.dto.inventaire.ComptageInventaireResponse;
+import com.example.demo.dto.journal.JournalMouvementRequest;
+import com.example.demo.dto.journal.JournalMouvementResponse;
+import com.example.demo.dto.journal.ScanArticleRequest;
+import com.example.demo.dto.inventaire.ScanInventaireRequest;
 import com.example.demo.entity.Article;
 import com.example.demo.entity.ArticleConditionnement;
 import com.example.demo.entity.ComptageInventaire;

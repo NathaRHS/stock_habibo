@@ -6,8 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.FournisseurRequest;
-import com.example.demo.dto.FournisseurResponse;
+import com.example.demo.dto.fournisseur.FournisseurRequest;
+import com.example.demo.dto.fournisseur.FournisseurResponse;
 import com.example.demo.entity.Societe;
 import com.example.demo.repository.SocieteRepository;
 import com.example.demo.repository.JournalMouvementRepository;

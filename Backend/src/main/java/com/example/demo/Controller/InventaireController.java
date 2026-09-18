@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.ControleInventaireResponse;
+import com.example.demo.dto.inventaire.ControleInventaireResponse;
 import com.example.demo.service.InventaireService;
 import com.example.demo.service.RapportInventaireService;
 

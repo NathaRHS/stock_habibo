@@ -7,8 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.ControleInventaireResponse;
-import com.example.demo.dto.LigneControleInventaireResponse;
+import com.example.demo.dto.inventaire.ControleInventaireResponse;
+import com.example.demo.dto.inventaire.LigneControleInventaireResponse;
 import com.example.demo.entity.Article;
 import com.example.demo.entity.ComptageInventaire;
 import com.example.demo.entity.DetailJournal;
@@ -17,7 +17,6 @@ import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.Rack;
 import com.example.demo.entity.UserJournalMouvement;
 import com.example.demo.repository.ComptageInventaireRepository;
-import com.example.demo.repository.EmplacementRepository;
 import com.example.demo.repository.JournalMouvementRepository;
 import com.example.demo.repository.StockRepository;
 import com.example.demo.repository.UserJournalMouvementRepository;

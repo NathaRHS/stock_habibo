@@ -6,8 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.ArticleConditionnementResponse;
-import com.example.demo.dto.CreateArticleConditionnementRequest;
+import com.example.demo.dto.article.ArticleConditionnementResponse;
+import com.example.demo.dto.article.CreateArticleConditionnementRequest;
 import com.example.demo.entity.Article;
 import com.example.demo.entity.ArticleConditionnement;
 import com.example.demo.entity.TypeConditionnement;

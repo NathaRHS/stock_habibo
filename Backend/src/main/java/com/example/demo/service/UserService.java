@@ -6,10 +6,10 @@ import java.util.List;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import com.example.demo.dto.CreateUserRequest;
-import com.example.demo.dto.LoginRequest;
-import com.example.demo.dto.LoginResponse;
-import com.example.demo.dto.UserResponse;
+import com.example.demo.dto.utilisateur.CreateUserRequest;
+import com.example.demo.dto.utilisateur.LoginRequest;
+import com.example.demo.dto.utilisateur.LoginResponse;
+import com.example.demo.dto.utilisateur.UserResponse;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
 

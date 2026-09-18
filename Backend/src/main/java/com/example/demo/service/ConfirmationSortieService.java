@@ -8,11 +8,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.ConfirmationSortieResponse;
-import com.example.demo.dto.DetailPrelevementResponse;
-import com.example.demo.dto.JournalSortieResponse;
-import com.example.demo.dto.LigneConfirmationResponse;
-import com.example.demo.dto.OperateurSortieResponse;
+import com.example.demo.dto.sortie.ConfirmationSortieResponse;
+import com.example.demo.dto.sortie.DetailPrelevementResponse;
+import com.example.demo.dto.sortie.JournalSortieResponse;
+import com.example.demo.dto.sortie.LigneConfirmationResponse;
+import com.example.demo.dto.sortie.OperateurSortieResponse;
 import com.example.demo.entity.Commande;
 import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.Picking;
