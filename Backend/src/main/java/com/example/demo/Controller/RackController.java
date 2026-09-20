@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.RackRequest;
-import com.example.demo.dto.RackResponse;
+import com.example.demo.dto.emplacement.RackRequest;
+import com.example.demo.dto.emplacement.RackResponse;
 import com.example.demo.service.RackService;
 
 @RestController

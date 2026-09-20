@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   chargerDonneesAffectation,
+  chargerSuggestionEmplacements,
   creerEntreeStock,
 } from "../services/affectationStockService";
 import Button from "../components/Button";
@@ -23,6 +24,9 @@ function AffectationStockMine() {
   const [mouvementsCrees, setMouvementsCrees] = useState([]);
   const [affectationTemporaireAll, setAffectationTemporaireAll] = useState([]);
   const [articleSelectionne, setArticleSelectionne] = useState(null);
+  const [suggestionProduit, setSuggestionProduit] = useState(null);
+  const [suggestionAConfirmer, setSuggestionAConfirmer] = useState(null);
+  const [chargementSuggestion, setChargementSuggestion] = useState(false);
   const [rackSelectionne, setRackSelectionne] = useState(null);
   const [pageEmplacements, setPageEmplacements] = useState(1);
   const EMPLACEMENTS_PAR_PAGE = 6;
@@ -178,6 +182,93 @@ function AffectationStockMine() {
     );
   };
 
+  const demanderSuggestion = async () => {
+    if (!articleSelectionne) return;
+
+    try {
+      setError("");
+      setChargementSuggestion(true);
+
+      const affectationsDesAutresArticles = affectationTemporaireAll.filter(
+        (affectation) => affectation.detailJournalId !== articleSelectionne.id,
+      );
+      const reponse = await chargerSuggestionEmplacements(
+        springUrl,
+        articleSelectionne.id,
+        affectationsDesAutresArticles,
+      );
+
+      setSuggestionProduit(reponse);
+      setSuggestionAConfirmer(reponse);
+
+      const premiereSuggestion = reponse.suggestions?.[0];
+      if (!premiereSuggestion) {
+        setEmplacementSelectionne(null);
+        return;
+      }
+
+      const rackPropose = racks.find(
+        (rack) => rack.id === premiereSuggestion.rackId,
+      );
+      const emplacementPropose = emplacements.find(
+        (emplacement) => emplacement.id === premiereSuggestion.emplacementId,
+      );
+
+      if (rackPropose) setRackSelectionne(rackPropose);
+      if (!emplacementPropose) return;
+
+      setEmplacementSelectionne(emplacementPropose);
+
+      const emplacementsDuNiveau = emplacements
+        .filter(
+          (emplacement) =>
+            emplacement.rackId === premiereSuggestion.rackId &&
+            emplacement.numeroEtage === premiereSuggestion.numeroEtage,
+        )
+        .sort(
+          (premier, second) =>
+            (premier.ordreDansEtage ?? 0) - (second.ordreDansEtage ?? 0),
+        );
+
+      const indexEmplacement = emplacementsDuNiveau.findIndex(
+        (emplacement) => emplacement.id === premiereSuggestion.emplacementId,
+      );
+
+      setPageEmplacements(
+        indexEmplacement >= 0
+          ? Math.floor(indexEmplacement / EMPLACEMENTS_PAR_PAGE) + 1
+          : 1,
+      );
+    } catch (erreur) {
+      setError(erreur.message || "Impossible de charger la suggestion");
+    } finally {
+      setChargementSuggestion(false);
+    }
+  };
+
+  const annulerSuggestion = () => {
+    setSuggestionProduit(null);
+    setSuggestionAConfirmer(null);
+  };
+
+  const confirmerSuggestion = () => {
+    if (!articleSelectionne || !suggestionAConfirmer) return;
+
+    setAffectationTemporaireAll((anciennesAffectations) => [
+      ...anciennesAffectations.filter(
+        (affectation) => affectation.detailJournalId !== articleSelectionne.id,
+      ),
+      ...(suggestionAConfirmer.suggestions ?? []).map((suggestion) => ({
+        idTemporaire: crypto.randomUUID(),
+        detailJournalId: articleSelectionne.id,
+        emplacementId: suggestion.emplacementId,
+        nombreConditionnements: suggestion.quantiteConditionnementsProposee,
+      })),
+    ]);
+    setSuggestionProduit(null);
+    setSuggestionAConfirmer(null);
+  };
+
   const handleSubmitTemporaire = (event) => {
     event.preventDefault();
     setError("");
@@ -285,6 +376,17 @@ function AffectationStockMine() {
   const informationsEmplacementSelectionne = calculerInformationsEmplacement(
     emplacementSelectionne,
   );
+  const suggestionsArticleSelectionne =
+    suggestionProduit?.detailJournalId === articleSelectionne?.id
+      ? (suggestionProduit?.suggestions ?? [])
+      : [];
+  const suggestionAConfirmerPourArticle =
+    suggestionAConfirmer?.detailJournalId === articleSelectionne?.id
+      ? suggestionAConfirmer
+      : null;
+  const suggestionEmplacementSelectionne = suggestionsArticleSelectionne.find(
+    (suggestion) => suggestion.emplacementId === emplacementSelectionne?.id,
+  );
 
   if (chargement) {
     return (
@@ -371,41 +473,79 @@ function AffectationStockMine() {
                     const conditionnement = conditionnements.find(
                       (element) => element.articleId === detail.articleId,
                     );
+                    const articleEstSelectionne =
+                      articleSelectionne?.id === detail.id;
+                    const insuffisanceSuggestion =
+                      articleEstSelectionne &&
+                      suggestionProduit?.detailJournalId === detail.id &&
+                      suggestionProduit?.quantiteConditionnementsNonAffectee >
+                        0;
+
                     return (
-                      <button
-                        type="button"
+                      <div
                         className={`product-card ${articleSelectionne?.id === detail.id ? "active" : ""}`}
                         key={detail.id}
-                        onClick={() => {
-                          setArticleSelectionne(detail);
-                          setEmplacementSelectionne(null);
-                        }}
                       >
-                        <div className="product-card-header">
-                          <span className="product-tag">
-                            {detail.nomArticle
-                              .split(" ")
-                              .slice(0, 2)
-                              .map((mot) => mot[0])
-                              .join("")
-                              .toUpperCase()}
-                          </span>
-                          <div>
-                            <h3>{detail.nomArticle}</h3>
-                            <p>
-                              {conditionnement?.nomConditionnement ??
-                                "Conditionnement"}
-                              {conditionnement?.quantitePieceStandard
-                                ? ` de ${conditionnement.quantitePieceStandard} pieces`
-                                : ""}
-                            </p>
+                        <button
+                          type="button"
+                          className="product-card-select"
+                          onClick={() => {
+                            setArticleSelectionne(detail);
+                            setEmplacementSelectionne(null);
+                            if (suggestionProduit?.detailJournalId !== detail.id) {
+                              setSuggestionProduit(null);
+                              setSuggestionAConfirmer(null);
+                            }
+                          }}
+                        >
+                          <div className="product-card-header">
+                            <span className="product-tag">
+                              {detail.nomArticle
+                                .split(" ")
+                                .slice(0, 2)
+                                .map((mot) => mot[0])
+                                .join("")
+                                .toUpperCase()}
+                            </span>
+                            <div>
+                              <h3>{detail.nomArticle}</h3>
+                              <p>
+                                {conditionnement?.nomConditionnement ??
+                                  "Conditionnement"}
+                                {conditionnement?.quantitePieceStandard
+                                  ? ` de ${conditionnement.quantitePieceStandard} pieces`
+                                  : ""}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="product-meta">
-                          <span>Reste a placer</span>
-                          <strong>{calculerQuantiteRestante(detail)}</strong>
-                        </div>
-                      </button>
+                          <div className="product-meta">
+                            <span>Reste a placer</span>
+                            <strong>{calculerQuantiteRestante(detail)}</strong>
+                          </div>
+                        </button>
+
+                        {articleEstSelectionne && (
+                          <button
+                            type="button"
+                            className="btn-suggestion"
+                            disabled={chargementSuggestion}
+                            onClick={demanderSuggestion}
+                          >
+                            {chargementSuggestion
+                              ? "Calcul de la suggestion..."
+                              : "Voir la suggestion"}
+                          </button>
+                        )}
+
+                        {insuffisanceSuggestion && (
+                          <p className="suggestion-warning">
+                            {
+                              suggestionProduit.quantiteConditionnementsNonAffectee
+                            }{" "}
+                            conditionnement(s) restent a placer.
+                          </p>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -434,6 +574,9 @@ function AffectationStockMine() {
                   <span className="legend-item">
                     <i className="legend-indicator blocked" /> Incompatible
                   </span>
+                  <span className="legend-item">
+                    <i className="legend-indicator suggested" /> Suggestion
+                  </span>
                 </div>
                 <div className="rack-selector-tabs">
                   {racks.map((rack) => (
@@ -458,7 +601,79 @@ function AffectationStockMine() {
                       Taux d'occupation : <b>{tauxOccupationRack}%</b>
                     </span>
                   </div>
-                   {nombrePages > 1 && (
+                  {suggestionAConfirmerPourArticle && (
+                    <section className="suggestion-popover" role="status">
+                      <div className="suggestion-popover-heading">
+                        <span className="material-symbols-outlined">
+                          auto_awesome
+                        </span>
+                        <div>
+                          <strong>Suggestion prête à appliquer</strong>
+                          <p>
+                            Les cases bleues montrent les emplacements proposés
+                            pour {articleSelectionne?.nomArticle}.
+                          </p>
+                        </div>
+                        <button
+                          aria-label="Fermer la suggestion"
+                          className="suggestion-popover-close"
+                          onClick={annulerSuggestion}
+                          type="button"
+                        >
+                          <span className="material-symbols-outlined">close</span>
+                        </button>
+                      </div>
+                      <div className="suggestion-popover-places">
+                        {(suggestionAConfirmerPourArticle.suggestions ?? []).map(
+                          (suggestion) => (
+                            <button
+                              className="suggestion-place"
+                              key={suggestion.emplacementId}
+                              onClick={() => {
+                                const emplacement = emplacements.find(
+                                  (element) =>
+                                    element.id === suggestion.emplacementId,
+                                );
+                                if (emplacement) setEmplacementSelectionne(emplacement);
+                              }}
+                              type="button"
+                            >
+                              <b>{suggestion.nomEmplacement}</b>
+                              <span>
+                                {suggestion.quantiteConditionnementsProposee} colis
+                              </span>
+                            </button>
+                          ),
+                        )}
+                      </div>
+                      <div className="suggestion-popover-reasons">
+                        <strong>Pourquoi cette proposition ?</strong>
+                        <ul>
+                          {(suggestionAConfirmerPourArticle.suggestions?.[0]
+                            ?.raisons ?? []).map((raison) => (
+                            <li key={raison}>{raison}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <footer className="suggestion-popover-actions">
+                        <button onClick={annulerSuggestion} type="button">
+                          Ignorer
+                        </button>
+                        <button
+                          className="suggestion-confirm-button"
+                          disabled={
+                            !(suggestionAConfirmerPourArticle.suggestions ?? [])
+                              .length
+                          }
+                          onClick={confirmerSuggestion}
+                          type="button"
+                        >
+                          Appliquer la suggestion
+                        </button>
+                      </footer>
+                    </section>
+                  )}
+                  {nombrePages > 1 && (
                     <div className="rack-pagination">
                       <button
                         type="button"
@@ -489,8 +704,9 @@ function AffectationStockMine() {
                           .filter(
                             (emplacement) => emplacement.numeroEtage === niveau,
                           )
-                          .sort((a, b) =>
-                            a.nomEmplacement.localeCompare(b.nomEmplacement),
+                          .sort(
+                            (a, b) =>
+                              (a.ordreDansEtage ?? 0) - (b.ordreDansEtage ?? 0),
                           )
                           .slice(
                             (pageEmplacements - 1) * EMPLACEMENTS_PAR_PAGE,
@@ -502,10 +718,16 @@ function AffectationStockMine() {
                             const presquePlein =
                               informations.tauxOccupation >= 75 &&
                               informations.placeRestante > 0;
+                            const suggestionEmplacement =
+                              suggestionsArticleSelectionne.find(
+                                (suggestion) =>
+                                  suggestion.emplacementId === emplacement.id,
+                              );
                             const classeEtat = [
                               informations.incompatible ? "blocked" : "",
                               informations.memeArticle ? "same" : "",
                               presquePlein ? "almost" : "",
+                              suggestionEmplacement ? "suggested" : "",
                             ]
                               .filter(Boolean)
                               .join(" ");
@@ -523,12 +745,21 @@ function AffectationStockMine() {
                                   <span className="slot-code">
                                     {emplacement.nomEmplacement}
                                   </span>
+                                  {suggestionEmplacement && (
+                                    <span className="suggestion-badge">
+                                      {
+                                        suggestionEmplacement.quantiteConditionnementsProposee
+                                      }
+                                    </span>
+                                  )}
                                 </span>
                                 <span className="slot-desc">
-                                  {informations.articlePresent
-                                    ? informations.conditionnementArticle
-                                        .nomArticle
-                                    : `Libre - ${informations.placeRestante} places`}
+                                  {suggestionEmplacement
+                                    ? `Suggestion : ${suggestionEmplacement.quantiteConditionnementsProposee} colis`
+                                    : informations.articlePresent
+                                      ? informations.conditionnementArticle
+                                          .nomArticle
+                                      : `Libre - ${informations.placeRestante} places`}
                                 </span>
                                 <span className="slot-progress-bar">
                                   <i
@@ -544,7 +775,7 @@ function AffectationStockMine() {
                       </div>
                     ))}
                   </div>
-                 
+
                   <div className="aisle-divider">Allee de circulation A</div>
                 </div>
               </section>
@@ -593,6 +824,26 @@ function AffectationStockMine() {
                     </div>
                   </div>
                 </div>
+                {/* {suggestionEmplacementSelectionne && (
+                  <section className="suggestion-reasons">
+                    <div className="suggestion-reasons-head">
+                      <span className="section-label">
+                        Pourquoi cette affectation ?
+                      </span>
+                      <strong>
+                        Score{" "}
+                        {suggestionEmplacementSelectionne.scoreFinal.toFixed(1)}
+                      </strong>
+                    </div>
+                    <ul>
+                      {suggestionEmplacementSelectionne.raisons?.map(
+                        (raison) => (
+                          <li key={raison}>{raison}</li>
+                        ),
+                      )}
+                    </ul>
+                  </section>
+                )} */}
                 <form className="form-group" onSubmit={handleSubmitTemporaire}>
                   <label
                     className="section-label"

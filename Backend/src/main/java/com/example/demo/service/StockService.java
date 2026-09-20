@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.StockParEmplacementResponse;
+import com.example.demo.dto.stock.StockParEmplacementResponse;
 import com.example.demo.projection.StockParEmplacementProjection;
 import com.example.demo.repository.ArticleRepository;
 import com.example.demo.repository.StockRepository;

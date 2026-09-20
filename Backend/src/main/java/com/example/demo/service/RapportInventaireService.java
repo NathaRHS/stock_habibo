@@ -11,9 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.ControleInventaireResponse;
-import com.example.demo.dto.LigneControleInventaireResponse;
-import com.example.demo.dto.ParticipantJournalResponse;
+import com.example.demo.dto.inventaire.ControleInventaireResponse;
+import com.example.demo.dto.inventaire.LigneControleInventaireResponse;
+import com.example.demo.dto.journal.ParticipantJournalResponse;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 
 @Service

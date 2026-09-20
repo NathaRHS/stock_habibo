@@ -6,8 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.StatutJournalMouvementRequest;
-import com.example.demo.dto.StatutJournalMouvementResponse;
+import com.example.demo.dto.journal.StatutJournalMouvementRequest;
+import com.example.demo.dto.journal.StatutJournalMouvementResponse;
 import com.example.demo.entity.StatutjournalMouvement;
 import com.example.demo.repository.JournalMouvementRepository;
 import com.example.demo.repository.StatutJournalMouvementRepository;
@@ -93,4 +93,3 @@ public class StatutJournalMouvementService {
                 statut.getNomStatut());
     }
 }
-

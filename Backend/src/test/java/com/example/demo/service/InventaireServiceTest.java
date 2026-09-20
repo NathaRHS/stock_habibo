@@ -17,7 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.LigneControleInventaireResponse;
+import com.example.demo.dto.inventaire.LigneControleInventaireResponse;
 import com.example.demo.entity.Article;
 import com.example.demo.entity.ComptageInventaire;
 import com.example.demo.entity.DetailJournal;

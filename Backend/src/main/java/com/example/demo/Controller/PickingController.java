@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.PickingCreateRequest;
-import com.example.demo.dto.PickingResponse;
-import com.example.demo.dto.PickingUpdateRequest;
+import com.example.demo.dto.picking.PickingCreateRequest;
+import com.example.demo.dto.picking.PickingResponse;
+import com.example.demo.dto.picking.PickingUpdateRequest;
 import com.example.demo.service.PickingService;
 
 @RestController

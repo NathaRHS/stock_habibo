@@ -131,6 +131,7 @@ function Inventaire() {
   return (
     <div className="inventory-page">
       <Sidebar />
+
       <section className="inventory-main">
         <header className="inventory-topbar">
           <p>Inventaires / {inventaire.reference}</p>
@@ -154,6 +155,12 @@ function Inventaire() {
         <main className="inventory-content">
           <header className="inventory-heading">
             <div>
+              {inventaire.statut === "EN COURS" ? (
+                <h2 className="comptage-en-cours">Comptage en cours....</h2>
+              ) : (
+                ""
+              )}
+
               <h1>Contrôle visuel de l’inventaire</h1>
               <p>
                 Localisez les écarts et examinez les comptages avant validation.
@@ -335,6 +342,8 @@ function Inventaire() {
                 <p className="inventory-note">Sélectionnez un emplacement.</p>
               )}
               <button
+                className="redaction"
+                disabled={inventaire.statut === "EN COURS"}
                 onClick={() =>
                   navigate(`/recapitulatif/${inventaire?.journalId}`)
                 }

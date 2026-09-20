@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.StatutJournalMouvementRequest;
-import com.example.demo.dto.StatutJournalMouvementResponse;
+import com.example.demo.dto.journal.StatutJournalMouvementRequest;
+import com.example.demo.dto.journal.StatutJournalMouvementResponse;
 import com.example.demo.service.StatutJournalMouvementService;
 
 @RestController
@@ -57,4 +57,3 @@ public class StatutJournalMouvementController {
         service.delete(id);
     }
 }
-

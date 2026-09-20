@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.CreatePaletteConditionnementRequest;
-import com.example.demo.dto.PaletteConditionnementResponse;
+import com.example.demo.dto.article.CreatePaletteConditionnementRequest;
+import com.example.demo.dto.article.PaletteConditionnementResponse;
 import com.example.demo.service.PaletteConditionnementService;
 
 @RestController

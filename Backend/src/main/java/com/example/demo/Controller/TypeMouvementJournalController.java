@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.TypeMouvementJournalRequest;
-import com.example.demo.dto.TypeMouvementJournalResponse;
+import com.example.demo.dto.journal.TypeMouvementJournalRequest;
+import com.example.demo.dto.journal.TypeMouvementJournalResponse;
 import com.example.demo.service.TypeMouvementJournalService;
 
 @RestController

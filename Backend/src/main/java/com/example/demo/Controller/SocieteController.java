@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.FournisseurRequest;
-import com.example.demo.dto.FournisseurResponse;
+import com.example.demo.dto.fournisseur.FournisseurRequest;
+import com.example.demo.dto.fournisseur.FournisseurResponse;
 import com.example.demo.service.SocieteService;
 
 @RestController

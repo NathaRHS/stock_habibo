@@ -19,9 +19,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.example.demo.dto.AffectationStockRequest;
-import com.example.demo.dto.CreerMouvementsStockRequest;
-import com.example.demo.dto.MouvementStockResponse;
+import com.example.demo.dto.stock.AffectationStockRequest;
+import com.example.demo.dto.stock.CreerMouvementsStockRequest;
+import com.example.demo.dto.stock.MouvementStockResponse;
 import com.example.demo.entity.Article;
 import com.example.demo.entity.ArticleConditionnement;
 import com.example.demo.entity.DetailJournal;
@@ -37,6 +37,8 @@ import com.example.demo.repository.EmplacementRepository;
 import com.example.demo.repository.JournalMouvementRepository;
 import com.example.demo.repository.MouvementStockRepository;
 import com.example.demo.repository.PaletteConditionnementRepository;
+import com.example.demo.repository.PickingRepository;
+import com.example.demo.repository.PrelevementRepository;
 import com.example.demo.repository.TypeMouvementStockRepository;
 import com.example.demo.repository.UserRepository;
 
@@ -45,6 +47,12 @@ class MouvementStockServiceTest {
 
     @Mock
     private JournalMouvementRepository journalMouvementRepository;
+
+    @Mock
+    private PickingRepository pickingRepository;
+
+    @Mock
+    private PrelevementRepository prelevementRepository;
 
     @Mock
     private DetailJournalRepository detailJournalRepository;
@@ -70,6 +78,8 @@ class MouvementStockServiceTest {
     void setUp() {
         mouvementStockService = new MouvementStockService(
                 journalMouvementRepository,
+                pickingRepository,
+                prelevementRepository,
                 detailJournalRepository,
                 mouvementStockRepository,
                 emplacementRepository,

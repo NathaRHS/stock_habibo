@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.ParticipantJournalResponse;
+import com.example.demo.dto.journal.ParticipantJournalResponse;
 import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.StatutParticipation;
 import com.example.demo.entity.StatutjournalMouvement;

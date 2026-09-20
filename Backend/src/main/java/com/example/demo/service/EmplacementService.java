@@ -7,14 +7,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.demo.dto.EmplacementRequest;
-import com.example.demo.dto.EmplacementResponse;
+import com.example.demo.dto.emplacement.EmplacementRequest;
+import com.example.demo.dto.emplacement.EmplacementResponse;
 import com.example.demo.entity.Emplacement;
 import com.example.demo.entity.Rack;
+import com.example.demo.projection.EmplacementCandidatProjection;
 import com.example.demo.repository.EmplacementRepository;
 import com.example.demo.repository.RackRepository;
 
-@Service
+@Service 
 public class EmplacementService {
     private final EmplacementRepository emplacementRepository;
     private final RackRepository rackRepository;
@@ -122,5 +123,12 @@ public class EmplacementService {
                 emplacement.getRack().getNomRack(),
                 emplacement.getNumeroEtage(),
                 emplacement.getOrdreDansEtage());
+    }
+
+    
+    public List<EmplacementCandidatProjection> trouverEmplacementLibre(Long articleConditionnementId){
+        List<EmplacementCandidatProjection> emplacementCandidats = emplacementRepository.rechercherEmplacementsCandidats(articleConditionnementId);
+        return emplacementCandidats;
+
     }
 }
