@@ -42,7 +42,18 @@ export async function chargerDonneesAffectation(springUrl, journalId) {
 
 export function creerEntreeStock(springUrl, journalId, affectations) {
   return requeteJson(`${springUrl}/mouvementStock/${journalId}/entree-stock`, {
-    method: "POST", 
+    method: "POST",
     body: JSON.stringify({ affectations }),
+  });
+}
+
+export function chargerSuggestionEmplacements(
+  springUrl,
+  detailJournalId,
+  affectations,
+) {
+  return requeteJson(`${springUrl}/optimisation/suggerer/${detailJournalId}`, {
+    method: "POST",
+    body: JSON.stringify(affectations ),
   });
 }

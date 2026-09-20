@@ -27,7 +27,11 @@ function ControleJournal() {
   const springUrl = import.meta.env.VITE_SPRING_URL;
   const token = getAccessToken();
   const [journal, setJournal] = useState(null);
-  const [document, setDocument] = useState({ url: "", type: "", fichier: null });
+  const [document, setDocument] = useState({
+    url: "",
+    type: "",
+    fichier: null,
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -126,7 +130,10 @@ function ControleJournal() {
 
   const details = Array.isArray(journal.details) ? journal.details : [];
   const nomFichier = extraireNomFichier(journal.urlPieceJointe);
-  const totalQuantite = details.reduce((acc, d) => acc + (Number(d.quantite) || 0), 0);
+  const totalQuantite = details.reduce(
+    (acc, d) => acc + (Number(d.quantite) || 0),
+    0,
+  );
 
   return (
     <div className="controle-shell">
@@ -134,233 +141,350 @@ function ControleJournal() {
       <section className="controle-main-section">
         <header className="controle-global-topbar">
           <p>Opérations / Contrôle du journal</p>
-          <label><span className="material-symbols-outlined">search</span><input placeholder="Rechercher" type="search" /></label>
-          <div className="controle-global-user"><span>AR</span><div><strong>Administrateur</strong><small>Responsable entrepôt</small></div></div>
-        </header>
-    <main className="controle-app">
-      {/* Topbar aux standards du design UI/UX */}
-      <header className="topbar">
-        <div className="topbar-left">
-          <Link className="controle-back" to="/journaux-mouvements" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', marginRight: '8px' }}>
-            <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
-          <div className="title-group">
-            <h1>
-              {journal.reference}
-              <span className="badge-status">
-                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>schedule</span>
-                {journal.statut}
-              </span>
-            </h1>
-            <div className="meta-info">
-              {journal.fournisseur || "Fournisseur Test"} · Réception d'entrepôt
+          <label>
+            <span className="material-symbols-outlined">search</span>
+            <input placeholder="Rechercher" type="search" />
+          </label>
+          <div className="controle-global-user">
+            <span>AR</span>
+            <div>
+              <strong>Administrateur</strong>
+              <small>Responsable entrepôt</small>
             </div>
           </div>
-        </div>
-
-        {/* Boutons d'en-tête alignés sur le design system */}
-        <div className="topbar-right">
-          {peutDecider && (
-            <>
-              <Button
-                className="btn btn-primary"
-                disabled={saving}
-                onClick={() =>
-                  executerDecision(
-                    "demander-modification",
-                    "Demander une modification",
-                  )
-                }
-                type="button"
+        </header>
+        <main className="controle-app">
+          {/* Topbar aux standards du design UI/UX */}
+          <header className="topbar">
+            <div className="topbar-left">
+              <Link
+                className="controle-back"
+                to="/journaux-mouvements"
+                style={{
+                  textDecoration: "none",
+                  color: "inherit",
+                  display: "flex",
+                  alignItems: "center",
+                  marginRight: "8px",
+                }}
               >
-                <span className="material-symbols-outlined">edit_note</span>
-                Modifier
-              </Button>
-              <Button
-                className="btn btn-accent"
-                disabled={saving}
-                onClick={() => executerDecision("valider", "Valider la session")}
-                type="button"
-              >
-                <span className="material-symbols-outlined">check_circle</span>
-                {saving ? "Enregistrement…" : "Valider la session"}
-              </Button>
-            </>
-          )}
-      
-        </div>
-      </header>
-
-      {/* Metrics Strip inspiré du design B2B moderne */}
-      <section className="metrics-grid">
-        <div className="metric-item">
-          <span className="metric-label">
-            <span className="material-symbols-outlined">swap_horiz</span>
-            Type de flux
-          </span>
-          <span className="metric-value">{journal.typeMouvementJournal || "Entrée de stock"}</span>
-        </div>
-        <div className="metric-item">
-          <span className="metric-label">
-            <span className="material-symbols-outlined">local_shipping</span>
-            Fournisseur
-          </span>
-          <span className="metric-value">{journal.fournisseur || "Non renseigné"}</span>
-        </div>
-        <div className="metric-item">
-          <span className="metric-label">
-            <span className="material-symbols-outlined">apartment</span>
-            Client
-          </span>
-          <span className="metric-value">{journal.nomClient || "Non renseigné"}</span>
-        </div>
-        <div className="metric-item">
-          <span className="metric-label">
-            <span className="material-symbols-outlined">qr_code_scanner</span>
-            Lignes scannées
-          </span>
-          <span className="metric-value">{details.length} / {details.length} lignes</span>
-        </div>
-      </section>
-
-      {error && (
-        <p className="controle-error" role="alert" style={{ margin: '16px 36px', padding: '12px', background: '#fef2f2', color: '#991b1b', borderRadius: '6px' }}>
-          {error}
-        </p>
-      )}
-
-      {/* Workspace en deux colonnes (Document & Résultats) */}
-      <div className="controle-workspace">
-        {/* Left: Document Viewer */}
-        <section className="viewer-pane">
-          <div className="pane-header">
-            <span>
-              <span className="material-symbols-outlined" style={{ verticalAlign: "-3px", marginRight: "6px" }}>description</span>
-              Document d'origine
-            </span>
-            <span style={{ fontFamily: "monospace", fontSize: "11px", fontWeight: "500", textTransform: "none", color: "var(--text)" }}>
-              {nomFichier || "aucun-document"}
-            </span>
-          </div>
-          <div className="doc-container">
-            {!nomFichier || !document.url ? (
-              <Empty>
-                {nomFichier ? "Aperçu indisponible." : "Aucune pièce jointe."}
-              </Empty>
-            ) : document.type.startsWith("image/") ? (
-              <div className="paper-sheet" style={{ padding: '20px', display: 'flex', justifyContent: 'center' }}>
-                <img
-                  className="controle-image"
-                  src={document.url}
-                  alt={`Pièce jointe ${nomFichier}`}
-                  style={{ maxWidth: '100%', maxHeight: '450px', objectFit: 'contain', borderRadius: '8px' }}
-                />
+                <span className="material-symbols-outlined">arrow_back</span>
+              </Link>
+              <div className="title-group">
+                <h1>
+                  {journal.reference}
+                  <span className="badge-status">
+                    <span
+                      className="material-symbols-outlined"
+                      style={{ fontSize: "13px" }}
+                    >
+                      schedule
+                    </span>
+                    {journal.statut}
+                  </span>
+                </h1>
+                <div className="meta-info">
+                  {journal.fournisseur || "Fournisseur Test"} · Réception
+                  d'entrepôt
+                </div>
               </div>
-            ) : document.type === "application/pdf" ? (
-              <PdfViewer
-                fichier={document.fichier}
-                urlTelechargement={document.url}
-                nomFichier={nomFichier}
-              />
-            ) : (
-              <Empty>
-                <a href={document.url} download={nomFichier}>
-                  Télécharger le fichier
-                </a>
-              </Empty>
-            )}
-          </div>
-        </section>
+            </div>
 
-        {/* Right: Scanned Result */}
-        <aside className="results-pane">
-          <div className="pane-header">
-            <span>
-              <span className="material-symbols-outlined" style={{ verticalAlign: "-3px", marginRight: "6px" }}>inventory_2</span>
-              Résultat du terrain
-            </span>
-            <span style={{ fontWeight: "700", color: "var(--text)", fontFamily: "monospace", textTransform: "none" }}>
-              {totalQuantite} unités totales
-            </span>
-          </div>
+            {/* Boutons d'en-tête alignés sur le design system */}
+            <div className="topbar-right">
+              {peutDecider && (
+                <>
+                  <Button
+                    className="btn btn-primary"
+                    disabled={saving}
+                    onClick={() =>
+                      executerDecision(
+                        "demander-modification",
+                        "Demander une modification",
+                      )
+                    }
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined">edit_note</span>
+                    Modifier
+                  </Button>
+                  <Button
+                    className="btn btn-accent"
+                    disabled={saving}
+                    onClick={() =>
+                      executerDecision("valider", "Valider la session")
+                    }
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined">
+                      check_circle
+                    </span>
+                    {saving ? "Enregistrement…" : "Valider la session"}
+                  </Button>
+                </>
+              )}
+            </div>
+          </header>
 
-          <div className="results-content">
-            <div>
-              <div className="section-title">
-                <span>Articles scannés</span>
-                <span style={{ fontSize: "11px", color: "var(--muted)", fontWeight: "500" }}>
-                  {details.length} produit{details.length > 1 ? "s" : ""}
+          {/* Metrics Strip inspiré du design B2B moderne */}
+          <section className="metrics-grid">
+            <div className="metric-item">
+              <span className="metric-label">
+                <span className="material-symbols-outlined">swap_horiz</span>
+                Type de flux
+              </span>
+              <span className="metric-value">
+                {journal.typeMouvementJournal || "Entrée de stock"}
+              </span>
+            </div>
+            <div className="metric-item">
+              <span className="metric-label">
+                <span className="material-symbols-outlined">
+                  local_shipping
+                </span>
+                Fournisseur
+              </span>
+              <span className="metric-value">
+                {journal.fournisseur || "Non renseigné"}
+              </span>
+            </div>
+            <div className="metric-item">
+              <span className="metric-label">
+                <span className="material-symbols-outlined">apartment</span>
+                Client
+              </span>
+              <span className="metric-value">
+                {journal.nomClient || "Non renseigné"}
+              </span>
+            </div>
+            <div className="metric-item">
+              <span className="metric-label">
+                <span className="material-symbols-outlined">
+                  qr_code_scanner
+                </span>
+                Lignes scannées
+              </span>
+              <span className="metric-value">
+                {details.length} / {details.length} lignes
+              </span>
+            </div>
+          </section>
+
+          {error && (
+            <p
+              className="controle-error"
+              role="alert"
+              style={{
+                margin: "16px 36px",
+                padding: "12px",
+                background: "#fef2f2",
+                color: "#991b1b",
+                borderRadius: "6px",
+              }}
+            >
+              {error}
+            </p>
+          )}
+
+          {/* Workspace en deux colonnes (Document & Résultats) */}
+          <div className="controle-workspace">
+            {/* Left: Document Viewer */}
+            <section className="viewer-pane">
+              <div className="pane-header">
+                <span>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ verticalAlign: "-3px", marginRight: "6px" }}
+                  >
+                    description
+                  </span>
+                  Document d'origine
+                </span>
+                <span
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "11px",
+                    fontWeight: "500",
+                    textTransform: "none",
+                    color: "var(--text)",
+                  }}
+                >
+                  {nomFichier || "aucun-document"}
+                </span>
+              </div>
+              <div className="doc-container">
+                {!nomFichier || !document.url ? (
+                  <Empty>
+                    {nomFichier
+                      ? "Aperçu indisponible."
+                      : "Aucune pièce jointe."}
+                  </Empty>
+                ) : document.type.startsWith("image/") ? (
+                  <div
+                    className="paper-sheet"
+                    style={{
+                      padding: "20px",
+                      display: "flex",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <img
+                      className="controle-image"
+                      src={document.url}
+                      alt={`Pièce jointe ${nomFichier}`}
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "450px",
+                        objectFit: "contain",
+                        borderRadius: "8px",
+                      }}
+                    />
+                  </div>
+                ) : document.type === "application/pdf" ? (
+                  <PdfViewer
+                    fichier={document.fichier}
+                    urlTelechargement={document.url}
+                    nomFichier={nomFichier}
+                  />
+                ) : (
+                  <Empty>
+                    <a href={document.url} download={nomFichier}>
+                      Télécharger le fichier
+                    </a>
+                  </Empty>
+                )}
+              </div>
+            </section>
+
+            {/* Right: Scanned Result */}
+            <aside className="results-pane">
+              <div className="pane-header">
+                <span>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ verticalAlign: "-3px", marginRight: "6px" }}
+                  >
+                    inventory_2
+                  </span>
+                  Résultat du terrain
+                </span>
+                <span
+                  style={{
+                    fontWeight: "700",
+                    color: "var(--text)",
+                    fontFamily: "monospace",
+                    textTransform: "none",
+                  }}
+                >
+                  {totalQuantite} unités totales
                 </span>
               </div>
 
-              {!details.length ? (
-                <Empty>Aucun produit enregistré pour cette session.</Empty>
-              ) : (
-                <div className="scanned-list">
-                  {details.map((d) => (
-                    <div className="scanned-item" key={d.id}>
-                      <div className="item-info">
-                        <h4>{d.nomArticle}</h4>
-                        <span>
-                          <span className="material-symbols-outlined">verified</span>
-                          Code scanné validé
-                        </span>
-                      </div>
-                      <div className="item-qty">{d.quantite}</div>
+              <div className="results-content">
+                <div>
+                  <div className="section-title">
+                    <span>Articles scannés</span>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        color: "var(--muted)",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {details.length} produit{details.length > 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  {!details.length ? (
+                    <Empty>Aucun produit enregistré pour cette session.</Empty>
+                  ) : (
+                    <div className="scanned-list">
+                      {details.map((d) => (
+                        <div className="scanned-item" key={d.id}>
+                          <div className="item-info">
+                            <h4>{d.nomArticle}</h4>
+                            <span>
+                              <span className="material-symbols-outlined">
+                                verified
+                              </span>
+                              Code scanné validé
+                            </span>
+                          </div>
+                          <div className="item-qty">{d.quantite}</div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Summary Block */}
-            <div className="control-summary">
-              <div className="summary-row">
-                <span>Lignes contrôlées</span>
-                <strong>{details.length} / {details.length}</strong>
+                {/* Summary Block */}
+                <div className="control-summary">
+                  <div className="summary-row">
+                    <span>Lignes contrôlées</span>
+                    <strong>
+                      {details.length} / {details.length}
+                    </strong>
+                  </div>
+                  <div className="summary-row">
+                    <span>État général</span>
+                    <span
+                      className={
+                        statutActuel === "VALIDE" ? "text-success" : ""
+                      }
+                    >
+                      {journal.statut}
+                    </span>
+                  </div>
+                  <div className="summary-row">
+                    <span>Écart constaté</span>
+                    <strong>0 unité</strong>
+                  </div>
+                </div>
               </div>
-              <div className="summary-row">
-                <span>État général</span>
-                <span className={statutActuel === "VALIDE" ? "text-success" : ""}>{journal.statut}</span>
-              </div>
-              <div className="summary-row">
-                <span>Écart constaté</span>
-                <strong>0 unité</strong>
-              </div>
-            </div>
-          </div>
 
-          {/* Footer d'action principal de la modale / panneau */}
-          <div className="pane-footer">
-            {peutDecider && (
-              <Button
-                className="btn btn-accent"
-                disabled={saving}
-                onClick={() => executerDecision("valider", "Valider la réception")}
-                type="button"
-                style={{ width: '100%' }}
-              >
-                <span className="material-symbols-outlined">check_circle</span>
-                {saving ? "Enregistrement…" : "Valider la réception"}
-              </Button>
-            )}
-            {peutAffecter && (
-              <Button
-                className="btn btn-accent"
-                onClick={() =>
-                  navigate(`/journaux-mouvements/${id}/affectation-stock`)
-                }
-                type="button"
-                style={{ width: '100%' }}
-              >
-                <span className="material-symbols-outlined">rule_folder</span>
-                Affecter les emplacements
-              </Button>
-            )}
+              {/* Footer d'action principal de la modale / panneau */}
+              <div className="pane-footer">
+                {peutDecider && (
+                  <Button
+                    className="btn btn-accent"
+                    disabled={saving}
+                    onClick={() =>
+                      executerDecision("valider", "Valider la réception")
+                    }
+                    type="button"
+                    style={{ width: "100%" }}
+                  >
+                    <span className="material-symbols-outlined">
+                      check_circle
+                    </span>
+                    {saving ? "Enregistrement…" : "Valider la réception"}
+                  </Button>
+                )}
+                {peutAffecter && (
+                  <Button
+                    className="btn btn-accent"
+                    onClick={() =>
+                      journal.typeMouvementJournal === "INVENTAIRE"
+                        ? navigate(`/inventaire/${id}`)
+                        : navigate(
+                            `/journaux-mouvements/${id}/affectation-stock`,
+                          )
+                    }
+                    type="button"
+                    style={{ width: "100%" }}
+                  >
+                    <span className="material-symbols-outlined">
+                      rule_folder
+                    </span>
+                    {journal.typeMouvementJournal === "INVENTAIRE"
+                      ? "consulter les détails de l'inventaire"
+                      : "Affecter les emplacements"}
+                  </Button>
+                )}
+              </div>
+            </aside>
           </div>
-        </aside>
-      </div>
-    </main>
+        </main>
       </section>
     </div>
   );
@@ -388,7 +512,14 @@ function PanelTitle({ kicker, title, children }) {
 }
 
 function Empty({ children }) {
-  return <div className="controle-empty" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>{children}</div>;
+  return (
+    <div
+      className="controle-empty"
+      style={{ padding: "24px", textAlign: "center", color: "#6b7280" }}
+    >
+      {children}
+    </div>
+  );
 }
 
 export default ControleJournal;

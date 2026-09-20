@@ -56,9 +56,6 @@ function Login() {
   return (
     <main className="login-page">
       <form className="login-card" onSubmit={handleLogin}>
-        <div className="login-brand" aria-hidden="true">
-          H
-        </div>
         <h1>Connexion</h1>
         <p className="login-subtitle">
           Accédez à votre espace Warehouse Management System

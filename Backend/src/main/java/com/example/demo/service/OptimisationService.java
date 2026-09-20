@@ -12,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.dto.optimisation.SuggestionEmplacementResponse;
 import com.example.demo.dto.optimisation.SuggestionProduitResponse;
+import com.example.demo.dto.stock.AffectationStockRequest;
 import com.example.demo.entity.Article;
 import com.example.demo.entity.ArticleConditionnement;
 import com.example.demo.entity.DetailJournal;
@@ -42,7 +43,8 @@ public class OptimisationService {
         this.lignePickingRepository = lignePickingRepository;
     }
 
-    public SuggestionProduitResponse proposerEmplacements(Long detailJournalId) {
+    public SuggestionProduitResponse proposerEmplacements(Long detailJournalId,
+            List<AffectationStockRequest> affectations) {
 
         if (detailJournalId == null) {
             throw new ResponseStatusException(
@@ -103,8 +105,31 @@ public class OptimisationService {
                     "La quantite de conditionnements a affecter est invalide");
         }
 
-        List<EmplacementCandidatProjection> emplacementsPossibles = emplacementService
+        List<EmplacementCandidatProjection> emplacementsPossiblesTemp = emplacementService
                 .trouverEmplacementLibre(articleConditionnement.getId());
+        if (affectations == null) {
+            affectations = List.of();
+        }
+
+        Set<Long> emplacementIdsDejaAffectes = new HashSet<>();
+
+        for (AffectationStockRequest affectation : affectations) {
+            if (affectation.emplacementId() != null) {
+                emplacementIdsDejaAffectes.add(affectation.emplacementId());
+            }
+        }
+
+        List<EmplacementCandidatProjection> emplacementsPossibles = new ArrayList<>();
+
+        for (EmplacementCandidatProjection emplacement : emplacementsPossiblesTemp) {
+
+            if (emplacementIdsDejaAffectes.contains(
+                    emplacement.getEmplacementId())) {
+                continue;
+            }
+
+            emplacementsPossibles.add(emplacement);
+        }
 
         List<EmplacementCandidatProjection> emplacementsCandidats = filtrerEmplacementsCandidats(
                 emplacementsPossibles,

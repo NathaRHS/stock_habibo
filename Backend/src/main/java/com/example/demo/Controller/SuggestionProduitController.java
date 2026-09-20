@@ -1,11 +1,15 @@
 package com.example.demo.Controller;
 
-import org.springframework.web.bind.annotation.GetMapping;
+import java.util.List;
+
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.optimisation.SuggestionProduitResponse;
+import com.example.demo.dto.stock.AffectationStockRequest;
 import com.example.demo.service.OptimisationService;
 
 @RestController
@@ -18,8 +22,8 @@ public class SuggestionProduitController {
         this.optimisationService = optimisationService;
     }
 
-    @GetMapping("/suggerer/{id}")
-    public SuggestionProduitResponse suggererEmplacement(@PathVariable Long id) {
-        return optimisationService.proposerEmplacements(id);
+    @PostMapping ("/suggerer/{id}")
+    public SuggestionProduitResponse suggererEmplacement(@PathVariable Long id,@RequestBody List<AffectationStockRequest>affectations) {
+        return optimisationService.proposerEmplacements(id,affectations);
     }
 }

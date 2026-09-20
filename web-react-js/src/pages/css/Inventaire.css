@@ -1,8 +1,20 @@
+@keyframes blink {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.2;
+  }
+}
 .inventory-page {
   display: flex;
   min-height: 100vh;
   background: var(--color-background);
   color: var(--color-text);
+}
+.comptage-en-cours {
+  animation: blink infinite ease-in 2.1s;
+  color: var(--color-primary);
 }
 .inventory-main {
   min-width: 0;
@@ -168,6 +180,7 @@
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: #fff;
+  text-align: center;
 }
 .inventory-panel-head {
   display: flex;
@@ -185,6 +198,17 @@
   margin-top: 4px;
   color: var(--color-text-muted);
   font-size: 9px;
+}
+.redaction {
+  height: 29px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  color: var(--color-secondary);
+  font-size: 10px;
+}
+.redaction:disabled {
+  cursor: not-allowed;
 }
 .rack-tabs {
   display: flex;
@@ -281,8 +305,8 @@
 }
 .inventory-slot:hover {
   border-color: var(--color-primary);
-  transform:translateY(-6px);
-  box-shadow:1px 1px 1px 1px rgba(71, 71, 255, 0.088);
+  transform: translateY(-6px);
+  box-shadow: 1px 1px 1px 1px rgba(71, 71, 255, 0.088);
 }
 .inventory-slot.selected {
   border: 2px solid var(--color-primary);
@@ -291,10 +315,8 @@
 }
 .inventory-slot strong {
   display: block;
-  font:
-    600 10px Helvetica;
-letter-spacing: 0.5px;
-
+  font: 600 10px Helvetica;
+  letter-spacing: 0.5px;
 }
 .inventory-slot span {
   display: block;

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAccessToken } from "../services/authService";
 import Sidebar from "../components/Sidebar";
+import CreateJournalModal from "../components/CreateJournalModal";
 import "./css/ListeJournal.css";
 
 const FILTRES = ["TOUS", "EN COURS", "EN ATTENTE", "VALIDE", "MODIFIE"];
@@ -21,6 +22,7 @@ function ListeJournal() {
   const [filtre, setFiltre] = useState("TOUS");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [modalOuverte, setModalOuverte] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -104,13 +106,14 @@ function ListeJournal() {
                 Consultez, contrôlez et poursuivez les sessions de l’entrepôt.
               </p>
             </div>
-            <Link
+            <button
               className="journal-create-link"
-              to="/journaux-mouvements/create"
+              onClick={() => setModalOuverte(true)}
+              type="button"
             >
               <span className="material-symbols-outlined">add</span>Nouveau
               journal
-            </Link>
+            </button>
           </header>
 
           {error && (
@@ -195,6 +198,13 @@ function ListeJournal() {
           </section>
         </main>
       </section>
+      <CreateJournalModal
+        isOpen={modalOuverte}
+        onClose={() => setModalOuverte(false)}
+        onCreated={(journalCree) => {
+          if (journalCree) setJournaux((journauxActuels) => [journalCree, ...journauxActuels]);
+        }}
+      />
     </div>
   );
 }
