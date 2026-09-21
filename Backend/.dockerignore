@@ -1,0 +1,7 @@
+target/
+uploads/
+tables/
+.git
+.idea
+.vscode
+*.md
