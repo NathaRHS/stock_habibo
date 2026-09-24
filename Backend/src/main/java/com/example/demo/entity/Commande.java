@@ -27,7 +27,6 @@ public class Commande {
 
     @Column(name = "quantite_demande")
     Integer quantiteDemandee;
-
     @Column(name = "quantite_reel")
     Integer quantiteReel;
 

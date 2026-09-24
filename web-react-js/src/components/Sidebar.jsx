@@ -1,5 +1,6 @@
 import { Link, NavLink } from "react-router-dom";
 import "../assets/css/Sidebar.css";
+import NotificationBell from "./NotificationBell";
 
 const navigationItems = [
   { label: "Tableau de bord", icon: "dashboard", to: "/accueil", end: true },
@@ -24,6 +25,10 @@ function Sidebar() {
         <span className="logo-mark material-symbols-outlined" aria-hidden="true">warehouse</span>
         <p>Warehouse</p>
       </Link>
+      <div className="sidebar-notification">
+        <NotificationBell />
+        <span>Notifications</span>
+      </div>
 
       <nav className="sidebar-content" aria-label="Navigation principale">
         <div className="content">

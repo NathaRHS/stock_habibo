@@ -65,15 +65,6 @@ function Accueil() {
             />
           </label>
           <div className="notification-profile-side">
-            <button
-              className="notification-button"
-              type="button"
-              aria-label="Notifications"
-            >
-              <span className="material-symbols-outlined" aria-hidden="true">
-                notifications
-              </span>
-            </button>
             <Button
               icon={<span className="material-symbols-outlined" aria-hidden="true">add</span>}
               type="button"

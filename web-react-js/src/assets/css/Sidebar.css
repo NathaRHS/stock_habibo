@@ -32,6 +32,32 @@
   font-weight: 800;
 }
 
+.sidebar-notification {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  margin: 14px 27px 0;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+
+.sidebar-notification .notification-bell-button {
+  width: 29px;
+  height: 29px;
+}
+
+.sidebar-notification .notification-panel {
+  top: calc(100% + 8px);
+  right: auto;
+  left: 0;
+}
+
+.sidebar-notification > span { white-space: nowrap; }
+
 .sidebar-content {
   display: flex;
   flex-direction: column;
