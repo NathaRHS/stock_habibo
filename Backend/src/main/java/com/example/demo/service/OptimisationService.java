@@ -71,7 +71,7 @@ public class OptimisationService {
                     "Le journal n'est pas de type ENTREE");
         }
 
-        String statutJournal = journal.getStatutJournalMouvement().getNomStatut();
+        String statutJournal = journal.getStatut().getNom();
         if (!"VALIDE".equalsIgnoreCase(statutJournal)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,

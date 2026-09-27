@@ -122,7 +122,7 @@ public class ConfirmationSortieService {
                 journal.getReference(),
                 picking.getDateDebut(),
                 picking.getDateFin(),
-                journal.getStatutJournalMouvement().getNomStatut());
+                journal.getStatut().getNom());
 
         return new ConfirmationSortieResponse(
                 journalResponse,

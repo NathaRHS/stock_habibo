@@ -9,7 +9,7 @@ import Button from "../components/Button";
 import Modal from "../components/Modal";
 import Sidebar from "../components/Sidebar";
 import "./css/AffectationStockMine.css";
-
+import { Info } from "lucide-react";
 function AffectationStockMine() {
   const { journalId } = useParams();
   const navigate = useNavigate();
@@ -144,7 +144,7 @@ function AffectationStockMine() {
       articlePresent: Boolean(articleIdPresent),
       capacite,
       quantiteOccupee,
-      placeRestante,
+      placeRestante,  
       tauxOccupation,
       incompatible,
       memeArticle: Boolean(
@@ -492,7 +492,9 @@ function AffectationStockMine() {
                           onClick={() => {
                             setArticleSelectionne(detail);
                             setEmplacementSelectionne(null);
-                            if (suggestionProduit?.detailJournalId !== detail.id) {
+                            if (
+                              suggestionProduit?.detailJournalId !== detail.id
+                            ) {
                               setSuggestionProduit(null);
                               setSuggestionAConfirmer(null);
                             }
@@ -620,37 +622,43 @@ function AffectationStockMine() {
                           onClick={annulerSuggestion}
                           type="button"
                         >
-                          <span className="material-symbols-outlined">close</span>
+                          <span className="material-symbols-outlined">
+                            close
+                          </span>
                         </button>
                       </div>
                       <div className="suggestion-popover-places">
-                        {(suggestionAConfirmerPourArticle.suggestions ?? []).map(
-                          (suggestion) => (
-                            <button
-                              className="suggestion-place"
-                              key={suggestion.emplacementId}
-                              onClick={() => {
-                                const emplacement = emplacements.find(
-                                  (element) =>
-                                    element.id === suggestion.emplacementId,
-                                );
-                                if (emplacement) setEmplacementSelectionne(emplacement);
-                              }}
-                              type="button"
-                            >
-                              <b>{suggestion.nomEmplacement}</b>
-                              <span>
-                                {suggestion.quantiteConditionnementsProposee} colis
-                              </span>
-                            </button>
-                          ),
-                        )}
+                        {(
+                          suggestionAConfirmerPourArticle.suggestions ?? []
+                        ).map((suggestion) => (
+                          <button
+                            className="suggestion-place"
+                            key={suggestion.emplacementId}
+                            onClick={() => {
+                              const emplacement = emplacements.find(
+                                (element) =>
+                                  element.id === suggestion.emplacementId,
+                              );
+                              if (emplacement)
+                                setEmplacementSelectionne(emplacement);
+                            }}
+                            type="button"
+                          >
+                            <b>{suggestion.nomEmplacement}</b>
+                            <span>
+                              {suggestion.quantiteConditionnementsProposee}{" "}
+                              colis
+                            </span>
+                          </button>
+                        ))}
                       </div>
                       <div className="suggestion-popover-reasons">
                         <strong>Pourquoi cette proposition ?</strong>
                         <ul>
-                          {(suggestionAConfirmerPourArticle.suggestions?.[0]
-                            ?.raisons ?? []).map((raison) => (
+                          {(
+                            suggestionAConfirmerPourArticle.suggestions?.[0]
+                              ?.raisons ?? []
+                          ).map((raison) => (
                             <li key={raison}>{raison}</li>
                           ))}
                         </ul>
@@ -732,44 +740,55 @@ function AffectationStockMine() {
                               .filter(Boolean)
                               .join(" ");
                             return (
-                              <button
-                                type="button"
-                                key={emplacement.id}
-                                disabled={informations.incompatible}
-                                className={`slot-card ${classeEtat} ${emplacementSelectionne?.id === emplacement.id ? "selected" : ""}`}
-                                onClick={() =>
-                                  setEmplacementSelectionne(emplacement)
-                                }
-                              >
-                                <span className="slot-head">
-                                  <span className="slot-code">
-                                    {emplacement.nomEmplacement}
-                                  </span>
-                                  {suggestionEmplacement && (
-                                    <span className="suggestion-badge">
-                                      {
-                                        suggestionEmplacement.quantiteConditionnementsProposee
-                                      }
+                              <div className="emplacement-container">
+                                <div
+                                  className="emplacement-info"
+                                  aria-label="Voir information"
+                                >
+                                  <Info color="#1e40af" strokeWidth={1} />
+                                </div>
+                                <button
+                                  type="button"
+                                  key={emplacement.id}
+                                  disabled={informations.incompatible}
+                                  className={`slot-card ${classeEtat} ${emplacementSelectionne?.id === emplacement.id ? "selected" : ""}`}
+                                  onClick={() =>
+                                    setEmplacementSelectionne(emplacement)
+                                  }
+                                >
+                                  <span
+                                    style={{ marginTop: "14px" }}
+                                    className="slot-head"
+                                  >
+                                    <span className="slot-code">
+                                      {emplacement.nomEmplacement}
                                     </span>
-                                  )}
-                                </span>
-                                <span className="slot-desc">
-                                  {suggestionEmplacement
-                                    ? `Suggestion : ${suggestionEmplacement.quantiteConditionnementsProposee} colis`
-                                    : informations.articlePresent
-                                      ? informations.conditionnementArticle
-                                          .nomArticle
-                                      : `Libre - ${informations.placeRestante} places`}
-                                </span>
-                                <span className="slot-progress-bar">
-                                  <i
-                                    className="slot-progress-fill"
-                                    style={{
-                                      width: `${informations.tauxOccupation}%`,
-                                    }}
-                                  />
-                                </span>
-                              </button>
+                                    {suggestionEmplacement && (
+                                      <span className="suggestion-badge">
+                                        {
+                                          suggestionEmplacement.quantiteConditionnementsProposee
+                                        }
+                                      </span>
+                                    )}
+                                  </span>
+                                  <span className="slot-desc">
+                                    {suggestionEmplacement
+                                      ? `Suggestion : ${suggestionEmplacement.quantiteConditionnementsProposee} colis`
+                                      : informations.articlePresent
+                                        ? informations.conditionnementArticle
+                                            .nomArticle
+                                        : `Libre - ${informations.placeRestante} places`}
+                                  </span>
+                                  <span className="slot-progress-bar">
+                                    <i
+                                      className="slot-progress-fill"
+                                      style={{
+                                        width: `${informations.tauxOccupation}%`,
+                                      }}
+                                    />
+                                  </span>
+                                </button>
+                              </div>
                             );
                           })}
                       </div>

@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { getAccessToken } from "../services/authService";
 import Button from "../components/Button";
+import Panel from "../components/Panel";
 
 const initialTypeConditionnementState = {
   nomConditionnement: "",
 };
 
-function CreateTypeConditionnement() {
+function CreateTypeConditionnement({ onCreated }) {
   const springUrl = import.meta.env.VITE_SPRING_URL;
 
   const [typeConditionnement, setTypeConditionnement] = useState(
@@ -28,6 +29,10 @@ function CreateTypeConditionnement() {
       body: JSON.stringify(objet),
     });
 
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || `Création impossible (${response.status})`);
+    }
 
     return response.json();
   };
@@ -53,13 +58,13 @@ function CreateTypeConditionnement() {
       setSubmitting(true);
       setError("");
 
-      await creerTypeConditionnement({
+      const cree = await creerTypeConditionnement({
         ...typeConditionnement,
-        nomConditionnement:
-          typeConditionnement.nomConditionnement.trim(),
+        nomConditionnement: typeConditionnement.nomConditionnement.trim(),
       });
 
       setTypeConditionnement(initialTypeConditionnementState);
+      onCreated?.(cree);
     } catch (erreur) {
       setError(erreur.message);
     } finally {
@@ -68,24 +73,31 @@ function CreateTypeConditionnement() {
   };
 
   return (
-    <div className="container-create-conditionnement">
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="nomConditionnement"
-          value={typeConditionnement.nomConditionnement}
-          onChange={handleChange}
-          placeholder="Nom du conditionnement"
-          disabled={submitting}
-        />
-
-        <Button type="submit" loading={submitting}>
-          Ajouter un type de conditionnement
-        </Button>
-
-        {error && <p role="alert">{error}</p>}
+    <Panel title="Nouveau type">
+      <form className="layout-form" onSubmit={handleSubmit}>
+        {error && (
+          <p className="layout-message layout-message--error" role="alert">
+            {error}
+          </p>
+        )}
+        <div className="layout-form-grid layout-form-inline">
+          <label>
+            Nom du type
+            <input
+              type="text"
+              name="nomConditionnement"
+              value={typeConditionnement.nomConditionnement}
+              onChange={handleChange}
+              placeholder="Ex. Carton, Sachet, Fût…"
+              disabled={submitting}
+            />
+          </label>
+          <Button type="submit" loading={submitting}>
+            Ajouter
+          </Button>
+        </div>
       </form>
-    </div>
+    </Panel>
   );
 }
 

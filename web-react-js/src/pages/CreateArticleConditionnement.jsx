@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getAccessToken } from "../services/authService";
 import Button from "../components/Button";
-import ListeArticleConditionnement from "./ListeArticleConditionnement";
+import Panel from "../components/Panel";
 
 const initialArticleConditionnementState = {
   articleId: "",
@@ -10,7 +10,7 @@ const initialArticleConditionnementState = {
   quantitePieceStandard: "",
 };
 
-function CreateArticleConditionnement() {
+function CreateArticleConditionnement({ onCreated }) {
   const springUrl = import.meta.env.VITE_SPRING_URL;
 
   const [articleConditionnement, setArticleConditionnement] = useState(
@@ -19,6 +19,7 @@ function CreateArticleConditionnement() {
   const [articles, setArticles] = useState([]);
   const [typesConditionnement, setTypesConditionnement] = useState([]);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -141,8 +142,9 @@ function CreateArticleConditionnement() {
     try {
       setSubmitting(true);
       setError("");
+      setSuccess("");
 
-      await creerArticleConditionnement({
+      const cree = await creerArticleConditionnement({
         articleId: Number(articleConditionnement.articleId),
         typeConditionnementId: Number(
           articleConditionnement.typeConditionnementId,
@@ -152,7 +154,17 @@ function CreateArticleConditionnement() {
       });
 
       setArticleConditionnement(initialArticleConditionnementState);
-      alert("Conditionnement de l'article ajouté avec succès !");
+      setSuccess("Conditionnement ajouté.");
+      onCreated?.({
+        nomArticle: articles.find(
+          (article) => article.id === Number(articleConditionnement.articleId),
+        )?.nomArticle,
+        nomConditionnement: typesConditionnement.find(
+          (type) =>
+            type.id === Number(articleConditionnement.typeConditionnementId),
+        )?.nomConditionnement,
+        ...cree,
+      });
     } catch (erreur) {
       setError(
         erreur instanceof Error
@@ -165,75 +177,95 @@ function CreateArticleConditionnement() {
   };
 
   return (
-    <div className="container-create-article-conditionnement">
-      <form onSubmit={handleSubmit}>
-        <select
-          name="articleId"
-          value={articleConditionnement.articleId}
-          onChange={handleChange}
-          disabled={loadingOptions || submitting}
-          required
-        >
-          <option value="" disabled>
-            Choisissez un article
-          </option>
-          {articles.map((article) => (
-            <option key={article.id} value={article.id}>
-              {article.nomArticle}
-            </option>
-          ))}
-        </select>
+    <Panel title="Nouveau conditionnement">
+      <form className="layout-form" onSubmit={handleSubmit}>
+        {error && (
+          <p className="layout-message layout-message--error" role="alert">
+            {error}
+          </p>
+        )}
+        {success && (
+          <p className="layout-message layout-message--success" role="status">
+            {success}
+          </p>
+        )}
 
-        <select
-          name="typeConditionnementId"
-          value={articleConditionnement.typeConditionnementId}
-          onChange={handleChange}
-          disabled={loadingOptions || submitting}
-          required
-        >
-          <option value="" disabled>
-            Choisissez un type de conditionnement
-          </option>
-          {typesConditionnement.map((type) => (
-            <option key={type.id} value={type.id}>
-              {type.nomConditionnement}
-            </option>
-          ))}
-        </select>
+        <div className="layout-form-grid">
+          <label>
+            Article
+            <select
+              name="articleId"
+              value={articleConditionnement.articleId}
+              onChange={handleChange}
+              disabled={loadingOptions || submitting}
+              required
+            >
+              <option value="" disabled>
+                Choisir un article
+              </option>
+              {articles.map((article) => (
+                <option key={article.id} value={article.id}>
+                  {article.nomArticle}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <input
-          type="text"
-          name="codeBarres"
-          value={articleConditionnement.codeBarres}
-          onChange={handleChange}
-          placeholder="Code-barres du conditionnement"
-          disabled={submitting}
-        />
+          <label>
+            Type de conditionnement
+            <select
+              name="typeConditionnementId"
+              value={articleConditionnement.typeConditionnementId}
+              onChange={handleChange}
+              disabled={loadingOptions || submitting}
+              required
+            >
+              <option value="" disabled>
+                Choisir un type
+              </option>
+              {typesConditionnement.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.nomConditionnement}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <input
-          type="number"
-          name="quantitePieceStandard"
-          value={articleConditionnement.quantitePieceStandard}
-          onChange={handleChange}
-          placeholder="Quantité de pièces standard"
-          min="1"
-          step="1"
-          disabled={submitting}
-          required
-        />
+          <label>
+            Code-barres
+            <input
+              type="text"
+              name="codeBarres"
+              value={articleConditionnement.codeBarres}
+              onChange={handleChange}
+              placeholder="Facultatif"
+              disabled={submitting}
+            />
+          </label>
 
-        <Button
-          type="submit"
-          loading={submitting}
-          disabled={loadingOptions}
-        >
-          Ajouter le conditionnement de l'article
-        </Button>
+          <label>
+            Pièces par unité
+            <input
+              type="number"
+              name="quantitePieceStandard"
+              value={articleConditionnement.quantitePieceStandard}
+              onChange={handleChange}
+              placeholder="Ex. 12"
+              min="1"
+              step="1"
+              disabled={submitting}
+              required
+            />
+          </label>
+        </div>
 
-        {error && <p role="alert">{error}</p>}
+        <div className="layout-form-actions">
+          <Button type="submit" loading={submitting} disabled={loadingOptions}>
+            Ajouter
+          </Button>
+        </div>
       </form>
-      <ListeArticleConditionnement/>
-    </div>
+    </Panel>
   );
 }
 

@@ -28,16 +28,16 @@ START TRANSACTION;
 
 INSERT INTO t_journal_mouvement (
     nom_client, reference, url_piece_jointe, fournisseur_id,
-    type_mouvement_journal_id, statut_journal_mouvement_id
+    type_mouvement_journal_id, statut_id
 ) VALUES
     (NULL, 'REC-STOCK-001', '/documents/rec-stock-001.pdf',
      (SELECT id FROM t_societe WHERE nom_societe = 'Hb' LIMIT 1),
      (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'ENTREE' LIMIT 1),
-     (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'VALIDE' LIMIT 1)),
+     (SELECT id FROM t_statut WHERE nom = 'VALIDE' LIMIT 1)),
     (NULL, 'REC-STOCK-002', '/documents/rec-stock-002.pdf',
      (SELECT id FROM t_societe WHERE nom_societe = 'HH' LIMIT 1),
      (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'ENTREE' LIMIT 1),
-     (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'VALIDE' LIMIT 1));
+     (SELECT id FROM t_statut WHERE nom = 'VALIDE' LIMIT 1));
 
 -- REC-STOCK-001 : premier lot de Coca-Cola, Candia et Eau Vive.
 INSERT INTO t_detail_journal (
@@ -135,12 +135,12 @@ INSERT INTO t_mouvement_stock (
 
 INSERT INTO t_journal_mouvement (
     nom_client, reference, url_piece_jointe, fournisseur_id,
-    type_mouvement_journal_id, statut_journal_mouvement_id
+    type_mouvement_journal_id, statut_id
 ) VALUES (
     NULL, 'REC-SCAN-TEST-001', '/documents/rec-scan-test-001.pdf',
     (SELECT id FROM t_societe WHERE nom_societe = 'Hm' LIMIT 1),
     (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'ENTREE' LIMIT 1),
-    (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'EN COURS' LIMIT 1)
+    (SELECT id FROM t_statut WHERE nom = 'EN COURS' LIMIT 1)
 );
 
 INSERT INTO t_user_journal_mouvement (
@@ -159,11 +159,11 @@ INSERT INTO t_user_journal_mouvement (
 
 INSERT INTO t_journal_mouvement (
     nom_client, reference, url_piece_jointe, fournisseur_id,
-    type_mouvement_journal_id, statut_journal_mouvement_id
+    type_mouvement_journal_id, statut_id
 ) VALUES (
     NULL, 'INV-CONTROLE-TEST-001', NULL, NULL,
     (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'INVENTAIRE' LIMIT 1),
-    (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'EN ATTENTE' LIMIT 1)
+    (SELECT id FROM t_statut WHERE nom = 'EN ATTENTE' LIMIT 1)
 );
 
 INSERT INTO t_detail_journal (
@@ -223,12 +223,12 @@ INSERT INTO t_user_journal_mouvement (
 
 INSERT INTO t_journal_mouvement (
     nom_client, reference, url_piece_jointe, fournisseur_id,
-    type_mouvement_journal_id, statut_journal_mouvement_id
+    type_mouvement_journal_id, statut_id
 ) VALUES (
     'Client Supermarche Analakely', 'SOR-PREP-TEST-001',
     '/documents/sor-prep-test-001.pdf', NULL,
     (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'SORTIE' LIMIT 1),
-    (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'EN COURS' LIMIT 1)
+    (SELECT id FROM t_statut WHERE nom = 'EN COURS' LIMIT 1)
 );
 
 -- Les quantites demandees sont exprimees en conditionnements.
@@ -259,12 +259,12 @@ SELECT
     j.id AS journal_id,
     j.reference,
     tmj.nom_type_mouvement AS type_journal,
-    sjm.nom_statut AS statut
+    sjm.nom AS statut
 FROM t_journal_mouvement j
 JOIN t_type_mouvement_journal tmj
     ON tmj.id = j.type_mouvement_journal_id
-JOIN t_statut_journal_mouvement sjm
-    ON sjm.id = j.statut_journal_mouvement_id
+JOIN t_statut sjm
+    ON sjm.id = j.statut_id
 ORDER BY j.id;
 
 SELECT

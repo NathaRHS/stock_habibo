@@ -179,7 +179,7 @@ public class MouvementStockService {
                         HttpStatus.NOT_FOUND,
                         "Journal introuvable"));
         // vérifier si le statut du journal est déjà valide
-        if (!journalMouvement.getStatutJournalMouvement().getNomStatut().equals(STATUT_VALIDE_JOURNAL)) {
+        if (!journalMouvement.getStatut().getNom().equals(STATUT_VALIDE_JOURNAL)) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "Le statut du journal n'est pas encore VALIDE");

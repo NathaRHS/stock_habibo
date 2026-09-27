@@ -21,7 +21,8 @@ import com.example.demo.entity.DetailJournal;
 import com.example.demo.entity.Emplacement;
 import com.example.demo.entity.Societe;
 import com.example.demo.entity.JournalMouvement;
-import com.example.demo.entity.StatutjournalMouvement;
+import com.example.demo.entity.Statut;
+import com.example.demo.entity.StatutJournalMouvementCode;
 import com.example.demo.entity.TypeMouvementJournal;
 import com.example.demo.repository.ArticleConditionnementRepository;
 import com.example.demo.repository.ArticleRepository;
@@ -30,20 +31,15 @@ import com.example.demo.repository.DetailJournalRepository;
 import com.example.demo.repository.EmplacementRepository;
 import com.example.demo.repository.SocieteRepository;
 import com.example.demo.repository.JournalMouvementRepository;
-import com.example.demo.repository.StatutJournalMouvementRepository;
+import com.example.demo.repository.StatutRepository;
 import com.example.demo.repository.TypeMouvementJournalRepository;
 
 @Service
 @Transactional
 public class JournalMouvementService {
-    private static final String STATUT_EN_COURS = "EN COURS";
-    private static final String STATUT_VALIDE = "VALIDE";
-    private static final String STATUT_MODIFIE = "MODIFIE";
-    private static final String STATUT_EN_ATTENTE = "EN ATTENTE";
-
     private final JournalMouvementRepository journalRepository;
     private final TypeMouvementJournalRepository typeRepository;
-    private final StatutJournalMouvementRepository statutRepository;
+    private final StatutRepository statutRepository;
     private final SocieteRepository fournisseurRepository;
     private final UserJournalMouvementService userJournalMouvementService;
     private final ArticleRepository articleRepository;
@@ -55,7 +51,7 @@ public class JournalMouvementService {
     public JournalMouvementService(
             JournalMouvementRepository journalRepository,
             TypeMouvementJournalRepository typeRepository,
-            StatutJournalMouvementRepository statutRepository,
+            StatutRepository statutRepository,
             SocieteRepository fournisseurRepository,
             UserJournalMouvementService userJournalMouvementService,
             ArticleRepository articleRepository, DetailJournalRepository detailJournalRepository,
@@ -79,14 +75,14 @@ public class JournalMouvementService {
         String reference = EnleverEspaceReference(request.reference());
         verifierReferenceDisponible(reference, null);
         // validerDetails(request.details());
-        StatutjournalMouvement statutjournalMouvement = trouverStatutMetier(STATUT_EN_COURS);
+        Statut statut = trouverStatutMetier(StatutJournalMouvementCode.EN_COURS);
         JournalMouvement journal = new JournalMouvement(
                 trouverFournisseur(request.fournisseurId()),
                 reference,
                 normaliserFacultatif(request.urlPieceJointe()),
                 normaliserFacultatif(request.nomClient()),
                 trouverType(request.typeMouvementJournalId()),
-                statutjournalMouvement);
+                statut);
 
         // remplacerDetails(journal, request.details());
         return versResponse(journalRepository.save(journal));
@@ -113,7 +109,7 @@ public class JournalMouvementService {
         journal.setNomClient(normaliserFacultatif(request.nomClient()));
         journal.setFournisseur(trouverFournisseur(request.fournisseurId()));
         journal.setTypeMouvementJournal(trouverType(request.typeMouvementJournalId()));
-        journal.setStatutJournalMouvement(trouverStatut(request.statutJournalMouvementId()));
+        journal.setStatut(trouverStatut(request.statutJournalMouvementId()));
         // remplacerDetails(journal, request.details());
 
         return versResponse(journalRepository.save(journal));
@@ -139,14 +135,16 @@ public class JournalMouvementService {
                         HttpStatus.NOT_FOUND, "Type de mouvement journal introuvable : " + id));
     }
 
-    private StatutjournalMouvement trouverStatut(Long id) {
+    private Statut trouverStatut(Long id) {
         if (id == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "statutJournalMouvementId est obligatoire");
         }
-        return statutRepository.findById(id)
+        Statut statut = statutRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Statut de journal introuvable : " + id));
+        verifierStatutDeJournal(statut);
+        return statut;
     }
 
     private Societe trouverFournisseur(Long id) {
@@ -203,49 +201,67 @@ public class JournalMouvementService {
                 journal.getTypeMouvementJournal().getId(),
                 journal.getTypeMouvementJournal().getNomTypeMouvement(),
                 journal.getTypeMouvementJournal().getSens(),
-                journal.getStatutJournalMouvement().getId(),
-                journal.getStatutJournalMouvement().getNomStatut(),
+                journal.getStatut().getId(),
+                journal.getStatut().getNom(),
                 details);
     }
 
     // change le statut du journal
     public JournalMouvementResponse updateStatutJournal(Long journalId, Long idStatut) {
         JournalMouvement journal = trouverJournal(journalId);
-        journal.setStatutJournalMouvement(trouverStatut(idStatut));
+        journal.setStatut(trouverStatut(idStatut));
         return versResponse(journalRepository.save(journal));
     }
 
     // changer lxe statut en "validé"
     public JournalMouvementResponse valider(Long journalId) {
         JournalMouvement journal = trouverJournal(journalId);
-        verifierStatutActuel(journal, STATUT_EN_ATTENTE);
-        journal.setStatutJournalMouvement(trouverStatutMetier(STATUT_VALIDE));
+        verifierStatutActuel(journal, StatutJournalMouvementCode.EN_ATTENTE);
+        journal.setStatut(trouverStatutMetier(StatutJournalMouvementCode.VALIDE));
         return versResponse(journalRepository.save(journal));
     }
 
     // changer le statut en "modifié"
     public JournalMouvementResponse demanderModification(Long journalId) {
         JournalMouvement journal = trouverJournal(journalId);
-        verifierStatutActuel(journal, STATUT_EN_ATTENTE);
-        journal.setStatutJournalMouvement(trouverStatutMetier(STATUT_MODIFIE));
+        verifierStatutActuel(journal, StatutJournalMouvementCode.EN_ATTENTE);
+        journal.setStatut(trouverStatutMetier(StatutJournalMouvementCode.MODIFIE));
         return versResponse(journalRepository.save(journal));
     }
 
-    private void verifierStatutActuel(JournalMouvement journal, String... statutsAutorises) {
-        String statutActuel = journal.getStatutJournalMouvement().getNomStatut();
+    private void verifierStatutActuel(
+            JournalMouvement journal,
+            StatutJournalMouvementCode... statutsAutorises) {
+        StatutJournalMouvementCode statutActuel = convertirStatut(journal.getStatut());
         if (!List.of(statutsAutorises).contains(statutActuel)) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "Transition interdite depuis le statut " + statutActuel);
+                    "Transition interdite depuis le statut " + statutActuel.getNom());
         }
     }
 
     //
-    private StatutjournalMouvement trouverStatutMetier(String nomStatut) {
-        return statutRepository.findByNomStatut(nomStatut)
+    private Statut trouverStatutMetier(StatutJournalMouvementCode statutMetier) {
+        return statutRepository.findByNom(statutMetier.getNom())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Le statut " + nomStatut + " n'est pas configure"));
+                        "Le statut " + statutMetier.getNom() + " n'est pas configure"));
+    }
+
+    private StatutJournalMouvementCode convertirStatut(Statut statut) {
+        try {
+            return StatutJournalMouvementCode.depuisNom(statut.getNom());
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
+        }
+    }
+
+    private void verifierStatutDeJournal(Statut statut) {
+        if (!StatutJournalMouvementCode.accepte(statut.getNom())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le statut " + statut.getNom() + " n'est pas autorise pour un journal de mouvement");
+        }
     }
 
     // transforme une liste de DetailJournal en DetailJournalResponse
@@ -287,7 +303,10 @@ public class JournalMouvementService {
         JournalMouvement journal = journalRepository.findById(journalId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "journal introuvable"));
 
-        verifierStatutActuel(journal, STATUT_EN_COURS, STATUT_MODIFIE);
+        verifierStatutActuel(
+                journal,
+                StatutJournalMouvementCode.EN_COURS,
+                StatutJournalMouvementCode.MODIFIE);
         if (request.dlc() == null || request.dlv() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "La DLC et la DLV sont obligatoires pour une reception");
@@ -394,7 +413,10 @@ public class JournalMouvementService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Le journal n'est pas de type INVENTAIRE");
         }
-        verifierStatutActuel(journal, STATUT_EN_COURS, STATUT_MODIFIE);
+        verifierStatutActuel(
+                journal,
+                StatutJournalMouvementCode.EN_COURS,
+                StatutJournalMouvementCode.MODIFIE);
 
         Emplacement emplacement = emplacementRepository.findById(request.emplacementId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,

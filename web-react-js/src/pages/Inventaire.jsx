@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +20,22 @@ function Inventaire() {
   const [filtre, setFiltre] = useState("TOUS");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const ecartsRef = useRef(null);
+  const defilementInitialEffectue = useRef(false);
+
+  useEffect(() => {
+    if (!loading && inventaire && !defilementInitialEffectue.current) {
+      defilementInitialEffectue.current = true;
+
+      requestAnimationFrame(() => {
+        ecartsRef.current?.scrollIntoView({
+          block: "start",
+          behavior: "instant",
+        });
+      });
+    }
+  }, [loading, inventaire]);
 
   useEffect(() => {
     async function charger() {
@@ -353,7 +369,7 @@ function Inventaire() {
             </aside>
           </div>
 
-          <section className="inventory-panel inventory-issues">
+          <section ref={ecartsRef} className="inventory-panel inventory-issues">
             <header className="inventory-panel-head">
               <div>
                 <h2>Écarts nécessitant une décision</h2>
@@ -398,6 +414,7 @@ function Inventaire() {
                     </td>
                     <td>
                       <button
+                        className="examiner-button"
                         onClick={() => {
                           setRackSelectionne(
                             racks.find((rack) => rack.name === ligne.nomRack),
@@ -425,8 +442,8 @@ function Inventaire() {
                   <small>Le journal passera à l’état MODIFIE.</small>
                 </div>
                 {/* <button onClick={() => changerStatut("demander-modification")}>
-                  Demander une modification
-                </button> */}
+                    Demander une modification
+                  </button> */}
               </footer>
             )}
           </section>

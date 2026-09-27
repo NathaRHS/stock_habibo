@@ -15,8 +15,8 @@ INSERT IGNORE INTO t_type_mouvement_journal (
 )
 VALUES ('ENTREE', 1);
 
-INSERT IGNORE INTO t_statut_journal_mouvement (nom_statut)
-VALUES ('EN_ATTENTE');
+INSERT IGNORE INTO t_statut (nom)
+VALUES ('EN ATTENTE');
 
 -- Creation de la session d'entree.
 INSERT IGNORE INTO t_journal_mouvement (
@@ -24,7 +24,7 @@ INSERT IGNORE INTO t_journal_mouvement (
     reference,
     url_piece_jointe,
     nom_client,
-    statut_journal_mouvement_id,
+    statut_id,
     type_mouvement_journal_id
 )
 SELECT
@@ -35,8 +35,8 @@ SELECT
     statut.id,
     type_mouvement.id
 FROM t_societe AS societe
-JOIN t_statut_journal_mouvement AS statut
-    ON statut.nom_statut = 'EN_ATTENTE'
+JOIN t_statut AS statut
+    ON statut.nom = 'EN ATTENTE'
 JOIN t_type_mouvement_journal AS type_mouvement
     ON type_mouvement.nom_type_mouvement = 'ENTREE'
 WHERE societe.nom_societe = 'HH'
@@ -55,7 +55,7 @@ SELECT
     journal.reference,
     societe.nom_societe,
     type_mouvement.nom_type_mouvement,
-    statut.nom_statut,
+    statut.nom,
     journal.url_piece_jointe,
     journal.nom_client
 FROM t_journal_mouvement AS journal
@@ -63,6 +63,6 @@ LEFT JOIN t_societe AS societe
     ON societe.id = journal.fournisseur_id
 JOIN t_type_mouvement_journal AS type_mouvement
     ON type_mouvement.id = journal.type_mouvement_journal_id
-JOIN t_statut_journal_mouvement AS statut
-    ON statut.id = journal.statut_journal_mouvement_id
+JOIN t_statut AS statut
+    ON statut.id = journal.statut_id
 WHERE journal.reference = 'BR-2026-0001';

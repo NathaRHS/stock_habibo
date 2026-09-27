@@ -473,9 +473,7 @@ function ControleJournal() {
                     type="button"
                     style={{ width: "100%" }}
                   >
-                    <span className="material-symbols-outlined">
-                      rule_folder
-                    </span>
+                    
                     {journal.typeMouvementJournal === "INVENTAIRE"
                       ? "consulter les détails de l'inventaire"
                       : "Affecter les emplacements"}

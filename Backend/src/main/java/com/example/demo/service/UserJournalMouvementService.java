@@ -10,32 +10,29 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.dto.journal.ParticipantJournalResponse;
 import com.example.demo.entity.JournalMouvement;
+import com.example.demo.entity.Statut;
+import com.example.demo.entity.StatutJournalMouvementCode;
 import com.example.demo.entity.StatutParticipation;
-import com.example.demo.entity.StatutjournalMouvement;
 import com.example.demo.entity.User;
 import com.example.demo.entity.UserJournalMouvement;
 import com.example.demo.repository.JournalMouvementRepository;
-import com.example.demo.repository.StatutJournalMouvementRepository;
+import com.example.demo.repository.StatutRepository;
 import com.example.demo.repository.UserJournalMouvementRepository;
 import com.example.demo.repository.UserRepository;
 
 @Service
 @Transactional
 public class UserJournalMouvementService {
-    private static final String STATUT_EN_COURS = "EN COURS";
-    private static final String STATUT_MODIFIE = "MODIFIE";
-    private static final String STATUT_EN_ATTENTE = "EN ATTENTE";
-
     private final UserJournalMouvementRepository participationRepository;
     private final JournalMouvementRepository journalRepository;
     private final UserRepository userRepository;
-    private final StatutJournalMouvementRepository statutRepository;
+    private final StatutRepository statutRepository;
 
     public UserJournalMouvementService(
             UserJournalMouvementRepository participationRepository,
             JournalMouvementRepository journalRepository,
             UserRepository userRepository,
-            StatutJournalMouvementRepository statutRepository) {
+            StatutRepository statutRepository) {
         this.participationRepository = participationRepository;
         this.journalRepository = journalRepository;
         this.userRepository = userRepository;
@@ -89,7 +86,7 @@ public class UserJournalMouvementService {
                         StatutParticipation.EN_COURS);
 
         if (!participantActifRestant) {
-            journal.setStatutJournalMouvement(trouverStatutMetier(STATUT_EN_ATTENTE));
+            journal.setStatut(trouverStatutMetier(StatutJournalMouvementCode.EN_ATTENTE));
             journalRepository.save(journal);
         }
 
@@ -124,19 +121,28 @@ public class UserJournalMouvementService {
     }
 
     private void verifierSessionOuverte(JournalMouvement journal) {
-        String statut = journal.getStatutJournalMouvement().getNomStatut();
-        if (!STATUT_EN_COURS.equals(statut) && !STATUT_MODIFIE.equals(statut)) {
+        StatutJournalMouvementCode statut = convertirStatut(journal.getStatut());
+        if (statut != StatutJournalMouvementCode.EN_COURS
+                && statut != StatutJournalMouvementCode.MODIFIE) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "La session n'accepte plus de participants. Statut actuel : " + statut);
+                    "La session n'accepte plus de participants. Statut actuel : " + statut.getNom());
         }
     }
 
-    private StatutjournalMouvement trouverStatutMetier(String nomStatut) {
-        return statutRepository.findByNomStatut(nomStatut)
+    private Statut trouverStatutMetier(StatutJournalMouvementCode statutMetier) {
+        return statutRepository.findByNom(statutMetier.getNom())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Le statut " + nomStatut + " n'est pas configure"));
+                        "Le statut " + statutMetier.getNom() + " n'est pas configure"));
+    }
+
+    private StatutJournalMouvementCode convertirStatut(Statut statut) {
+        try {
+            return StatutJournalMouvementCode.depuisNom(statut.getNom());
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
+        }
     }
 
     private ParticipantJournalResponse versResponse(UserJournalMouvement participation) {

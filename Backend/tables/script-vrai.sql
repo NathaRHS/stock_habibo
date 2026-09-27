@@ -29,12 +29,12 @@ INSERT INTO t_roles (nom_role) VALUES
 ON DUPLICATE KEY UPDATE nom_role = VALUES(nom_role);
 
 -- Referentiels necessaires aux simulations metier.
-INSERT INTO t_statut_journal_mouvement (nom_statut) VALUES
+INSERT INTO t_statut (nom) VALUES
     ('EN COURS'),
     ('EN ATTENTE'),
     ('VALIDE'),
     ('MODIFIE')
-ON DUPLICATE KEY UPDATE nom_statut = VALUES(nom_statut);
+ON DUPLICATE KEY UPDATE nom = VALUES(nom);
 
 INSERT INTO t_type_mouvement (nom_type_mouvement, sens) VALUES
     ('ENTREE', 1),
@@ -258,42 +258,42 @@ ON DUPLICATE KEY UPDATE quantite = VALUES(quantite);
 
 INSERT INTO t_journal_mouvement (
     nom_client, reference, url_piece_jointe, fournisseur_id,
-    type_mouvement_journal_id, statut_journal_mouvement_id
+    type_mouvement_journal_id, statut_id
 ) VALUES
     (NULL, 'REC-HIST-001', '/documents/bon-reception-historique.pdf',
      (SELECT id FROM t_societe WHERE nom_societe = 'Hb'),
      (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'ENTREE'),
-     (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'VALIDE')),
+     (SELECT id FROM t_statut WHERE nom = 'VALIDE')),
     (NULL, 'REC-SCAN-001', '/documents/bon-reception-scan.pdf',
      (SELECT id FROM t_societe WHERE nom_societe = 'HH'),
      (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'ENTREE'),
-     (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'EN COURS')),
+     (SELECT id FROM t_statut WHERE nom = 'EN COURS')),
     (NULL, 'REC-ATTENTE-001', '/documents/bon-reception-attente.pdf',
      (SELECT id FROM t_societe WHERE nom_societe = 'Hb'),
      (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'ENTREE'),
-     (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'EN ATTENTE')),
+     (SELECT id FROM t_statut WHERE nom = 'EN ATTENTE')),
     (NULL, 'REC-MODIFIE-001', '/documents/bon-reception-modifie.pdf',
      (SELECT id FROM t_societe WHERE nom_societe = 'Hm'),
      (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'ENTREE'),
-     (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'MODIFIE')),
+     (SELECT id FROM t_statut WHERE nom = 'MODIFIE')),
     (NULL, 'INV-ENCOURS-001', NULL, NULL,
      (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'INVENTAIRE'),
-     (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'EN COURS')),
+     (SELECT id FROM t_statut WHERE nom = 'EN COURS')),
     (NULL, 'INV-ATTENTE-001', NULL, NULL,
      (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'INVENTAIRE'),
-     (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'EN ATTENTE')),
+     (SELECT id FROM t_statut WHERE nom = 'EN ATTENTE')),
     (NULL, 'INV-VALIDE-001', '/documents/rapport-inventaire-001.pdf', NULL,
      (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'INVENTAIRE'),
-     (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'VALIDE')),
+     (SELECT id FROM t_statut WHERE nom = 'VALIDE')),
     ('Client demonstration', 'SOR-PREP-001', '/documents/bon-commande-001.pdf', NULL,
      (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'SORTIE'),
-     (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'EN COURS'))
+     (SELECT id FROM t_statut WHERE nom = 'EN COURS'))
 ON DUPLICATE KEY UPDATE
     nom_client = VALUES(nom_client),
     url_piece_jointe = VALUES(url_piece_jointe),
     fournisseur_id = VALUES(fournisseur_id),
     type_mouvement_journal_id = VALUES(type_mouvement_journal_id),
-    statut_journal_mouvement_id = VALUES(statut_journal_mouvement_id);
+    statut_id = VALUES(statut_id);
 
 -- Details scannes dans chaque session.
 INSERT INTO t_detail_journal (
@@ -549,19 +549,19 @@ ORDER BY r.nom_rack;
 SELECT
     j.reference,
     tmj.nom_type_mouvement AS type_session,
-    sjm.nom_statut,
+    sjm.nom,
     COUNT(DISTINCT d.id) AS lignes,
     COUNT(DISTINCT ujm.user_id) AS participants
 FROM t_journal_mouvement j
 JOIN t_type_mouvement_journal tmj
     ON tmj.id = j.type_mouvement_journal_id
-JOIN t_statut_journal_mouvement sjm
-    ON sjm.id = j.statut_journal_mouvement_id
+JOIN t_statut sjm
+    ON sjm.id = j.statut_id
 LEFT JOIN t_detail_journal d ON d.journal_mouvement_id = j.id
 LEFT JOIN t_user_journal_mouvement ujm ON ujm.journal_mouvement_id = j.id
 WHERE j.reference IN (
     'REC-HIST-001', 'REC-SCAN-001', 'REC-ATTENTE-001', 'REC-MODIFIE-001',
     'INV-ENCOURS-001', 'INV-ATTENTE-001', 'INV-VALIDE-001', 'SOR-PREP-001'
 )
-GROUP BY j.id, j.reference, tmj.nom_type_mouvement, sjm.nom_statut
+GROUP BY j.id, j.reference, tmj.nom_type_mouvement, sjm.nom
 ORDER BY tmj.nom_type_mouvement, j.reference;

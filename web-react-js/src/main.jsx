@@ -1,17 +1,14 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import "./index.css";
 import Accueil from "./pages/Accueil";
 import Login from "./pages/Login";
 import ListeArticle from "./pages/ListeArticle";
 import ListeJournal from "./pages/ListeJournal";
 import ListeUtilisateur from "./pages/ListeUtilisateur";
-import CreateArticle from "./pages/CreateArticle";
-import CreateTypeConditionnement from "./pages/CreateTypeConditionnement";
 import ListeTypeConditionnement from "./pages/ListeTypeConditionnement";
 import ListeArticleConditionnement from "./pages/ListeArticleConditionnement";
-import CreateArticleConditionnement from "./pages/CreateArticleConditionnement";
 import CreateTypeMouvementJournal from "./pages/CreateTypeMouvementJournal";
 import ListeTypeMouvementJournal from "./pages/ListeTypeMouvementJournal";
 import UploadFile from "./pages/UploadFile";
@@ -27,6 +24,9 @@ import Recapitulatif from "./pages/Recapitulatif";
 import CreateCommande from "./pages/CreateCommande";
 import AffectationSortie from "./pages/AffectationSortie";
 // import AffectationStock from "./pages/AffectationStock";
+// Nouvelles versions en cours de validation (src/new-pages), servies sous /new/...
+import NewListeJournal from "./new-pages/ListeJournal/ListeJournal";
+import NewAffectationStock from "./new-pages/AffectationStock/AffectationStock";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -38,13 +38,13 @@ createRoot(document.getElementById("root")).render(
         <Route path="/accueil" element={<Accueil />} />
         <Route path="/login" element={<Login />} />
         <Route path="/article" element={<ListeArticle />} />
-        <Route path="/article/create" element={<CreateArticle />} />
+        <Route path="/article/create" element={<Navigate to="/article" replace />} />
         <Route path="/users" element={<ListeUtilisateur />} />
         <Route path="/users/create" element={<CreateUtilisateur />} />
-        <Route path="/type-conditionnement/create" element={<CreateTypeConditionnement />} />
+        <Route path="/type-conditionnement/create" element={<Navigate to="/type-conditionnement" replace />} />
         <Route path="/type-conditionnement" element={<ListeTypeConditionnement />} />
         <Route path="/article-conditionnements" element={<ListeArticleConditionnement />} />
-        <Route path="/article-conditionnements/create" element={<CreateArticleConditionnement />} />
+        <Route path="/article-conditionnements/create" element={<Navigate to="/article-conditionnements" replace />} />
         <Route path="/palettes-conditionnements/create" element={<CreatePaletteConditionnement />} />
         <Route path="/types-mouvements-journal" element={<ListeTypeMouvementJournal />} />
         <Route path="/types-mouvements-journal/create" element={<CreateTypeMouvementJournal />} />
@@ -72,6 +72,12 @@ createRoot(document.getElementById("root")).render(
           element={<AffectationStock />}
         /> */}
         <Route path="/upload" element={<UploadFile />} />
+
+        <Route path="/new/journaux-mouvements" element={<NewListeJournal />} />
+        <Route
+          path="/new/journaux-mouvements/:journalId/affectation-stock"
+          element={<NewAffectationStock />}
+        />
 
       </Routes>
     </BrowserRouter>

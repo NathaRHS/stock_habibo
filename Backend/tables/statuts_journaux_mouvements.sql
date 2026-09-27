@@ -6,7 +6,7 @@ USE stock_habibo;
 
 START TRANSACTION;
 
-INSERT IGNORE INTO t_statut_journal_mouvement (nom_statut)
+INSERT IGNORE INTO t_statut (nom)
 VALUES
     ('EN COURS'),
     ('EN ATTENTE'),
@@ -15,6 +15,6 @@ VALUES
 
 COMMIT;
 
-SELECT id, nom_statut
-FROM t_statut_journal_mouvement
+SELECT id, nom
+FROM t_statut
 ORDER BY id;

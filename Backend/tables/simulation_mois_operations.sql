@@ -56,9 +56,9 @@ SET @inventoriste_id = (
 SET @type_entree = (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'ENTREE' LIMIT 1);
 SET @type_sortie = (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'SORTIE' LIMIT 1);
 SET @type_inventaire = (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'INVENTAIRE' LIMIT 1);
-SET @statut_valide = (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'VALIDE' LIMIT 1);
-SET @statut_cours = (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'EN COURS' LIMIT 1);
-SET @statut_attente = (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'EN ATTENTE' LIMIT 1);
+SET @statut_valide = (SELECT id FROM t_statut WHERE nom = 'VALIDE' LIMIT 1);
+SET @statut_cours = (SELECT id FROM t_statut WHERE nom = 'EN COURS' LIMIT 1);
+SET @statut_attente = (SELECT id FROM t_statut WHERE nom = 'EN ATTENTE' LIMIT 1);
 SET @type_mvt_entree = (SELECT id FROM t_type_mouvement WHERE nom_type_mouvement = 'ENTREE' LIMIT 1);
 SET @type_mvt_sortie = (SELECT id FROM t_type_mouvement WHERE nom_type_mouvement = 'SORTIE' LIMIT 1);
 SET @statut_prelevement_confirme = (SELECT id FROM t_statut_prelevement WHERE nom_statut = 'CONFIRME' LIMIT 1);
@@ -94,7 +94,7 @@ SELECT @admin_id AS admin_id, @operateur_id AS operateur_id,
 -- 2. ENTREES SUR LE MOIS : STOCK HISTORIQUE ET ENTREE EN ATTENTE
 -- --------------------------------------------------------------------------
 INSERT INTO t_journal_mouvement
-    (nom_client, reference, url_piece_jointe, fournisseur_id, type_mouvement_journal_id, statut_journal_mouvement_id)
+    (nom_client, reference, url_piece_jointe, fournisseur_id, type_mouvement_journal_id, statut_id)
 VALUES
     (NULL, 'REC-202609-001', '/documents/rec-202609-001.pdf', NULL, @type_entree, @statut_valide),
     (NULL, 'REC-202609-002', '/documents/rec-202609-002.pdf', NULL, @type_entree, @statut_valide),
@@ -142,7 +142,7 @@ VALUES
 -- 3. SORTIES : UNE TERMINEE, UNE EN COURS, UNE PRETE A CONFIRMER
 -- --------------------------------------------------------------------------
 INSERT INTO t_journal_mouvement
-    (nom_client, reference, url_piece_jointe, fournisseur_id, type_mouvement_journal_id, statut_journal_mouvement_id)
+    (nom_client, reference, url_piece_jointe, fournisseur_id, type_mouvement_journal_id, statut_id)
 VALUES
     ('SUPERETTE CENTRE', 'SOR-202609-001', '/documents/bl-sor-001.pdf', NULL, @type_sortie, @statut_valide),
     ('MAGASIN BETA', 'SOR-202609-002', '/documents/bl-sor-002.pdf', NULL, @type_sortie, @statut_cours),
@@ -215,7 +215,7 @@ VALUES
 -- 4. INVENTAIRES : UN TERMINE AVEC ECART, UN EN COURS
 -- --------------------------------------------------------------------------
 INSERT INTO t_journal_mouvement
-    (nom_client, reference, url_piece_jointe, fournisseur_id, type_mouvement_journal_id, statut_journal_mouvement_id)
+    (nom_client, reference, url_piece_jointe, fournisseur_id, type_mouvement_journal_id, statut_id)
 VALUES
     (NULL, 'INV-202609-001', NULL, NULL, @type_inventaire, @statut_valide),
     (NULL, 'INV-202609-002', NULL, NULL, @type_inventaire, @statut_cours);
@@ -285,12 +285,12 @@ COMMIT;
 -- --------------------------------------------------------------------------
 SELECT 'Journaux par type et statut' AS controle;
 SELECT type.nom_type_mouvement AS type_journal,
-       statut.nom_statut AS statut,
+       statut.nom AS statut,
        COUNT(*) AS total
 FROM t_journal_mouvement journal
 JOIN t_type_mouvement_journal type ON type.id = journal.type_mouvement_journal_id
-JOIN t_statut_journal_mouvement statut ON statut.id = journal.statut_journal_mouvement_id
-GROUP BY type.nom_type_mouvement, statut.nom_statut
+JOIN t_statut statut ON statut.id = journal.statut_id
+GROUP BY type.nom_type_mouvement, statut.nom
 ORDER BY type_journal, statut;
 
 SELECT 'Stock calcule par emplacement' AS controle;

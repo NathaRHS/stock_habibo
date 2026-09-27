@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import Table from "../components/Table";
 import { getAccessToken } from "../services/authService";
 import "./css/CreateUtilisateur.css";
-
+import Sidebar from "../components/Sidebar";
 function ListeUtilisateur() {
   const springUrl = import.meta.env.VITE_SPRING_URL;
   const location = useLocation();
@@ -47,17 +47,44 @@ function ListeUtilisateur() {
   if (loading) return <p>Chargement des utilisateurs…</p>;
 
   return (
-    <main className="users-page">
-      <header className="users-header">
-        <div>
-          <h1>Utilisateurs</h1>
-          <p>Gérez les comptes et leurs rôles.</p>
-        </div>
-        <Link className="users-create-link" to="/users/create">Créer un compte</Link>
-      </header>
-      {location.state?.success && <p className="users-success" role="status">{location.state.success}</p>}
-      {error ? <p role="alert">{error}</p> : <Table objetsProps={utilisateurs} title="Utilisateurs" />}
-    </main>
+    <div className="users-page-shell">
+      <Sidebar />
+      <section className="users-page-workspace">
+        <header className="users-page-topbar">
+          <p>Administration / Utilisateurs</p>
+          <div className="users-page-user">
+            <span>AR</span>
+            <div>
+              <strong>Administrateur</strong>
+              <small>Responsable entrepôt</small>
+            </div>
+          </div>
+        </header>
+
+        <main className="users-page">
+          <header className="users-header">
+            <div>
+              <span className="users-kicker">Administration</span>
+              <h1>Utilisateurs</h1>
+              <p>Gérez les comptes et leurs rôles.</p>
+            </div>
+            <Link className="users-create-link" to="/users/create">
+              Créer un compte
+            </Link>
+          </header>
+          {location.state?.success && (
+            <p className="users-success" role="status">
+              {location.state.success}
+            </p>
+          )}
+          {error ? (
+            <p role="alert">{error}</p>
+          ) : (
+            <Table objetsProps={utilisateurs} title="Utilisateurs" />
+          )}
+        </main>
+      </section>
+    </div>
   );
 }
 

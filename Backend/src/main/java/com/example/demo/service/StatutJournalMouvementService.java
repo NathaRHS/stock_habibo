@@ -8,17 +8,18 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.dto.journal.StatutJournalMouvementRequest;
 import com.example.demo.dto.journal.StatutJournalMouvementResponse;
-import com.example.demo.entity.StatutjournalMouvement;
+import com.example.demo.entity.Statut;
+import com.example.demo.entity.StatutJournalMouvementCode;
 import com.example.demo.repository.JournalMouvementRepository;
-import com.example.demo.repository.StatutJournalMouvementRepository;
+import com.example.demo.repository.StatutRepository;
 
 @Service
 public class StatutJournalMouvementService {
-    private final StatutJournalMouvementRepository statutRepository;
+    private final StatutRepository statutRepository;
     private final JournalMouvementRepository journalRepository;
 
     public StatutJournalMouvementService(
-            StatutJournalMouvementRepository statutRepository,
+            StatutRepository statutRepository,
             JournalMouvementRepository journalRepository) {
         this.statutRepository = statutRepository;
         this.journalRepository = journalRepository;
@@ -27,11 +28,12 @@ public class StatutJournalMouvementService {
     public StatutJournalMouvementResponse create(StatutJournalMouvementRequest request) {
         String nom = normaliserNom(request.nomStatut());
         verifierNomDisponible(nom, null);
-        return versResponse(statutRepository.save(new StatutjournalMouvement(nom)));
+        return versResponse(statutRepository.save(new Statut(nom)));
     }
 
     public List<StatutJournalMouvementResponse> findAll() {
         return statutRepository.findAll().stream()
+                .filter(statut -> StatutJournalMouvementCode.accepte(statut.getNom()))
                 .map(this::versResponse)
                 .toList();
     }
@@ -43,16 +45,16 @@ public class StatutJournalMouvementService {
     public StatutJournalMouvementResponse update(
             Long id,
             StatutJournalMouvementRequest request) {
-        StatutjournalMouvement statut = trouver(id);
+        Statut statut = trouver(id);
         String nom = normaliserNom(request.nomStatut());
         verifierNomDisponible(nom, id);
-        statut.setNomStatut(nom);
+        statut.setNom(nom);
         return versResponse(statutRepository.save(statut));
     }
 
     public void delete(Long id) {
-        StatutjournalMouvement statut = trouver(id);
-        if (journalRepository.existsByStatutJournalMouvementId(id)) {
+        Statut statut = trouver(id);
+        if (journalRepository.existsByStatutId(id)) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "Ce statut est utilise par des journaux de mouvement");
@@ -60,11 +62,13 @@ public class StatutJournalMouvementService {
         statutRepository.delete(statut);
     }
 
-    private StatutjournalMouvement trouver(Long id) {
-        return statutRepository.findById(id)
+    private Statut trouver(Long id) {
+        Statut statut = statutRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Statut de journal de mouvement introuvable : " + id));
+        verifierStatutJournal(statut.getNom());
+        return statut;
     }
 
     private String normaliserNom(String nom) {
@@ -73,11 +77,13 @@ public class StatutJournalMouvementService {
                     HttpStatus.BAD_REQUEST,
                     "Le nom du statut est obligatoire");
         }
-        return nom.trim().toUpperCase();
+        String nomNormalise = nom.trim().toUpperCase();
+        verifierStatutJournal(nomNormalise);
+        return nomNormalise;
     }
 
     private void verifierNomDisponible(String nom, Long idExclu) {
-        statutRepository.findByNomStatut(nom)
+        statutRepository.findByNom(nom)
                 .filter(statut -> idExclu == null || !statut.getId().equals(idExclu))
                 .ifPresent(statut -> {
                     throw new ResponseStatusException(
@@ -87,9 +93,17 @@ public class StatutJournalMouvementService {
     }
 
     private StatutJournalMouvementResponse versResponse(
-            StatutjournalMouvement statut) {
+            Statut statut) {
         return new StatutJournalMouvementResponse(
                 statut.getId(),
-                statut.getNomStatut());
+                statut.getNom());
+    }
+
+    private void verifierStatutJournal(String nom) {
+        try {
+            StatutJournalMouvementCode.depuisNom(nom);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
+        }
     }
 }

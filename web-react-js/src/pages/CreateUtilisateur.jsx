@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getAccessToken } from "../services/authService";
 import Button from "../components/Button";
+import Sidebar from "../components/Sidebar";
 import "./css/CreateUtilisateur.css";
 
 const formulaireInitial = {
@@ -124,24 +125,64 @@ function CreateUtilisateur() {
     }
   }
 
+  const roleChoisi = roles.find(
+    (role) => String(role.id) === String(formulaire.roleId),
+  );
+  const reglesMotDePasse = [
+    { ok: formulaire.password.length >= 8, texte: "Au moins 8 caractères" },
+    {
+      ok:
+        formulaire.password.length > 0 &&
+        formulaire.password === formulaire.confirmationMotDePasse,
+      texte: "Confirmation identique",
+    },
+  ];
+  const initiales =
+    formulaire.username
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((mot) => mot[0].toUpperCase())
+      .join("") || "?";
+
   return (
-    <main className="create-user-page">
-      <div className="create-user-shell">
-        <Link className="create-user-back" to="/users">
-          ← Retour aux utilisateurs
-        </Link>
-        <header className="create-user-header">
-          <span>Administration</span>
-          <h1>Créer un compte</h1>
-          <p>Ajoutez un opérateur ou un responsable et définissez son rôle.</p>
+    <div className="users-page-shell">
+      <Sidebar />
+      <section className="users-page-workspace">
+        <header className="users-page-topbar">
+          <p>Administration / Utilisateurs / Nouveau compte</p>
+          <div className="users-page-user">
+            <span>AR</span>
+            <div>
+              <strong>Administrateur</strong>
+              <small>Responsable entrepôt</small>
+            </div>
+          </div>
         </header>
 
+        <main className="create-user-page">
+          <Link className="create-user-back" to="/users">
+            <span className="material-symbols-outlined">arrow_back</span>
+            Retour aux utilisateurs
+          </Link>
+          <header className="create-user-header">
+            <span>Administration</span>
+            <h1>Créer un compte</h1>
+            <p>Ajoutez un opérateur ou un responsable et définissez son rôle.</p>
+          </header>
+
+          <div className="create-user-layout">
         <form className="create-user-form" onSubmit={handleSubmit}>
           {error && (
             <p className="create-user-error" role="alert">
               {error}
             </p>
           )}
+          <h2 className="create-user-section-title">
+            <span className="material-symbols-outlined">badge</span>
+            Identité
+          </h2>
           <div className="create-user-grid">
             <label>
               Nom d’utilisateur
@@ -179,6 +220,12 @@ function CreateUtilisateur() {
                 value={formulaire.email}
               />
             </label>
+          </div>
+          <h2 className="create-user-section-title">
+            <span className="material-symbols-outlined">lock</span>
+            Accès
+          </h2>
+          <div className="create-user-grid">
             <label className="create-user-wide">
               Rôle
               <select
@@ -240,8 +287,50 @@ function CreateUtilisateur() {
             </Button>
           </footer>
         </form>
-      </div>
-    </main>
+
+            <aside className="create-user-aside">
+              <section className="create-user-card create-user-preview">
+                <div className="create-user-avatar">{initiales}</div>
+                <strong>{formulaire.username.trim() || "Nouvel utilisateur"}</strong>
+                <small>{formulaire.email.trim() || "adresse@email.com"}</small>
+                <dl>
+                  <div>
+                    <dt>Matricule</dt>
+                    <dd>{formulaire.matricule.trim() || "—"}</dd>
+                  </div>
+                  <div>
+                    <dt>Rôle</dt>
+                    <dd>{roleChoisi?.name || "—"}</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section className="create-user-card">
+                <h3>Mot de passe</h3>
+                <ul className="create-user-rules">
+                  {reglesMotDePasse.map((regle) => (
+                    <li className={regle.ok ? "is-ok" : ""} key={regle.texte}>
+                      <span className="material-symbols-outlined">
+                        {regle.ok ? "check_circle" : "radio_button_unchecked"}
+                      </span>
+                      {regle.texte}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className="create-user-card create-user-tip">
+                <span className="material-symbols-outlined">info</span>
+                <p>
+                  Le rôle détermine les pages accessibles. Il pourra être
+                  modifié plus tard par un administrateur.
+                </p>
+              </section>
+            </aside>
+          </div>
+        </main>
+      </section>
+    </div>
   );
 }
 

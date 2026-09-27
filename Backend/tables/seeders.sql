@@ -28,7 +28,7 @@ TRUNCATE TABLE t_rack;
 TRUNCATE TABLE t_societe;
 TRUNCATE TABLE t_user;
 TRUNCATE TABLE t_roles;
-TRUNCATE TABLE t_statut_journal_mouvement;
+TRUNCATE TABLE t_statut;
 TRUNCATE TABLE t_type_mouvement;
 TRUNCATE TABLE t_type_mouvement_journal;
 TRUNCATE TABLE t_type_conditionnement;
@@ -47,7 +47,7 @@ INSERT INTO t_roles (id, nom_role) VALUES
     (2, 'SUPERVISEUR'),
     (3, 'RESPONSABLE_INVENTAIRE');
 
-INSERT INTO t_statut_journal_mouvement (id, nom_statut) VALUES
+INSERT INTO t_statut (id, nom) VALUES
     (1, 'EN COURS'),
     (2, 'VALIDE'),
     (3, 'MODIFIE'),
@@ -92,6 +92,10 @@ INSERT INTO t_user (
 -- ============================================================================
 -- 3. FOURNISSEURS / SOCIETES
 -- ============================================================================
+
+SELECT
+
+
 
 INSERT INTO t_societe (id, nom_societe) VALUES
     (1, 'STAR DISTRIBUTION'),
@@ -186,7 +190,7 @@ INSERT INTO t_palette_conditionnement (
 
 INSERT INTO t_journal_mouvement (
     id, nom_client, reference, url_piece_jointe, fournisseur_id,
-    type_mouvement_journal_id, statut_journal_mouvement_id
+    type_mouvement_journal_id, statut_id
 ) VALUES
     -- Historique entierement range : alimente les vues de stock.
     (1, NULL, 'REC-HIST-001', '/documents/bon-reception-historique.pdf',
@@ -298,14 +302,14 @@ COMMIT;
 SELECT
     journal.id AS journal_id,
     journal.reference,
-    statut.nom_statut,
+    statut.nom,
     detail.id AS detail_journal_id,
     article.nom_article,
     detail.quantite,
     detail.quantite_conditionnement
 FROM t_journal_mouvement journal
-JOIN t_statut_journal_mouvement statut
-    ON statut.id = journal.statut_journal_mouvement_id
+JOIN t_statut statut
+    ON statut.id = journal.statut_id
 LEFT JOIN t_detail_journal detail
     ON detail.journal_mouvement_id = journal.id
 LEFT JOIN t_article article

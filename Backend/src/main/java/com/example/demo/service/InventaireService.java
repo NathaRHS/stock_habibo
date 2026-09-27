@@ -107,7 +107,7 @@ public class InventaireService {
         List<UserJournalMouvement> userJournalMouvements = userJournalMouvementRepository
                 .findAllByJournalMouvementIdOrderByDateDebutAsc(journalId);
         return new ControleInventaireResponse(journalId, journal.getReference(),
-                journal.getStatutJournalMouvement().getNomStatut(), userJournalMouvements.size(),
+                journal.getStatut().getNom(), userJournalMouvements.size(),
                 ligneControleInventaireResponses);
 
     }

@@ -22,22 +22,22 @@ SET @inventaire_type_id = (
     WHERE nom_type_mouvement = 'INVENTAIRE' LIMIT 1
 );
 SET @valide_statut_id = (
-    SELECT id FROM t_statut_journal_mouvement
-    WHERE nom_statut = 'VALIDE' LIMIT 1
+    SELECT id FROM t_statut
+    WHERE nom = 'VALIDE' LIMIT 1
 );
 SET @cours_statut_id = (
-    SELECT id FROM t_statut_journal_mouvement
-    WHERE nom_statut = 'EN COURS' LIMIT 1
+    SELECT id FROM t_statut
+    WHERE nom = 'EN COURS' LIMIT 1
 );
 SET @attente_statut_id = (
-    SELECT id FROM t_statut_journal_mouvement
-    WHERE nom_statut = 'EN ATTENTE' LIMIT 1
+    SELECT id FROM t_statut
+    WHERE nom = 'EN ATTENTE' LIMIT 1
 );
 
 -- 1. Entree validee : l'admin doit encore affecter les articles.
 INSERT INTO t_journal_mouvement (
     nom_client, reference, url_piece_jointe, fournisseur_id,
-    type_mouvement_journal_id, statut_journal_mouvement_id
+    type_mouvement_journal_id, statut_id
 )
 VALUES (
     NULL, 'REC-NOTIF-001', '/documents/rec-notif-001.pdf', NULL,
@@ -57,7 +57,7 @@ VALUES (
 -- 2. Sortie en cours : l'operateur a termine, l'admin doit confirmer.
 INSERT INTO t_journal_mouvement (
     nom_client, reference, url_piece_jointe, fournisseur_id,
-    type_mouvement_journal_id, statut_journal_mouvement_id
+    type_mouvement_journal_id, statut_id
 )
 VALUES (
     'CLIENT TEST', 'SOR-NOTIF-001', NULL, NULL,
@@ -88,7 +88,7 @@ VALUES (
 -- 3. Inventaire en attente de traitement.
 INSERT INTO t_journal_mouvement (
     nom_client, reference, url_piece_jointe, fournisseur_id,
-    type_mouvement_journal_id, statut_journal_mouvement_id
+    type_mouvement_journal_id, statut_id
 )
 VALUES (
     NULL, 'INV-NOTIF-001', NULL, NULL,
