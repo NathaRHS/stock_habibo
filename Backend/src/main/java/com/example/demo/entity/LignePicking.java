@@ -6,8 +6,6 @@ import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -68,9 +66,9 @@ public class LignePicking {
     @Column(name = "date_reservation", nullable = false)
     private LocalDateTime dateReservation;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "statut", nullable = false, length = 20)
-    private StatutLignePicking statut = StatutLignePicking.RESERVEE;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "statut_id", nullable = false)
+    private StatutLignePicking statut;
 
     @OneToMany(mappedBy = "lignePicking")
     private List<Prelevement> prelevements = new ArrayList<>();
@@ -85,7 +83,8 @@ public class LignePicking {
             ArticleConditionnement articleConditionnement,
             Integer ordrePassage,
             Integer quantiteConditionnementsAPrelever,
-            Integer quantitePiecesAPrelever) {
+            Integer quantitePiecesAPrelever,
+            StatutLignePicking statut) {
         this.commande = commande;
         this.emplacement = emplacement;
         this.detailJournalSource = detailJournalSource;
@@ -94,16 +93,13 @@ public class LignePicking {
         setQuantiteConditionnementsAPrelever(quantiteConditionnementsAPrelever);
         setQuantitePiecesAPrelever(quantitePiecesAPrelever);
         this.dateReservation = LocalDateTime.now();
-        this.statut = StatutLignePicking.RESERVEE;
+        this.statut = statut;
     }
 
     @PrePersist
     private void initialiserAvantCreation() {
         if (dateReservation == null) {
             dateReservation = LocalDateTime.now();
-        }
-        if (statut == null) {
-            statut = StatutLignePicking.RESERVEE;
         }
     }
 
@@ -200,8 +196,13 @@ public class LignePicking {
         return statut;
     }
 
+    // A n'appeler que depuis LignePickingStatutService (qui ecrit aussi l'historique).
     public void setStatut(StatutLignePicking statut) {
         this.statut = statut;
+    }
+
+    public StatutLignePickingCode getStatutCode() {
+        return StatutLignePickingCode.depuisNom(statut.getNom());
     }
 
     public List<Prelevement> getPrelevements() {

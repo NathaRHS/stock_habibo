@@ -27,8 +27,8 @@ public class JournalMouvement {
 
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "statut_journal_mouvement_id", nullable = false)
-    private StatutjournalMouvement statutJournalMouvement;
+    @JoinColumn(name = "statut_id", nullable = false)
+    private StatutJournalMouvement statut;
     
     @OneToMany (mappedBy = "journalMouvement")
     private List<Commande> commandes;
@@ -49,13 +49,13 @@ public class JournalMouvement {
             String urlPieceJointe,
             String nomClient,
             TypeMouvementJournal typeMouvementJournal,
-            StatutjournalMouvement statutJournalMouvement) {
+            StatutJournalMouvement statut) {
         this.fournisseur = fournisseur;
         this.reference = reference;
         this.urlPieceJointe = urlPieceJointe;
         this.nomClient = nomClient;
         this.typeMouvementJournal = typeMouvementJournal;
-        this.statutJournalMouvement = statutJournalMouvement;
+        this.statut = statut;
     }
 
     public Long getId() {
@@ -99,12 +99,12 @@ public class JournalMouvement {
     }
     
 
-    public StatutjournalMouvement getStatutJournalMouvement() {
-        return statutJournalMouvement;
+    public StatutJournalMouvement getStatut() {
+        return statut;
     }
 
-    public void setStatutJournalMouvement(StatutjournalMouvement statutJournalMouvement) {
-        this.statutJournalMouvement = statutJournalMouvement;
+    public void setStatut(StatutJournalMouvement statut) {
+        this.statut = statut;
     }
 
     public List<DetailJournal> getDetails() {

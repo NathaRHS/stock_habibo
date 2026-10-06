@@ -1,0 +1,160 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+.page {
+  min-width: 0;
+  flex: 1;
+  padding: 28px 32px 48px;
+  border-left: 1px solid var(--color-border);
+}
+
+.header { margin-bottom: 20px; }
+.header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.header p {
+  margin-top: 6px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.message {
+  padding: 24px 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+.error {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+/* Filtre de période */
+.filtre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.filtre label {
+  display: grid;
+  gap: 4px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
+.filtre input {
+  height: 34px;
+  padding: 0 10px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+}
+.filtre input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+.bouton {
+  height: 34px;
+  padding: 0 14px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.bouton:hover:not(:disabled) { color: var(--color-primary); border-color: var(--color-primary); }
+.bouton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.periode {
+  margin-left: auto;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+.periode em {
+  color: var(--color-text-muted);
+  font-style: normal;
+  font-weight: 400;
+}
+
+/* Bande de chiffres du rack */
+.bande {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.bande > div {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+.bande span {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+.bande strong {
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.hausse { color: var(--color-success); }
+.baisse { color: var(--color-danger); }
+
+/* Contenu des cases, choisi par la page */
+.code {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  opacity: 0.75;
+}
+.etat {
+  font-size: 11px;
+  font-weight: 500;
+}
+.vide {
+  font-size: 11px;
+  opacity: 0.5;
+}
+.variation {
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.detail {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 13px;
+}
+.detail strong { font-weight: 600; }
+.detail span { color: var(--color-text-secondary); }
+
+@media (max-width: 700px) {
+  .periode { margin-left: 0; }
+}

@@ -12,6 +12,11 @@
   background: var(--color-background);
   color: var(--color-text);
 }
+.examiner-button:hover{
+  cursor: pointer;
+  background: rgba(0, 0, 255, 0.188);
+  /* padding: 20px; */
+}
 .comptage-en-cours {
   animation: blink infinite ease-in 2.1s;
   color: var(--color-primary);
@@ -128,8 +133,9 @@
   background: var(--color-primary);
   color: #fff;
 }
-.inventory-actions .material-symbols-outlined {
-  font-size: 17px;
+.inventory-actions svg {
+  width: 17px;
+  height: 17px;
 }
 .inventory-error {
   margin-bottom: 14px;
@@ -336,6 +342,12 @@
 .inventory-slot.slot-ok > i {
   background: var(--color-success);
 }
+.inventory-slot.slot-pending {
+  opacity: 0.45;
+  background: #f4f6f8;
+  border-color: #e3e8ed;
+}
+
 .inventory-slot.slot-missing {
   border-color: #f0c7c7;
   background: #fffafa;
@@ -465,6 +477,8 @@
   background: transparent;
   color: var(--color-primary);
   font-weight: 600;
+  height: 20px;
+  width: 50px;
 }
 .no-issues {
   padding: 26px;

@@ -1,0 +1,136 @@
+.panel {
+  min-width: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+.head h2 {
+  font-size: 14px;
+  font-weight: 600;
+}
+.head p {
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.head p strong {
+  color: var(--color-text);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabs {
+  display: flex;
+  max-width: 60%;
+  overflow-x: auto;
+  padding: 3px;
+  background: var(--color-secondary-soft);
+  border-radius: 8px;
+}
+.tabs button {
+  height: 28px;
+  padding: 0 12px;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tabs button:hover { color: var(--color-text); }
+.tabs button[aria-pressed="true"] {
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08);
+  font-weight: 500;
+}
+
+.empty {
+  padding: 40px 16px;
+  color: var(--color-text-muted);
+  text-align: center;
+  font-size: 13px;
+}
+
+.grid {
+  display: grid;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 16px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.level {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  flex: 0 0 34px;
+  padding: 4px 0;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+}
+.cells {
+  display: flex;
+  gap: 8px;
+}
+
+.cell {
+  display: flex;
+  flex: 0 0 auto;
+  width: 88px;
+  height: 80px;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 7px 8px 8px;
+  color: var(--color-text);
+  background: #fbfcfd;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+}
+.cell:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(16, 24, 40, 0.08);
+}
+.cell:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.active,
+.active:hover {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 6px 16px rgba(1, 73, 142, 0.28);
+}
+
+@media (max-width: 900px) {
+  .head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .tabs { max-width: 100%; }
+}

@@ -21,6 +21,18 @@ public class ComptageInventaire {
     @JoinColumn(name = "emplacement_id", nullable = false)
     private Emplacement emplacement;
 
+    @ManyToOne 
+    @JoinColumn(name = "user_id")
+    User user;
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
     @Column(name = "quantite_comptee", nullable = false)
     private Integer quantiteComptee;
 

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { FileText } from "lucide-react";
 import Sidebar from "../components/Sidebar";
+import LienUser from "../components/LienUser";
 import {
   chargerDonneesControleInventaire,
   chargerParticipantsInventaire,
@@ -81,7 +83,7 @@ function Recapitulatif() {
           <p>Inventaires / {inventaire.reference} / Rapport</p>
           <div className="rapport-topbar-actions">
             <Link to={`/inventaire/${id}`}>Retour au contrôle</Link>
-            <button type="button" disabled={generationPdf} onClick={telechargerPdf}><span className="material-symbols-outlined">picture_as_pdf</span>{generationPdf ? "Génération…" : "Télécharger le PDF"}</button>
+            <button type="button" disabled={generationPdf} onClick={telechargerPdf}><FileText size={16} />{generationPdf ? "Génération…" : "Télécharger le PDF"}</button>
           </div>
         </header>
 
@@ -121,7 +123,7 @@ function Recapitulatif() {
             <aside className="rapport-side">
               <section className="rapport-panel rapport-conclusion"><header className="rapport-panel-head"><h2>Conclusion</h2></header><div>{ecartTotal === 0 ? <p>Tous les emplacements contrôlés correspondent au stock théorique.</p> : <p>{lignesManquantes.length + lignesSurplus.length} écart{lignesManquantes.length + lignesSurplus.length > 1 ? "s" : ""} ont été constatés pour un total de {ecartTotal} pièce{ecartTotal > 1 ? "s" : ""} à examiner.</p>}<small>Ce rapport constate les écarts. Il ne modifie pas automatiquement le stock.</small></div></section>
               <section className="rapport-panel"><header className="rapport-panel-head"><div><h2>Participants</h2><p>Traçabilité du comptage</p></div><span className="rapport-panel-note">{participants.length}</span></header><div className="rapport-participants">
-                {participants.length === 0 ? <p>Aucun participant enregistré.</p> : participants.map((participant) => <div className="rapport-participant" key={participant.participationId}><span>{participant.username?.slice(0, 2).toUpperCase()}</span><div><strong>{participant.username}</strong><small>{participant.matricule}</small></div><em>{participant.statut}</em></div>)}
+                {participants.length === 0 ? <p>Aucun participant enregistré.</p> : participants.map((participant) => <div className="rapport-participant" key={participant.participationId}><span>{participant.username?.slice(0, 2).toUpperCase()}</span><div><LienUser userId={participant.userId} nom={participant.username} /><small>{participant.matricule}</small></div><em>{participant.statut}</em></div>)}
               </div></section>
             </aside>
           </section>

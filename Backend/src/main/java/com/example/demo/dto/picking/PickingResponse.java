@@ -2,7 +2,7 @@ package com.example.demo.dto.picking;
 
 import java.time.LocalDateTime;
 
-import com.example.demo.entity.StatutPicking;
+import com.example.demo.entity.StatutPickingCode;
 
 public record PickingResponse(
         Long id,
@@ -15,6 +15,6 @@ public record PickingResponse(
         LocalDateTime dateGenerationPicking,
         LocalDateTime dateDebut,
         LocalDateTime dateFin,
-        StatutPicking statut,
+        StatutPickingCode statut,
         Integer nombreLignes) {
 }

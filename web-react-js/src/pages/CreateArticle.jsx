@@ -135,67 +135,91 @@ function CreateArticle() {
   };
 
   return (
-    <div className="container-create-article">
-      {error && <p role="alert">{error}</p>}
+    <section className="article-create-panel">
+      <header className="article-create-panel-header">
+        <h2>Nouvel article</h2>
+      </header>
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="nomArticle"
-          value={article.nomArticle}
-          onChange={handleChange}
-          placeholder="Nom de l'article"
-          required
-        />
+      <form className="article-create-form" onSubmit={handleSubmit}>
+        {error && (
+          <p className="article-create-error" role="alert">
+            {error}
+          </p>
+        )}
 
-        <input
-          type="text"
-          name="codeBar"
-          value={article.codeBar}
-          onChange={handleChange}
-          placeholder="Code-barres"
-          required
-        />
+        <div className="article-create-grid">
+          <label>
+            Nom de l'article
+            <input
+              type="text"
+              name="nomArticle"
+              value={article.nomArticle}
+              onChange={handleChange}
+              placeholder="Nom de l'article"
+              required
+            />
+          </label>
 
-        <select
-          name="typeProduitId"
-          value={article.typeProduitId}
-          onChange={handleChange}
-          disabled={loadingOptions}
-          required
-        >
-          <option value="" disabled>
-            Choisissez le type de produit
-          </option>
-          {typeArticle.map((type) => (
-            <option key={type.id} value={type.id}>
-              {type.nomType}
-            </option>
-          ))}
-        </select>
+          <label>
+            Code-barres
+            <input
+              type="text"
+              name="codeBar"
+              value={article.codeBar}
+              onChange={handleChange}
+              placeholder="Code-barres"
+              required
+            />
+          </label>
 
-        <select
-          name="typeConditionnementId"
-          value={article.typeConditionnementId}
-          onChange={handleChange}
-          disabled={loadingOptions}
-          required
-        >
-          <option value="" disabled>
-            Choisissez le conditionnement
-          </option>
-          {typeConditionnement.map((type) => (
-            <option key={type.id} value={type.id}>
-              {type.nomConditionnement}
-            </option>
-          ))}
-        </select>
+          <label>
+            Type de produit
+            <select
+              name="typeProduitId"
+              value={article.typeProduitId}
+              onChange={handleChange}
+              disabled={loadingOptions}
+              required
+            >
+              <option value="" disabled>
+                Choisissez le type de produit
+              </option>
+              {typeArticle.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.nomType}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <Button type="submit" loading={submitting} disabled={loadingOptions}>
-          Créer l'article
-        </Button>
+          <label>
+            Conditionnement
+            <select
+              name="typeConditionnementId"
+              value={article.typeConditionnementId}
+              onChange={handleChange}
+              disabled={loadingOptions}
+              required
+            >
+              <option value="" disabled>
+                Choisissez le conditionnement
+              </option>
+              {typeConditionnement.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.nomConditionnement}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="article-create-actions">
+            <Button type="submit" loading={submitting} disabled={loadingOptions}>
+              Créer l'article
+            </Button>
+          </div>
+        </div>
       </form>
-    </div>
+    </section>
   );
 }
 

@@ -1,0 +1,195 @@
+TODO - AUDIT DE LA CONCEPTION (backend Java + Flutter)
+=======================================================
+Legende : [ ] a faire   [x] fait   (P1 = urgent, P2 = important, P3 = si le temps le permet)
+
+
+-------------------------------------------------------
+FAIT
+-------------------------------------------------------
+[x] Import de fichiers limite aux PDF (extension .pdf + signature %PDF-)
+    -> service/FileStorageService.java
+    Reste : regler la taille max (spring.servlet.multipart.max-file-size)
+            et limiter le selecteur Flutter au PDF.
+
+[x] Statuts : modele "table de statuts + enum + historique + methode centrale"
+    applique au Journal, au Picking et a la Ligne de picking.
+    - Base migree avec Backend/tables/badgaga.sql (execute, controles a 0)
+    - Tests : JournalStatutHistoriqueTest, PickingStatutHistoriqueTest,
+      LignePickingStatutHistoriqueTest (H2 en memoire, 14 tests, tous OK)
+    - JSON inchange pour Flutter et React (memes textes RESERVEE, PRELEVEE...)
+
+    Journal
+    [x] StatutJournalMouvement (t_statut_journal_mouvement) + enum StatutJournalMouvementCode
+    [x] HistoriqueJournalMouvementStatut (t_historique_journal_mouvement_statut)
+    [x] JournalStatutService.changerStatut / enregistrerStatutInitial
+    [x] 6 setStatut remplaces (JournalMouvementService x4, MouvementStockService,
+        UserJournalMouvementService) + 1re ligne d'historique a la creation
+    Picking
+    [x] StatutPicking (t_statut_picking) + enum StatutPickingCode
+    [x] HistoriquePickingStatut + PickingStatutService (creerPicking, changerStatut)
+    [x] Les 2 creations de Picking passent par creerPicking
+    Ligne de picking (les 5 statuts gardes, dont IMPOSSIBLE)
+    [x] StatutLignePicking (t_statut_ligne_picking) + enum StatutLignePickingCode
+    [x] HistoriqueLignePickingStatut + LignePickingStatutService
+    [x] scan(), creerLigne et l'annulation du picking passent par changerStatut
+
+
+-------------------------------------------------------
+P1 - STATUTS : CE QU'IL RESTE
+-------------------------------------------------------
+[ ] Redemarrer le backend et verifier a la main un parcours complet :
+    generer un picking -> scanner une ligne -> regarder les 3 tables d'historique
+    (scan() n'a pas de test automatique : il demande stock, lots et prelevements)
+[ ] Initialiseur au demarrage : inserer les statuts manquants depuis les enums
+    (journal, picking, ligne) -> une base neuve fonctionne sans script de donnees
+[ ] Fermer PUT /journaux-mouvements/{id}/statut (updateStatutJournal) :
+    aucun controle de transition. Flutter l'appelle-t-il ? Sinon le supprimer.
+[ ] JournalMouvementService.update : ne plus accepter statutJournalMouvementId
+    dans la requete (modifier une reference ne doit pas changer le statut)
+[ ] Retirer la page admin de creation / suppression de statuts
+    (StatutJournalMouvementService), ou la passer en lecture seule
+[ ] Chercher tous les textes en dur : "PRELEVE", "CONFIRME", "SORTIE", etc.
+    (ex. findByNomStatut("..."), comparaisons avec des chaines)
+    et les remplacer par des constantes / enums
+[ ] Le picking ne passe jamais tout seul a EN_COURS / TERMINE (seul PUT /pickings/{id}
+    le fait) : decider si scan() doit le faire (l'historique reste a GENERE sinon)
+[ ] UserJournalMouvement (statut de participation) : a trancher
+    (conseil : le laisser tel quel, c'est un etat de session, pas un cycle de vie)
+[ ] Prelevement : pas d'historique (fait ponctuel, ne change jamais de statut)
+
+Menage lie aux statuts :
+[ ] Supprimer les anciens scripts rendus inutiles par badgaga.sql :
+    migration_statut_picking_vers_table.sql, migration_statut_ligne_picking_vers_table.sql,
+    migration_statut_journal_vers_statut_global.sql (obsolete : rejoue l'ancien chemin)
+[ ] Remplacer t_statut par t_statut_journal_mouvement dans les scripts de tables/
+    (create.sql, seeders.sql, donnees_test_*.sql, ...)
+[ ] Adapter simulation_mois_operations.sql : il insere encore t_picking et
+    t_ligne_picking avec l'ancienne colonne texte "statut"
+[ ] Apres validation, supprimer la table de secours t_statut_journal_mouvement_ancien
+    si elle existe : DROP TABLE t_statut_journal_mouvement_ancien;
+
+
+-------------------------------------------------------
+P1 - SECURITE RAPIDE (10 minutes)
+-------------------------------------------------------
+[ ] Sortir le mot de passe MySQL (root) et JWT_SECRET de application.properties
+    -> variables d'environnement
+[ ] Changer le JWT_SECRET actuel (considere comme compromis)
+[ ] jwt.expiration : 400000 s = ~4,6 jours, alors que le commentaire dit 1 heure
+[ ] Ajouter .gitignore : target/, uploads/, fichiers de secrets
+
+
+-------------------------------------------------------
+P1 - CONCURRENCE
+-------------------------------------------------------
+[ ] Ajouter @Version sur LignePicking et Picking
+    (GlobalExceptionHandler gere deja l'optimistic locking, mais aucune
+    entite n'a de @Version : le handler ne se declenche jamais)
+[ ] Proteger scan() contre deux scans simultanes sur la meme ligne
+[ ] Ecrire un test sur scan()
+
+
+-------------------------------------------------------
+P1 - TESTS
+-------------------------------------------------------
+[ ] Corriger InventaireServiceTest (NullPointer : ComptageInventaire sans user,
+    le service appelle getUser().getUsername()) -> mvnw test passe en entier
+[ ] Couper le SQL affiche pendant les tests (src/test/resources/application.properties)
+Lancer un test : .\mvnw test -Dtest=JournalStatutHistoriqueTest
+
+
+-------------------------------------------------------
+P2 - PAGINATION
+-------------------------------------------------------
+Backend (Pageable + format de reponse commun : contenu + total) :
+[ ] MouvementStockController GET / et /entrees
+[ ] JournalMouvementController GET / et /detailJournal
+[ ] PickingController GET /
+[ ] NotificationController GET /
+[ ] ArticleController GET /  (avec recherche)
+Ne PAS paginer : racks, roles, types, statuts, societes, conditionnements,
+palettes, emplacements, et les listes deja limitees par un parent.
+Ajouter un filtre (date, statut) en meme temps.
+Flutter : adapter chaque ecran au nouveau format + chargement de la page suivante.
+
+
+-------------------------------------------------------
+P2 - PIECES JOINTES
+-------------------------------------------------------
+Aujourd'hui : un simple texte url_piece_jointe dans JournalMouvement.
+[ ] Creer l'entite PieceJointe :
+    id, journal_mouvement_id, nom_original, nom_stocke, taille, date_ajout, user_id
+[ ] Relation JournalMouvement 1 -> N PieceJointe
+[ ] L'upload cree la ligne en base ; nettoyer le fichier si l'insertion echoue
+[ ] Telecharger par identifiant de piece, pas par nom de fichier
+[ ] Migrer / retirer url_piece_jointe
+
+
+-------------------------------------------------------
+P2 - PARAMETRAGE DE LA SUGGESTION D'AFFECTATION
+-------------------------------------------------------
+Table : t_parametrage_recommandation (une ligne, 4 colonnes, par insertion)
+[ ] Colonnes : poids_proximite, poids_capacite, poids_fiabilite,
+    poids_regroupement, date_creation, user_id
+[ ] Valeurs par defaut : 0,25 / 0,30 / 0,30 / 0,15
+[ ] Validation : chaque poids entre 0 et 1, somme = 1,00 (tolerance 0,001)
+[ ] Inserer une ligne par defaut au premier demarrage
+[ ] Lire le parametrage UNE fois au debut de proposerEmplacements
+[ ] Utiliser les poids dans calculerScoreFinal (OptimisationService, l.330-340)
+[ ] Controleur lecture / ecriture + ecran admin
+Hors perimetre (reste en code) : penalite anomalie, scores 60/100,
+poids rack/etage/position, regles de filtrage.
+
+
+-------------------------------------------------------
+P2 - CONCEPTION DES ENTITES (a decider)
+-------------------------------------------------------
+[ ] Commande : retirer les champs inutilises (quantite_reel, Etat, user, isChecked)
+    Renommer en LigneCommande (ou documenter : c'est une ligne du journal de sortie)
+[ ] Prelevement.lignePicking : rendre obligatoire une fois l'ancien chemin retire
+[ ] Ancien chemin CommandeService.UpdateCommandeAndDetailJournal : laisse tel quel
+    pour l'instant (decision du jour), a retirer plus tard
+[ ] Conditionnement de reference explicite (6 usages de .get(0) dans les services)
+[ ] Article.typeConditionnement double ArticleConditionnement.typeConditionnement
+[ ] Fusionner / clarifier TypeMouvementJournal et TypeMouvementStock ; sens en enum
+[ ] Initialiser les listes OneToMany (new ArrayList<>()) : Article.commandes,
+    Emplacement.prelevements, Role.users, User.commandes / prelevements / comptages
+[ ] Commande.isChecked : renommer (probleme de getter JSON), colonne en snake_case
+[ ] Verifier le stock par article ET par lot dans l'ancien chemin de prelevement
+    (compare au stock de tout l'emplacement)
+
+
+-------------------------------------------------------
+P3 - AUTRES POINTS RELEVES
+-------------------------------------------------------
+[ ] ddl-auto=update -> scripts versionnes (Flyway) ou validate en production
+    (rappel : update ne renomme ni ne supprime rien, d'ou badgaga.sql a la main)
+[ ] Verifier les droits du role OPERATEUR (SecurityConfig : presque tout en ADMIN)
+[ ] Verifier la protection de /user/** (regles hasRole commentees)
+[ ] Upload : limiter la taille (voir ligne PDF ci-dessus)
+[ ] CORS : limite a localhost, a elargir si une version web est servie ailleurs
+[ ] server.error.include-message=always et show-sql=true : a couper en production
+[ ] @Transactional(readOnly = true) sur les methodes de lecture (22 sans readOnly)
+[ ] Retirer System.out.println dans InventaireController (l.28)
+[ ] RapportInventaireService : ne plus attraper Exception (l.49)
+[ ] InsertAllCommande : recharger le journal hors de la boucle,
+    refuser deux lignes du meme article dans un journal
+[ ] Decouper les gros services (MouvementStockService, JournalMouvementService,
+    CommandeService) ; deplacer genererMeilleurParcours vers PickingService
+[ ] Ajouter @ManyToOne(fetch = LAZY) explicite (par defaut EAGER -> requetes N+1)
+[ ] Champs de tracabilite communs : date_creation, date_modification, cree_par
+[ ] nom_client (texte libre) : en faire une entite ou un lien vers Societe
+[ ] Plus de tests : generation du parcours, securite
+
+
+-------------------------------------------------------
+ORDRE CONSEILLE
+-------------------------------------------------------
+1. Verifier a la main le parcours picking apres badgaga.sql   -> 10 min
+2. Securite rapide (secrets, JWT)                             -> 10 min, tres visible
+3. @Version + test sur scan()                                 -> protege les statuts
+4. Fin des statuts : initialiseur, PUT /statut, page admin, textes en dur
+5. Pagination : MouvementStock et JournalMouvement
+6. Pieces jointes
+7. Parametrage de la recommandation
+8. Le reste (P3)

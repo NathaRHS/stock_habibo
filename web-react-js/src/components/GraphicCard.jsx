@@ -6,7 +6,7 @@ function GraphicCard({
   valeur_hier,
   valeur_now,
   props_color,
-  icon,
+  icon: Icon,
 }) {
   const difference = valeur_now - valeur_hier;
   const taux = valeur_hier === 0 ? 0 : (Math.abs(difference) * 100) / valeur_hier;
@@ -14,8 +14,8 @@ function GraphicCard({
 
   return (
     <article className="graphic-card-container" style={{ background: props_color }}>
-      <span className="graphic-card-icon material-symbols-outlined" aria-hidden="true">
-        {icon}
+      <span className="graphic-card-icon" aria-hidden="true">
+        <Icon size={22} />
       </span>
       <p className="graphic-card-title">{designation}</p>
       <p className="graphic-card-value">{valeur_chiffres.toLocaleString("fr-FR")}</p>

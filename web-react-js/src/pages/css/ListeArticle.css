@@ -1,0 +1,196 @@
+.article-page-shell {
+  display: flex;
+  min-height: 100vh;
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+.article-page-workspace {
+  min-width: 0;
+  flex: 1;
+  border-left: 1px solid var(--color-border);
+}
+
+.article-page-topbar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  min-height: 86px;
+  align-items: center;
+  gap: 26px;
+  padding: 0 38px 0 28px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.article-page-topbar > p {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.article-page-user {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 9px;
+}
+
+.article-page-user > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  place-items: center;
+  font-weight: 600;
+}
+
+.article-page-user strong,
+.article-page-user small { display: block; }
+.article-page-user strong { font-size: 11px; }
+.article-page-user small {
+  margin-top: 3px;
+  color: var(--color-text-muted);
+  font-size: 9px;
+}
+
+.article-page-content {
+  width: 100%;
+  max-width: 1380px;
+  margin: 0;
+  padding: 38px 38px 56px;
+  color: var(--color-text);
+  font-family: "Helvetica", Arial, sans-serif;
+}
+
+.article-list-heading {
+  margin-bottom: 24px;
+}
+.article-list-kicker {
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.article-list-heading h1 {
+  margin: 7px 0 5px;
+  font-size: 28px;
+  font-weight: 500;
+}
+.article-list-heading p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.article-create-panel {
+  overflow: hidden;
+  margin-bottom: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.article-create-panel-header {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+.article-create-panel-header h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.article-create-form {
+  padding: 22px 20px;
+}
+.article-create-error {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid #f1bbbb;
+  border-radius: 8px;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: 12px;
+}
+.article-create-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+.article-create-grid label {
+  display: grid;
+  gap: 7px;
+  color: var(--color-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+.article-create-grid input,
+.article-create-grid select {
+  width: 100%;
+  box-sizing: border-box;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+}
+.article-create-grid input:focus,
+.article-create-grid select:focus {
+  border-color: var(--color-primary);
+  outline: 3px solid var(--color-primary-soft);
+}
+.article-create-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.article-list-card {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.article-list-loading {
+  display: grid;
+  min-height: 60vh;
+  color: var(--color-text-secondary);
+  place-items: center;
+}
+.article-list-error {
+  margin-bottom: 18px;
+  padding: 13px 15px;
+  border: 1px solid #f1bbbb;
+  border-radius: 8px;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: 12px;
+}
+
+@media (max-width: 820px) {
+  .article-page-content {
+    width: calc(100% - 24px);
+    padding-top: 22px;
+  }
+  .article-create-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .article-create-grid {
+    grid-template-columns: 1fr;
+  }
+}

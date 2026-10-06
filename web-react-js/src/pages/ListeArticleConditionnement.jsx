@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Shapes } from "lucide-react";
 import { getAccessToken } from "../services/authService";
+import PageLayout from "../components/PageLayout";
+import Panel from "../components/Panel";
+import CreateArticleConditionnement from "./CreateArticleConditionnement";
 
 function ListeArticleConditionnement() {
   const springUrl = import.meta.env.VITE_SPRING_URL;
@@ -53,46 +58,65 @@ function ListeArticleConditionnement() {
     chargerArticlesConditionnements();
   }, [springUrl]);
 
-  if (loading) {
-    return <p>Chargement des conditionnements d'articles...</p>;
-  }
-
-  if (error) {
-    return <p role="alert">{error}</p>;
-  }
-
   return (
-    <div>
-      <table border="1">
-        <thead>
-          <tr>
-            <th>Article</th>
-            <th>Type de conditionnement</th>
-            <th>Code-barres</th>
-            <th>Quantité standard</th>
-          </tr>
-        </thead>
+    <PageLayout
+      breadcrumb="Stock / Conditionnements"
+      kicker="Stock"
+      title="Conditionnements"
+      description="Associez un article à un type de conditionnement et à sa quantité standard."
+      actions={
+        <Link className="layout-link-button" to="/type-conditionnement">
+          <Shapes size={17} />
+          Types de conditionnement
+        </Link>
+      }
+    >
+      <CreateArticleConditionnement
+        onCreated={(nouveau) =>
+          setArticlesConditionnements((actuels) => [...actuels, nouveau])
+        }
+      />
 
-        <tbody>
-          {articlesConditionnements.length === 0 ? (
-            <tr>
-              <td colSpan="4">
-                Aucun conditionnement d'article trouvé.
-              </td>
-            </tr>
-          ) : (
-            articlesConditionnements.map((conditionnement) => (
-              <tr key={conditionnement.id}>
-                <td>{conditionnement.nomArticle}</td>
-                <td>{conditionnement.nomConditionnement}</td>
-                <td>{conditionnement.codeBarres || "—"}</td>
-                <td>{conditionnement.quantitePieceStandard}</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+      <Panel
+        title="Conditionnements enregistrés"
+        subtitle={`${articlesConditionnements.length} au total`}
+      >
+        {loading ? (
+          <p className="layout-table-empty">Chargement…</p>
+        ) : error ? (
+          <p className="layout-table-empty" role="alert">{error}</p>
+        ) : articlesConditionnements.length === 0 ? (
+          <p className="layout-table-empty">
+            Aucun conditionnement d'article pour l'instant.
+          </p>
+        ) : (
+          <div className="layout-table-scroll">
+            <table className="layout-table">
+              <thead>
+                <tr>
+                  <th>Article</th>
+                  <th>Type de conditionnement</th>
+                  <th>Code-barres</th>
+                  <th className="is-number">Pièces par unité</th>
+                </tr>
+              </thead>
+              <tbody>
+                {articlesConditionnements.map((conditionnement) => (
+                  <tr key={conditionnement.id}>
+                    <td><strong>{conditionnement.nomArticle}</strong></td>
+                    <td>{conditionnement.nomConditionnement}</td>
+                    <td>{conditionnement.codeBarres || "—"}</td>
+                    <td className="is-number">
+                      {conditionnement.quantitePieceStandard}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+    </PageLayout>
   );
 }
 

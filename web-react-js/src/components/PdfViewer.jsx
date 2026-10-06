@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Download, Maximize, Minus, Plus } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist/build/pdf.mjs";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import "./PdfViewer.css";
@@ -129,7 +130,7 @@ function PdfViewer({ fichier, urlTelechargement, nomFichier }) {
         </div>
 
         <div className="pdf-toolbar-group">
-          <PdfTool icon="remove" label="Réduire" onClick={() => changerZoom(zoom - 0.15)} />
+          <PdfTool icon={Minus} label="Réduire" onClick={() => changerZoom(zoom - 0.15)} />
           <button
             className={adapterLargeur ? "pdf-tool-active" : ""}
             type="button"
@@ -138,14 +139,14 @@ function PdfViewer({ fichier, urlTelechargement, nomFichier }) {
           >
             {adapterLargeur ? "Largeur" : `${Math.round(zoom * 100)} %`}
           </button>
-          <PdfTool icon="add" label="Agrandir" onClick={() => changerZoom(zoom + 0.15)} />
+          <PdfTool icon={Plus} label="Agrandir" onClick={() => changerZoom(zoom + 0.15)} />
         </div>
 
         <div className="pdf-toolbar-group">
           <a href={urlTelechargement} download={nomFichier} title="Télécharger">
-            <span className="material-symbols-outlined">download</span>
+            <Download size={18} />
           </a>
-          <PdfTool icon="fullscreen" label="Plein écran" onClick={basculerPleinEcran} />
+          <PdfTool icon={Maximize} label="Plein écran" onClick={basculerPleinEcran} />
         </div>
       </div>
 
@@ -158,10 +159,10 @@ function PdfViewer({ fichier, urlTelechargement, nomFichier }) {
   );
 }
 
-function PdfTool({ icon, label, ...props }) {
+function PdfTool({ icon: Icon, label, ...props }) {
   return (
     <button type="button" aria-label={label} title={label} {...props}>
-      <span className="material-symbols-outlined">{icon}</span>
+      <Icon size={18} />
     </button>
   );
 }

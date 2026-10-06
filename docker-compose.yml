@@ -1,0 +1,58 @@
+name: wms-habibo
+
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-tiger}
+      MYSQL_DATABASE: stock_habibo
+      TZ: ${TZ:-Europe/Paris}
+    ports:
+      # 3307 côté hôte, comme dans application.properties (pour DBeaver, Workbench...)
+      - "${DB_HOST_PORT:-3307}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+  
+  backend:
+    build: ./Backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Surcharge application.properties (localhost:3307 ne fonctionne pas dans un conteneur)
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/stock_habibo?allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-tiger}
+      # Décommentez pour remplacer la clé JWT de application.properties :
+      # JWT_SECRET: ${JWT_SECRET}
+      TZ: ${TZ:-Europe/Paris}
+    ports:
+      - "8080:8080"
+    volumes:
+      # Fichiers uploadés (chemin relatif "uploads" dans FileStorageService)
+      - ./Backend/uploads:/app/uploads
+
+  web:
+    build:
+      context: ./web-react-js
+      args:
+        # Adresse de l'API telle que le NAVIGATEUR la voit (pas le nom Docker "backend").
+        # Autre PC du réseau : http://IP_DU_PC:8080
+        VITE_SPRING_URL: ${VITE_SPRING_URL:-http://localhost:8080}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${WEB_PORT:-5173}:80"
+
+volumes:
+  db_data:

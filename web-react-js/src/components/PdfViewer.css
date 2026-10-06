@@ -61,7 +61,7 @@
 }
 
 .pdf-toolbar button:disabled { color: #b5becb; cursor: not-allowed; }
-.pdf-toolbar .material-symbols-outlined { font-size: 20px; }
+.pdf-toolbar svg { width: 20px; height: 20px; }
 
 .pdf-page-number {
   min-width: 58px;

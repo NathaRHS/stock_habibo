@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { getAccessToken } from "../services/authService";
+import PageLayout from "../components/PageLayout";
+import Panel from "../components/Panel";
 import CreateTypeConditionnement from "./CreateTypeConditionnement";
 
 function ListeTypeConditionnement() {
@@ -43,39 +47,55 @@ function ListeTypeConditionnement() {
     chargerTypesConditionnement();
   }, [springUrl]);
 
-  if (loading) {
-    return <p>Chargement des types de conditionnement...</p>;
-  }
-
-  if (error) {
-    return <p role="alert">{error}</p>;
-  }
-
   return (
-    <div>
-      <CreateTypeConditionnement />
-      <table border="1">
-        <thead>
-          <tr>
-            <th>Nom du type de conditionnement</th>
-          </tr>
-        </thead>
+    <PageLayout
+      breadcrumb="Stock / Conditionnements / Types"
+      kicker="Stock"
+      title="Types de conditionnement"
+      description="Les formats disponibles pour conditionner un article."
+      actions={
+        <Link className="layout-link-button" to="/article-conditionnements">
+          <ArrowLeft size={17} />
+          Conditionnements
+        </Link>
+      }
+    >
+      <CreateTypeConditionnement
+        onCreated={(nouveau) =>
+          setTypesConditionnement((actuels) => [...actuels, nouveau])
+        }
+      />
 
-        <tbody>
-          {typesConditionnement.length === 0 ? (
-            <tr>
-              <td>Aucun type de conditionnement trouvé.</td>
-            </tr>
-          ) : (
-            typesConditionnement.map((type) => (
-              <tr key={type.id}>
-                <td>{type.nomConditionnement}</td>
+      <Panel
+        title="Types enregistrés"
+        subtitle={`${typesConditionnement.length} au total`}
+      >
+        {loading ? (
+          <p className="layout-table-empty">Chargement…</p>
+        ) : error ? (
+          <p className="layout-table-empty" role="alert">{error}</p>
+        ) : typesConditionnement.length === 0 ? (
+          <p className="layout-table-empty">
+            Aucun type de conditionnement pour l'instant.
+          </p>
+        ) : (
+          <table className="layout-table">
+            <thead>
+              <tr>
+                <th>Nom</th>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+            </thead>
+            <tbody>
+              {typesConditionnement.map((type) => (
+                <tr key={type.id}>
+                  <td><strong>{type.nomConditionnement}</strong></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Panel>
+    </PageLayout>
   );
 }
 

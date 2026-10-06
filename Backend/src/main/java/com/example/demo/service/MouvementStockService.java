@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import java.util.ArrayList;
@@ -97,6 +98,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.example.demo.dto.stock.ActiviteEmplacementResponse;
 import com.example.demo.dto.stock.AffectationStockRequest;
 import com.example.demo.dto.stock.CreerMouvementsStockRequest;
 import com.example.demo.dto.picking.LignePickingResponse;
@@ -111,6 +113,7 @@ import com.example.demo.entity.MouvementStock;
 import com.example.demo.entity.PaletteConditionnement;
 import com.example.demo.entity.Picking;
 import com.example.demo.entity.Prelevement;
+import com.example.demo.entity.StatutJournalMouvementCode;
 import com.example.demo.entity.TypeMouvementStock;
 import com.example.demo.entity.User;
 import com.example.demo.repository.DetailJournalRepository;
@@ -131,6 +134,7 @@ public class MouvementStockService {
     private final JournalMouvementRepository journalMouvementRepository;
     private final PaletteConditionnementRepository palelConditionnementRepository;
     private final DetailJournalRepository detailJournalRepository;
+    private final JournalStatutService journalStatutService;
     private final EmplacementRepository emplacementRepository;
     private final MouvementStockRepository mouvementStockRepository;
     private final PickingRepository pickingRepository;
@@ -140,6 +144,7 @@ public class MouvementStockService {
     private final TypeMouvementStockRepository typeMouvementStockRepository;
 
     private static final String STATUT_VALIDE_JOURNAL = "VALIDE";
+    private static final String STATUT_AFFECTE = "AFFECTEE";
     private static final String TYPE_MOUVEMENT_ENTREE = "ENTREE";
 
     public MouvementStockService(JournalMouvementRepository journalMouvementRepository,
@@ -149,6 +154,7 @@ public class MouvementStockService {
             EmplacementRepository emplacementRepository,
             PaletteConditionnementRepository palelConditionnementRepository,
             UserRepository userRepository,
+            JournalStatutService journalStatutService,
             TypeMouvementStockRepository typeMouvementStockRepository) {
         this.journalMouvementRepository = journalMouvementRepository;
         this.palelConditionnementRepository = palelConditionnementRepository;
@@ -159,6 +165,7 @@ public class MouvementStockService {
         this.typeMouvementStockRepository = typeMouvementStockRepository;
         this.pickingRepository = pickingRepository;
         this.prelevementRepository = prelevementRepository;
+        this.journalStatutService = journalStatutService;
     }
 
     @Transactional
@@ -179,7 +186,7 @@ public class MouvementStockService {
                         HttpStatus.NOT_FOUND,
                         "Journal introuvable"));
         // vérifier si le statut du journal est déjà valide
-        if (!journalMouvement.getStatutJournalMouvement().getNomStatut().equals(STATUT_VALIDE_JOURNAL)) {
+        if (!journalMouvement.getStatut().getNom().equals(STATUT_VALIDE_JOURNAL)) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "Le statut du journal n'est pas encore VALIDE");
@@ -415,11 +422,37 @@ public class MouvementStockService {
             }
         }
 
+        journalStatutService.changerStatut(journalMouvement, StatutJournalMouvementCode.AFFECTEE, utilisateur);
         // Un seul enregistrement pour tous les mouvements. La transaction annule tout
         // si l'une des insertions echoue.
         return mouvementStockRepository.saveAll(mouvementsAPreparer)
                 .stream()
                 .map(this::versResponse)
+                .toList();
+    }
+
+    // Stock et activite par emplacement : sans date, le jour courant est utilise;
+    // sans fin, la periode se limite au jour de debut. La fin est incluse.
+    public List<ActiviteEmplacementResponse> calculerActivite(LocalDate debut, LocalDate fin) {
+        LocalDate jourDebut = debut != null ? debut : LocalDate.now();
+        LocalDate jourFin = fin != null ? fin : jourDebut;
+
+        if (jourFin.isBefore(jourDebut)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La date de fin doit etre posterieure ou egale a la date de debut");
+        }
+
+        return mouvementStockRepository
+                .calculerActiviteParEmplacement(
+                        jourDebut.atStartOfDay(),
+                        jourFin.plusDays(1).atStartOfDay())
+                .stream()
+                .map(ligne -> new ActiviteEmplacementResponse(
+                        ligne.getEmplacementId(),
+                        ligne.getStockFin(),
+                        ligne.getVariation(),
+                        ligne.getNbMouvements()))
                 .toList();
     }
 
@@ -459,8 +492,9 @@ public class MouvementStockService {
 
     @Transactional
     public List<MouvementStockResponse> validerSortie(Long journalId) {
-        List<MouvementStock>mouvements = new  ArrayList<>();
-        JournalMouvement journal = journalMouvementRepository.findById(journalId).orElseThrow(
+        List<MouvementStock> mouvements = new ArrayList<>();
+        // Verrou sur le journal : deux validations simultanees sont serialisees.
+        JournalMouvement journal = journalMouvementRepository.findByIdForUpdate(journalId).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Le journal sortie n'existe pas."));
 
         if (!"SORTIE".equals(
@@ -470,64 +504,71 @@ public class MouvementStockService {
                     HttpStatus.BAD_REQUEST,
                     "Le journal n'est pas de type sortie");
         }
-        Picking picking = pickingRepository.findPicking(journalId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Picking introuvable"));
 
-    TypeMouvementStock typeMouvementSortie = typeMouvementStockRepository.findByNomTypeMouvement("SORTIE").orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"statut sortie introuvabke"));
-        for(LignePicking lignePicking:picking.getLignes()){
-            List<Prelevement>prelevements = prelevementRepository.findAllByLignePickingId(lignePicking.getId());
-
-          for (Prelevement prelevement : prelevements) {
-
-            Integer quantitePieces =
-                    prelevement.getQuantitePiecesPrelevees();
-
-            Integer quantitePieceStandard =
-                    lignePicking
-                            .getArticleConditionnement()
-                            .getQuantitePieceStandard();
-
-            if (quantitePieces % quantitePieceStandard != 0) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "La quantité prélevée de la ligne "
-                                + lignePicking.getId()
-                                + " ne correspond pas à un nombre entier "
-                                + "de conditionnements"
-                );
-            }
-
-            Integer nombreConditionnements =
-                    quantitePieces / quantitePieceStandard;
-
-            MouvementStock mouvement = new MouvementStock(
-                    typeMouvementSortie,
-                    prelevement.getEmplacement(),
-                    picking.getUser(),
-                    nombreConditionnements,
-                    lignePicking.getArticleConditionnement(),
-                    quantitePieces,
-                    LocalDateTime.now(),
-                    "Sortie du journal " + journal.getReference(),
-                    lignePicking.getDetailJournalSource(),
-                    false
-            );
-
-            mouvements.add(mouvement);
+        // Une sortie deja cloturee ne peut pas etre validee une seconde fois.
+        if (StatutJournalMouvementCode.CLOTURE.getNom().equals(journal.getStatut().getNom())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Cette sortie est deja cloturee");
         }
-    }
+        Picking picking = pickingRepository.findPicking(journalId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Picking introuvable"));
 
-    if (mouvements.isEmpty()) {
-        throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "Aucun mouvement de aaasortie à enregistrer"
-        );
-    }
+        TypeMouvementStock typeMouvementSortie = typeMouvementStockRepository.findByNomTypeMouvement("SORTIE")
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "statut sortie introuvabke"));
+        for (LignePicking lignePicking : picking.getLignes()) {
+            List<Prelevement> prelevements = prelevementRepository.findAllByLignePickingId(lignePicking.getId());
 
-    return mouvementStockRepository
-            .saveAll(mouvements)
-            .stream()
-            .map(this::versResponse)
-            .toList();
-}
+            for (Prelevement prelevement : prelevements) {
+
+                Integer quantitePieces = prelevement.getQuantitePiecesPrelevees();
+
+                Integer quantitePieceStandard = lignePicking
+                        .getArticleConditionnement()
+                        .getQuantitePieceStandard();
+
+                if (quantitePieces % quantitePieceStandard != 0) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "La quantité prélevée de la ligne "
+                                    + lignePicking.getId()
+                                    + " ne correspond pas à un nombre entier "
+                                    + "de conditionnements");
+                }
+
+                Integer nombreConditionnements = quantitePieces / quantitePieceStandard;
+
+                MouvementStock mouvement = new MouvementStock(
+                        typeMouvementSortie,
+                        prelevement.getEmplacement(),
+                        picking.getUser(),
+                        nombreConditionnements,
+                        lignePicking.getArticleConditionnement(),
+                        quantitePieces,
+                        LocalDateTime.now(),
+                        "Sortie du journal " + journal.getReference(),
+                        lignePicking.getDetailJournalSource(),
+                        false);
+
+                mouvements.add(mouvement);
+            }
+        }
+
+        if (mouvements.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Aucun mouvement de aaasortie à enregistrer");
+        }
+
+        List<MouvementStock> mouvementsEnregistres = mouvementStockRepository.saveAll(mouvements);
+
+        // La validation de la sortie est l'etape finale : le journal est cloture.
+        journalStatutService.changerStatut(journal, StatutJournalMouvementCode.CLOTURE);
+
+        return mouvementsEnregistres
+                .stream()
+                .map(this::versResponse)
+                .toList();
+    }
 
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight, ClipboardCheck, FileText, Plus, Search } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import { chargerJournauxInventaire } from "../services/inventaireService";
 import "./css/ListeInventaire.css";
@@ -90,7 +91,7 @@ function ListeInventaire() {
           <p>Opérations / Inventaires</p>
 
           <label className="inventaire-topbar-search">
-            <span className="material-symbols-outlined">search</span>
+            <Search size={16} />
             <input
               onChange={(event) => setRecherche(event.target.value)}
               placeholder="Rechercher une référence"
@@ -122,7 +123,7 @@ function ListeInventaire() {
               className="inventaire-create-button"
               to="/journaux-mouvements/create"
             >
-              <span className="material-symbols-outlined">add</span>
+              <Plus size={17} />
               Nouvel inventaire
             </Link>
           </header>
@@ -159,7 +160,7 @@ function ListeInventaire() {
 
               <div className="inventaire-filters">
                 <label>
-                  <span className="material-symbols-outlined">search</span>
+                  <Search size={16} />
                   <input
                     onChange={(event) => setRecherche(event.target.value)}
                     placeholder="Référence de l’inventaire"
@@ -212,9 +213,7 @@ function ListeInventaire() {
                       <tr key={journal.id}>
                         <td>
                           <div className="inventaire-reference">
-                            <span className="material-symbols-outlined">
-                              fact_check
-                            </span>
+                            <span className="inventaire-reference-icon"><ClipboardCheck size={17} /></span>
                             <div>
                               <strong>{journal.reference}</strong>
                               <small>Session #{journal.id}</small>
@@ -244,9 +243,7 @@ function ListeInventaire() {
                         <td>
                           {journal.urlPieceJointe ? (
                             <span className="inventaire-document">
-                              <span className="material-symbols-outlined">
-                                description
-                              </span>
+                              <FileText size={16} />
                               Disponible
                             </span>
                           ) : (
@@ -261,9 +258,7 @@ function ListeInventaire() {
                             to={`/inventaire/${journal.id}`}
                           >
                             {libelleAction(journal.statut)}
-                            <span className="material-symbols-outlined">
-                              arrow_forward
-                            </span>
+                            <ArrowRight size={16} />
                           </Link>
                         </td>
                       </tr>

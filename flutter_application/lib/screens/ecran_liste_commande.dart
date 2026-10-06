@@ -28,6 +28,7 @@ class EcranListeCommandeState extends State<EcranListeCommande> {
   List<Commande> _commandes = [];
   List<MeilleurEmplacement> _meilleurEmplacements = [];
   String? _erreur;
+  String? _filtre;
   @override
   void initState() {
     super.initState();
@@ -128,10 +129,20 @@ class EcranListeCommandeState extends State<EcranListeCommande> {
     }
   }
 
+  List<Commande> filterCommande() {
+    if (_filtre == "Toutes") {
+      return _commandes;
+    }
+
+    return _commandes
+        .where((commande) => commande.quantiteDemande > 10)
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Test")),
+      appBar: AppBar(title: Text("")),
       body: _erreur != null
           ? Center(
               child: Padding(
@@ -148,6 +159,23 @@ class EcranListeCommandeState extends State<EcranListeCommande> {
                         Row(
                           children: [
                             Text("Liste des commandes"),
+                            Row(
+                              children: [
+                                InkWell(
+                                  onTap: () => setState(() {
+                                    _filtre = "Toutes";
+                                  }),
+                                  child: Text("Toutes"),
+                                ),
+                                SizedBox(width: 50),
+                                InkWell(
+                                  onTap: () => setState(() {
+                                    _filtre = "Grosses";
+                                  }),
+                                  child: Text("Grosses commandes"),
+                                ),
+                              ],
+                            ),
                             SizedBox(width: 24),
                             Text(
                               "${_commandes.length} commandes",
@@ -176,7 +204,7 @@ class EcranListeCommandeState extends State<EcranListeCommande> {
                         ),
                         Column(
                           children: [
-                            ..._commandes.map((commande) {
+                            ...filterCommande().map((commande) {
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 12),
                                 child: Row(
@@ -186,7 +214,15 @@ class EcranListeCommandeState extends State<EcranListeCommande> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(commande.nomArticle),
-                                        Text("${commande.quantiteDemande}"),
+                                        Text(
+                                          "${commande.quantiteDemande}",
+                                          style: commande.quantiteDemande > 10
+                                              ? TextStyle(
+                                                  color: Colors.red,
+                                                  fontWeight: FontWeight.bold,
+                                                )
+                                              : TextStyle(color: Colors.black),
+                                        ),
                                       ],
                                     ),
                                     Spacer(),
@@ -195,6 +231,7 @@ class EcranListeCommandeState extends State<EcranListeCommande> {
                                         await _chargerMeilleurEmplacement(
                                           commande.idCommande,
                                         );
+
                                         if (!context.mounted) return;
                                         showModalBottomSheet(
                                           context: context,

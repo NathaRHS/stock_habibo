@@ -7,6 +7,7 @@ public record ComptageInventaireResponse(
         Long detailJournalId,
         Long articleId,
         String nomArticle,
+        String user,
         Long emplacementId,
         String nomEmplacement,
         Integer quantiteComptee,

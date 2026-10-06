@@ -1,3 +1,4 @@
+import { ArrowRight, Package } from "lucide-react";
 import "../assets/css/Dashboard.css";
 
 const stockStates = [
@@ -15,7 +16,9 @@ function StockStatusCard() {
           <h2 id="stock-status-title">10 432</h2>
           <span>unités disponibles</span>
         </div>
-        <span className="stock-status-icon material-symbols-outlined" aria-hidden="true">inventory_2</span>
+        <span className="stock-status-icon" aria-hidden="true">
+          <Package size={20} />
+        </span>
       </div>
       <div className="stock-status-bar" aria-label="Répartition de l’état du stock">
         {stockStates.map((state) => (
@@ -33,7 +36,7 @@ function StockStatusCard() {
       </ul>
       <button type="button">
         Voir les détails
-        <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        <ArrowRight size={16} aria-hidden="true" />
       </button>
     </section>
   );

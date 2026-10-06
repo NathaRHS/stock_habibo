@@ -21,16 +21,44 @@
 }
 
 .logo-mark {
-  display: grid;
-  width: 28px;
-  height: 28px;
-  color: var(--color-primary);
-  border: 2px solid var(--color-primary);
-  border-radius: 6px;
-  place-items: center;
-  font-size: 18px;
-  font-weight: 800;
+  display: block;
+  width: 132px;
+  height: auto;
+  flex: 0 0 132px;
 }
+
+.logo-mark img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.sidebar-notification {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  margin: 14px 27px 0;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+
+.sidebar-notification .notification-bell-button {
+  width: 29px;
+  height: 29px;
+}
+
+.sidebar-notification .notification-panel {
+  top: calc(100% + 8px);
+  right: auto;
+  left: 0;
+}
+
+.sidebar-notification > span { white-space: nowrap; }
 
 .sidebar-content {
   display: flex;
@@ -67,12 +95,9 @@
   text-align: left;
 }
 
-.sidebar-content .sidebar-link .material-symbols-outlined {
-  width: 18px;
-  height: auto;
+.sidebar-content .sidebar-link svg {
   flex: 0 0 18px;
   background: transparent;
-  font-size: 18px;
 }
 
 .sidebar-content .sidebar-link:hover:not(:disabled) {
@@ -122,7 +147,7 @@
   font-family: inherit;
 }
 
-.sidebar-footer .material-symbols-outlined { font-size: 18px; }
+.sidebar-footer svg { flex: none; }
 .sidebar-footer button:disabled { color: var(--color-text-muted); cursor: not-allowed; }
 
 @media (max-width: 640px) {

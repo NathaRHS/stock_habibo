@@ -10,7 +10,7 @@
  select * from  t_rack;                     
  select * from  t_roles;                    
  select * from  t_societe;                  
- select * from  t_statut_journal_mouvement; 
+ select * from  t_statut; 
  select * from  t_type_conditionnement;     
  select * from  t_type_mouvement;           
  select * from  t_type_mouvement_journal;   
@@ -34,7 +34,7 @@ INSERT INTO t_roles (id, nom_role) VALUES
 (2, 'INVENTORY-RESPONSABLE'),
 (3, 'AUDITEUR');
 
-INSERT INTO t_statut_journal_mouvement (id, nom_statut) VALUES
+INSERT INTO t_statut (id, nom) VALUES
 (1, 'EN COURS'),
 (2, 'VALIDE'),
 (3, 'MODIFIE'),
@@ -133,7 +133,7 @@ INSERT INTO t_journal_mouvement
     url_piece_jointe,
     fournisseur_id,
     type_mouvement_journal_id,
-    statut_journal_mouvement_id
+    statut_id
 )
 VALUES
 (
@@ -246,7 +246,7 @@ TRUNCATE TABLE t_emplacement;
 TRUNCATE TABLE t_rack;
 TRUNCATE TABLE t_user;
 TRUNCATE TABLE t_societe;
-TRUNCATE TABLE t_statut_journal_mouvement;
+TRUNCATE TABLE t_statut;
 TRUNCATE TABLE t_type_mouvement_journal;
 TRUNCATE TABLE t_type_mouvement;
 TRUNCATE TABLE t_type_conditionnement;
@@ -369,7 +369,7 @@ DESC t_palette_conditionnement;
 DESC t_rack;                     
 DESC t_roles;                    
 DESC t_societe;                  
-DESC t_statut_journal_mouvement; 
+DESC t_statut; 
 DESC t_type_conditionnement;     
 DESC t_type_mouvement;           
 DESC t_type_mouvement_journal;   

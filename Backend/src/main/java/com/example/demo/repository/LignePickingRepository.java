@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.demo.entity.LignePicking;
-import com.example.demo.entity.StatutLignePicking;
+import com.example.demo.entity.StatutLignePickingCode;
 
 @Repository
 public interface LignePickingRepository extends JpaRepository<LignePicking, Long> {
@@ -27,9 +27,16 @@ public interface LignePickingRepository extends JpaRepository<LignePicking, Long
             SELECT DISTINCT ligne.emplacement.id
             FROM LignePicking ligne
             WHERE ligne.emplacement.id IN :emplacementIds
-              AND ligne.statut IN :statuts
+              AND ligne.statut.nom IN :nomsStatuts
             """)
-    List<Long> findEmplacementIdsAvecPickingActif(
+    List<Long> findEmplacementIdsAvecPickingActifParNom(
             @Param("emplacementIds") List<Long> emplacementIds,
-            @Param("statuts") List<StatutLignePicking> statuts);
+            @Param("nomsStatuts") List<String> nomsStatuts);
+
+    // Les appelants raisonnent avec l'enum, jamais avec du texte.
+    default List<Long> findEmplacementIdsAvecPickingActif(
+            List<Long> emplacementIds,
+            List<StatutLignePickingCode> statuts) {
+        return findEmplacementIdsAvecPickingActifParNom(emplacementIds, StatutLignePickingCode.versNoms(statuts));
+    }
 }

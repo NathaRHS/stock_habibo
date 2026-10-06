@@ -16,8 +16,8 @@ import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.LignePicking;
 import com.example.demo.entity.Picking;
 import com.example.demo.entity.Rack;
-import com.example.demo.entity.StatutLignePicking;
-import com.example.demo.entity.StatutPicking;
+import com.example.demo.entity.StatutLignePickingCode;
+import com.example.demo.entity.StatutPickingCode;
 import com.example.demo.entity.User;
 import com.example.demo.repository.JournalMouvementRepository;
 import com.example.demo.repository.LignePickingRepository;
@@ -28,27 +28,33 @@ import com.example.demo.repository.UserRepository;
 @Service
 public class PickingService {
 
-    private static final List<StatutPicking> STATUTS_ACTIFS = List.of(
-            StatutPicking.GENERE,
-            StatutPicking.EN_COURS);
+    private static final List<StatutPickingCode> STATUTS_ACTIFS = List.of(
+            StatutPickingCode.GENERE,
+            StatutPickingCode.EN_COURS);
 
     private final PickingRepository pickingRepository;
     private final LignePickingRepository lignePickingRepository;
     private final JournalMouvementRepository journalMouvementRepository;
     private final UserRepository userRepository;
     private final RackRepository rackRepository;
+    private final PickingStatutService pickingStatutService;
+    private final LignePickingStatutService lignePickingStatutService;
 
     public PickingService(
             PickingRepository pickingRepository,
             LignePickingRepository lignePickingRepository,
             JournalMouvementRepository journalMouvementRepository,
             UserRepository userRepository,
-            RackRepository rackRepository) {
+            RackRepository rackRepository,
+            PickingStatutService pickingStatutService,
+            LignePickingStatutService lignePickingStatutService) {
         this.pickingRepository = pickingRepository;
         this.lignePickingRepository = lignePickingRepository;
         this.journalMouvementRepository = journalMouvementRepository;
         this.userRepository = userRepository;
         this.rackRepository = rackRepository;
+        this.pickingStatutService = pickingStatutService;
+        this.lignePickingStatutService = lignePickingStatutService;
     }
 
     @Transactional
@@ -69,8 +75,8 @@ public class PickingService {
         User user = trouverUser(request.userId());
         Rack rackDepart = trouverRack(request.rackDepartId());
 
-        Picking picking = new Picking(journal, user, rackDepart);
-        return versResponse(pickingRepository.save(picking));
+        Picking picking = pickingStatutService.creerPicking(journal, user, rackDepart);
+        return versResponse(picking);
     }
 
     @Transactional(readOnly = true)
@@ -108,13 +114,13 @@ public class PickingService {
         boolean affectationModifiee = !Objects.equals(picking.getUser().getId(), user.getId())
                 || !Objects.equals(picking.getRackDepart().getId(), rackDepart.getId());
 
-        if (affectationModifiee && picking.getStatut() != StatutPicking.GENERE) {
+        if (affectationModifiee && picking.getStatutCode() != StatutPickingCode.GENERE) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "Un picking demarre ne peut plus changer d'utilisateur ou de rack de depart");
         }
 
-        verifierTransition(picking.getStatut(), request.statut());
+        verifierTransition(picking.getStatutCode(), request.statut());
 
         picking.setUser(user);
         picking.setRackDepart(rackDepart);
@@ -186,14 +192,14 @@ public class PickingService {
         }
     }
 
-    private void verifierTransition(StatutPicking actuel, StatutPicking nouveau) {
+    private void verifierTransition(StatutPickingCode actuel, StatutPickingCode nouveau) {
         if (actuel == nouveau) {
             return;
         }
 
         boolean autorisee = switch (actuel) {
-            case GENERE -> nouveau == StatutPicking.EN_COURS || nouveau == StatutPicking.ANNULE;
-            case EN_COURS -> nouveau == StatutPicking.TERMINE || nouveau == StatutPicking.ANNULE;
+            case GENERE -> nouveau == StatutPickingCode.EN_COURS || nouveau == StatutPickingCode.ANNULE;
+            case EN_COURS -> nouveau == StatutPickingCode.TERMINE || nouveau == StatutPickingCode.ANNULE;
             case TERMINE, ANNULE -> false;
         };
 
@@ -204,20 +210,20 @@ public class PickingService {
         }
     }
 
-    private void appliquerNouveauStatut(Picking picking, StatutPicking nouveauStatut) {
-        if (picking.getStatut() == nouveauStatut) {
+    private void appliquerNouveauStatut(Picking picking, StatutPickingCode nouveauStatut) {
+        if (picking.getStatutCode() == nouveauStatut) {
             return;
         }
 
-        if (nouveauStatut == StatutPicking.EN_COURS && picking.getDateDebut() == null) {
+        if (nouveauStatut == StatutPickingCode.EN_COURS && picking.getDateDebut() == null) {
             picking.setDateDebut(LocalDateTime.now());
         }
 
-        if (nouveauStatut == StatutPicking.TERMINE) {
+        if (nouveauStatut == StatutPickingCode.TERMINE) {
             boolean ligneNonTerminee = picking.getLignes().stream()
-                    .map(LignePicking::getStatut)
-                    .anyMatch(statut -> statut == StatutLignePicking.RESERVEE
-                            || statut == StatutLignePicking.EN_COURS);
+                    .map(LignePicking::getStatutCode)
+                    .anyMatch(statut -> statut == StatutLignePickingCode.RESERVEE
+                            || statut == StatutLignePickingCode.EN_COURS);
 
             if (ligneNonTerminee) {
                 throw new ResponseStatusException(
@@ -227,17 +233,17 @@ public class PickingService {
             picking.setDateFin(LocalDateTime.now());
         }
 
-        if (nouveauStatut == StatutPicking.ANNULE) {
+        if (nouveauStatut == StatutPickingCode.ANNULE) {
             for (LignePicking ligne : picking.getLignes()) {
-                if (ligne.getStatut() == StatutLignePicking.RESERVEE
-                        || ligne.getStatut() == StatutLignePicking.EN_COURS) {
-                    ligne.setStatut(StatutLignePicking.ANNULEE);
+                if (ligne.getStatutCode() == StatutLignePickingCode.RESERVEE
+                        || ligne.getStatutCode() == StatutLignePickingCode.EN_COURS) {
+                    lignePickingStatutService.changerStatut(ligne, StatutLignePickingCode.ANNULEE);
                 }
             }
             picking.setDateFin(LocalDateTime.now());
         }
 
-        picking.setStatut(nouveauStatut);
+        pickingStatutService.changerStatut(picking, nouveauStatut);
     }
 
     private PickingResponse versResponse(Picking picking) {
@@ -252,7 +258,7 @@ public class PickingService {
                 picking.getDateGenerationPicking(),
                 picking.getDateDebut(),
                 picking.getDateFin(),
-                picking.getStatut(),
+                picking.getStatutCode(),
                 picking.getLignes().size());
     }
 

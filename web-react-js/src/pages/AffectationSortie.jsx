@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, ArrowRight, CheckSquare, ChevronRight, FileUp, Info, Receipt, Search } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import { getAccessToken } from "../services/authService";
 import "./css/AffectationSortie.css";
@@ -14,6 +15,27 @@ const normalize = (value) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+
+async function lireMessageErreur(response, messageParDefaut) {
+  const contenu = await response.text();
+  if (!contenu.trim()) return messageParDefaut;
+
+  try {
+    const erreur = JSON.parse(contenu);
+    const message =
+      erreur.detail ??
+      erreur.message ??
+      erreur.title ??
+      erreur.error;
+
+    if (typeof message === "string" && message.trim()) return message;
+  } catch {
+    const typeContenu = response.headers.get("content-type") ?? "";
+    if (typeContenu.includes("text/plain")) return contenu.trim();
+  }
+
+  return messageParDefaut;
+}
 
 function AffectationSortie() {
   const { id } = useParams();
@@ -30,6 +52,9 @@ function AffectationSortie() {
   const [endTime, setEndTime] = useState("");
   const [openLine, setOpenLine] = useState(null);
   const [notice, setNotice] = useState("");
+  const [statutJournal, setStatutJournal] = useState("");
+  const [validationEnCours, setValidationEnCours] = useState(false);
+  const cloture = statutJournal === "CLOTURE";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -38,6 +63,24 @@ function AffectationSortie() {
       try {
         setLoading(true);
         setError("");
+
+        // Le statut du journal indique si la sortie est deja cloturee.
+        const journalResponse = await fetch(
+          `${springUrl}/journaux-mouvements/${id}`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            signal: controller.signal,
+          },
+        );
+
+        if (journalResponse.ok) {
+          const journal = await journalResponse.json();
+          setStatutJournal(journal.statut ?? "");
+        }
+
         const response = await fetch(
           `${springUrl}/lignes-picking/getLignes/${id}`,
           {
@@ -51,7 +94,10 @@ function AffectationSortie() {
 
         if (!response.ok) {
           throw new Error(
-            `Impossible de charger la sortie (${response.status}).`,
+            await lireMessageErreur(
+              response,
+              `Impossible de charger la sortie (${response.status}).`,
+            ),
           );
         }
 
@@ -120,12 +166,21 @@ function AffectationSortie() {
   };
 
   const validerSortie = async () => {
+    if (cloture || validationEnCours) return;
+
     try {
+      setValidationEnCours(true);
+      setError("");
       const mouvementsCrees = await appelerApiSortie();
 
-      setNotice(`${mouvementsCrees.length} mouvement(s) de stock créé(s).`);
+      setStatutJournal("CLOTURE");
+      setNotice(
+        `Sortie clôturée : ${mouvementsCrees.length} mouvement(s) de stock créé(s).`,
+      );
     } catch (erreur) {
       setError(erreur.message);
+    } finally {
+      setValidationEnCours(false);
     }
   };
 
@@ -137,7 +192,7 @@ function AffectationSortie() {
           <span>Opérations / Confirmation de sortie</span>
           <div className="confirmation-topbar-right">
             <label className="confirmation-global-search">
-              <span className="material-symbols-outlined">search</span>
+              <Search size={16} />
               <input
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Rechercher"
@@ -157,7 +212,7 @@ function AffectationSortie() {
 
         <main className="confirmation-page">
           <Link className="confirmation-back" to="/journaux-mouvements">
-            <span className="material-symbols-outlined">arrow_back</span>
+            <ArrowLeft size={16} />
             Journaux de mouvements
           </Link>
 
@@ -192,7 +247,7 @@ function AffectationSortie() {
               </p>
 
               <div className="confirmation-journal-info">
-                <span className="material-symbols-outlined">receipt_long</span>
+                <Receipt size={18} />
                 <div>
                   <small>Journal sélectionné</small>
                   <strong>Sortie #{id}</strong>
@@ -211,9 +266,7 @@ function AffectationSortie() {
                 onClick={() => fileInput.current?.click()}
                 type="button"
               >
-                <span className="material-symbols-outlined">
-                  {file ? "task" : "upload_file"}
-                </span>
+                {file ? <CheckSquare size={22} /> : <FileUp size={22} />}
                 <strong>{file ? file.name : "Importer un document"}</strong>
                 <small>
                   {file
@@ -247,7 +300,7 @@ function AffectationSortie() {
 
               <div className="confirmation-toolbar">
                 <label className="confirmation-search">
-                  <span className="material-symbols-outlined">search</span>
+                  <Search size={16} />
                   <input
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Rechercher un article ou emplacement"
@@ -325,14 +378,18 @@ function AffectationSortie() {
 
               <footer className="confirmation-footer">
                 <div>
-                  <span className="material-symbols-outlined">info</span>
-                  Vérifiez les quantités et le document avant validation.
+                  <Info size={16} />
+                  {cloture
+                    ? "Cette sortie est clôturée. Vous consultez son résumé."
+                    : "Vérifiez les quantités et le document avant validation."}
                 </div>
-                <button onClick={validerSortie} type="button">
-                  Valider la sortie
-                  <span className="material-symbols-outlined">
-                    arrow_forward
-                  </span>
+                <button
+                  disabled={cloture || validationEnCours}
+                  onClick={validerSortie}
+                  type="button"
+                >
+                  {cloture ? "Sortie clôturée" : "Valider la sortie"}
+                  {!cloture && <ArrowRight size={16} />}
                 </button>
               </footer>
             </section>
@@ -365,9 +422,7 @@ function PickingRow({ line, open, toggle }) {
           <strong>{line.quantiteConditionnementsAPrelever ?? 0}</strong>
           <small>conditionnements</small>
         </span>
-        <span className="material-symbols-outlined confirmation-chevron">
-          chevron_right
-        </span>
+        <ChevronRight className="confirmation-chevron" size={17} />
       </button>
       {open && (
         <div className="confirmation-details">

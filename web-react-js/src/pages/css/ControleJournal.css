@@ -4,7 +4,7 @@
   --text: #111827;
   --muted: #4b5563;
   --line: #e5e7eb;
-  --primary: #1d4ed8;
+  --primary: #01498e;
   --primary-hover: #1e40af;
   --success-bg: #ecfdf5;
   --success-text: #065f46;
@@ -356,8 +356,9 @@
   gap: 4px;
 }
 
-.item-info span .material-symbols-outlined {
-  font-size: 13px;
+.item-info span svg {
+  width: 13px;
+  height: 13px;
   color: #059669;
 }
 

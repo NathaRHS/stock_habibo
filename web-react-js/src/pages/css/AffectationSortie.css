@@ -227,9 +227,10 @@
   border-color: #9fcdb6;
   background: #fbfefc;
 }
-.confirmation-upload > .material-symbols-outlined {
+.confirmation-upload > svg {
   margin-bottom: 10px;
-  font-size: 24px;
+  width: 24px;
+  height: 24px;
 }
 .confirmation-upload strong {
   max-width: 100%;
@@ -579,6 +580,12 @@
 }
 .confirmation-footer button:hover {
   background: var(--color-primary-hover);
+}
+.confirmation-footer button:disabled,
+.confirmation-footer button:disabled:hover {
+  background: var(--color-primary);
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 .confirmation-footer button span {
   font-size: 16px;

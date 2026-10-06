@@ -78,6 +78,11 @@ public class JournalMouvementController {
         return service.valider(id);
     }
 
+    @GetMapping("/{idParticipant}")
+    public JournalMouvementResponse getAllJournauxByParticipant(@PathVariable  Long participantId){
+        return service.findAllByParticipantsId(participantId);
+    }
+
     @PostMapping("/{id}/demander-modification")
     public JournalMouvementResponse demanderModification(@PathVariable Long id) {
         return service.demanderModification(id);

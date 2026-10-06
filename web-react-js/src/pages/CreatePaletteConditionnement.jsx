@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAccessToken } from "../services/authService";
+import { Link } from "react-router-dom";
+import { PackageOpen } from "lucide-react";
 import Button from "../components/Button";
+import PageLayout from "../components/PageLayout";
+import Panel from "../components/Panel";
 import "./css/CreatePaletteConditionnement.css";
 
 const initialForm = {
@@ -134,37 +138,37 @@ function CreatePaletteConditionnement() {
     conditionnements.find((conditionnement) => conditionnement.id === id);
 
   return (
-    <main className="palette-page">
-      <header className="palette-header">
-        <div>
-          <p className="palette-eyebrow">Configuration du stockage</p>
-          <h1>Capacités des palettes</h1>
-          <p>
-            Définissez combien de conditionnements d’un article peuvent tenir sur
-            une place palette.
-          </p>
-        </div>
-        <a href="/article-conditionnements" className="palette-back-link">
-          Voir les conditionnements
-        </a>
-      </header>
-
-      <div className="palette-layout">
-        <section className="palette-card palette-form-card">
-          <div className="palette-card-heading">
-            <span className="palette-step">01</span>
-            <div>
-              <h2>Nouvelle règle</h2>
-              <p>Une seule règle peut être créée par conditionnement d’article.</p>
-            </div>
-          </div>
-
+    <PageLayout
+      breadcrumb="Stock / Capacités palettes"
+      kicker="Stock"
+      title="Capacités palettes"
+      description="Nombre maximum d’unités d’un conditionnement sur une place palette."
+      actions={
+        <Link className="layout-link-button" to="/article-conditionnements">
+          <PackageOpen size={17} />
+          Conditionnements
+        </Link>
+      }
+    >
+        <Panel
+          title="Nouvelle capacité"
+          subtitle="Une seule capacité par conditionnement d’article."
+        >
           {loading ? (
-            <p className="palette-state">Chargement des conditionnements…</p>
+            <p className="layout-table-empty">Chargement…</p>
           ) : (
-            <form onSubmit={handleSubmit} className="palette-form">
+            <form onSubmit={handleSubmit} className="layout-form">
+              {optionsDisponibles.length === 0 && !error && (
+                <p className="layout-message layout-message--info">
+                  Tous les conditionnements ont déjà une capacité.
+                </p>
+              )}
+              {error && <p className="layout-message layout-message--error" role="alert">{error}</p>}
+              {success && <p className="layout-message layout-message--success" role="status">{success}</p>}
+
+              <div className="palette-form-grid">
               <label>
-                <span>Conditionnement d’article</span>
+                Conditionnement d’article
                 <select
                   value={form.articleConditionnementId}
                   onChange={(event) => {
@@ -189,7 +193,7 @@ function CreatePaletteConditionnement() {
               </label>
 
               <label>
-                <span>Conditionnements maximum par palette</span>
+                Unités max. par palette
                 <input
                   type="number"
                   min="1"
@@ -210,72 +214,64 @@ function CreatePaletteConditionnement() {
                 />
               </label>
 
-              <div className="palette-capacity-preview" aria-live="polite">
-                <span>Capacité calculée</span>
-                <strong>{capaciteTotale > 0 ? `${capaciteTotale} pièces` : "—"}</strong>
-                <small>
-                  {conditionnementSelectionne && quantiteMaximale > 0
-                    ? `${quantiteMaximale} × ${conditionnementSelectionne.quantitePieceStandard} pièces`
-                    : "Choisissez un conditionnement et une quantité."}
-                </small>
+              <p className="palette-total" aria-live="polite">
+                <span>Soit</span>
+                <strong>{capaciteTotale > 0 ? capaciteTotale : "—"}</strong>
+                <span>pièces</span>
+              </p>
               </div>
 
-              {optionsDisponibles.length === 0 && !error && (
-                <p className="palette-message palette-message--info">
-                  Tous les conditionnements possèdent déjà une règle palette.
-                </p>
-              )}
-              {error && <p className="palette-message palette-message--error" role="alert">{error}</p>}
-              {success && <p className="palette-message palette-message--success" role="status">{success}</p>}
-
-              <Button
-                type="submit"
-                loading={submitting}
-                disabled={loading || optionsDisponibles.length === 0}
-              >
-                Enregistrer la capacité
-              </Button>
+              <div className="layout-form-actions">
+                <Button
+                  type="submit"
+                  loading={submitting}
+                  disabled={loading || optionsDisponibles.length === 0}
+                >
+                  Enregistrer
+                </Button>
+              </div>
             </form>
           )}
-        </section>
+        </Panel>
 
-        <section className="palette-card palette-list-card">
-          <div className="palette-card-heading">
-            <span className="palette-step">02</span>
-            <div>
-              <h2>Règles configurées</h2>
-              <p>{regles.length} capacité{regles.length > 1 ? "s" : ""} enregistrée{regles.length > 1 ? "s" : ""}</p>
+        <Panel title="Capacités enregistrées" subtitle={`${regles.length} au total`}>
+          {!loading && regles.length === 0 ? (
+            <p className="layout-table-empty">Aucune capacité pour l’instant.</p>
+          ) : (
+            <div className="layout-table-scroll">
+              <table className="layout-table">
+                <thead>
+                  <tr>
+                    <th>Article</th>
+                    <th>Conditionnement</th>
+                    <th className="is-number">Pièces / unité</th>
+                    <th className="is-number">Unités / palette</th>
+                    <th className="is-number">Pièces / palette</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {regles.map((regle) => {
+                    const conditionnement = trouverConditionnement(regle.articleConditionnementId);
+                    return (
+                      <tr key={regle.id}>
+                        <td><strong>{conditionnement?.nomArticle || "Article inconnu"}</strong></td>
+                        <td>{conditionnement?.nomConditionnement || `#${regle.articleConditionnementId}`}</td>
+                        <td className="is-number">{conditionnement?.quantitePieceStandard ?? "—"}</td>
+                        <td className="is-number">{regle.quantiteMaximale}</td>
+                        <td className="is-number">
+                          {conditionnement
+                            ? conditionnement.quantitePieceStandard * regle.quantiteMaximale
+                            : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          </div>
-
-          <div className="palette-rules">
-            {!loading && regles.length === 0 ? (
-              <p className="palette-state">Aucune capacité palette configurée.</p>
-            ) : (
-              regles.map((regle) => {
-                const conditionnement = trouverConditionnement(regle.articleConditionnementId);
-                const total = conditionnement
-                  ? conditionnement.quantitePieceStandard * regle.quantiteMaximale
-                  : null;
-                return (
-                  <article className="palette-rule" key={regle.id}>
-                    <div>
-                      <strong>{conditionnement?.nomArticle || "Article inconnu"}</strong>
-                      <span>{conditionnement?.nomConditionnement || `Conditionnement #${regle.articleConditionnementId}`}</span>
-                    </div>
-                    <div className="palette-rule-values">
-                      <strong>{regle.quantiteMaximale}</strong>
-                      <span>conditionnements</span>
-                      {total && <small>{total} pièces au total</small>}
-                    </div>
-                  </article>
-                );
-              })
-            )}
-          </div>
-        </section>
-      </div>
-    </main>
+          )}
+        </Panel>
+    </PageLayout>
   );
 }
 

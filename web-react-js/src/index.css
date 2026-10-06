@@ -21,28 +21,6 @@ input {
   font: inherit;
 }
 
-.material-symbols-outlined {
-  display: inline-block;
-  overflow: hidden;
-  font-family: "Material Symbols Outlined";
-  font-size: 20px;
-  font-style: normal;
-  font-weight: 400;
-  letter-spacing: normal;
-  line-height: 1;
-  text-transform: none;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  -webkit-font-feature-settings: "liga";
-  -webkit-font-smoothing: antialiased;
-  font-feature-settings: "liga";
-  font-variation-settings:
-    "FILL" 0,
-    "wght" 400,
-    "GRAD" 0,
-    "opsz" 24;
-}
 :root {
   --color-primary: #01498e;
   --color-primary-hover: #003d78;

@@ -1,6 +1,6 @@
 import { getAccessToken } from "./authService";
 
-async function requeteJson(url, options = {}) {
+export async function requeteJson(url, options = {}) {
   const token = getAccessToken();
   const response = await fetch(url, {
     ...options,

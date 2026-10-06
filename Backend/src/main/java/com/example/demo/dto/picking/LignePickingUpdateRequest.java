@@ -1,6 +1,6 @@
 package com.example.demo.dto.picking;
 
-import com.example.demo.entity.StatutLignePicking;
+import com.example.demo.entity.StatutLignePickingCode;
 
 public record LignePickingUpdateRequest(
         Long commandeId,
@@ -9,5 +9,5 @@ public record LignePickingUpdateRequest(
         Long articleConditionnementId,
         Integer ordrePassage,
         Integer quantiteConditionnementsAPrelever,
-        StatutLignePicking statut) {
+        StatutLignePickingCode statut) {
 }

@@ -23,11 +23,11 @@ CREATE TABLE IF NOT EXISTS t_roles (
     CONSTRAINT uk_role_nom UNIQUE (nom_role)
 ) ENGINE = InnoDB;
 
-CREATE TABLE IF NOT EXISTS t_statut_journal_mouvement (
+CREATE TABLE IF NOT EXISTS t_statut (
     id BIGINT NOT NULL AUTO_INCREMENT,
-    nom_statut VARCHAR(50) NOT NULL,
+    nom VARCHAR(50) NOT NULL,
     PRIMARY KEY (id),
-    CONSTRAINT uk_statut_journal_nom UNIQUE (nom_statut)
+    CONSTRAINT uk_statut_nom UNIQUE (nom)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS t_type_mouvement (
@@ -186,7 +186,7 @@ CREATE TABLE IF NOT EXISTS t_journal_mouvement (
     url_piece_jointe VARCHAR(255) NULL,
     fournisseur_id BIGINT NULL,
     type_mouvement_journal_id BIGINT NOT NULL,
-    statut_journal_mouvement_id BIGINT NOT NULL,
+    statut_id BIGINT NOT NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_journal_mouvement_reference UNIQUE (reference),
     CONSTRAINT fk_journal_fournisseur
@@ -197,8 +197,8 @@ CREATE TABLE IF NOT EXISTS t_journal_mouvement (
         REFERENCES t_type_mouvement_journal (id)
         ON UPDATE NO ACTION ON DELETE RESTRICT,
     CONSTRAINT fk_journal_statut
-        FOREIGN KEY (statut_journal_mouvement_id)
-        REFERENCES t_statut_journal_mouvement (id)
+        FOREIGN KEY (statut_id)
+        REFERENCES t_statut (id)
         ON UPDATE NO ACTION ON DELETE RESTRICT
 ) ENGINE = InnoDB;
 

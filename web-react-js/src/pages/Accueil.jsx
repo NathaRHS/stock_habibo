@@ -6,6 +6,7 @@ import ListeSociete from "./ListeSociete";
 import { useEffect, useState } from "react";
 import { getAccessToken } from "../services/authService";
 import Button from "../components/Button";
+import { LogIn, LogOut, Package, Plus, Search } from "lucide-react";
 
 function Accueil() {
   const springUrl = import.meta.env.VITE_SPRING_URL;
@@ -55,9 +56,7 @@ function Accueil() {
         <header className="dashboard-header">
           <p className="dashboard-label">Tableau de bord</p>
           <label className="dashboard-search-wrapper">
-            <span className="material-symbols-outlined" aria-hidden="true">
-              search
-            </span>
+            <Search size={18} aria-hidden="true" />
             <input
               type="search"
               aria-label="Rechercher"
@@ -65,17 +64,8 @@ function Accueil() {
             />
           </label>
           <div className="notification-profile-side">
-            <button
-              className="notification-button"
-              type="button"
-              aria-label="Notifications"
-            >
-              <span className="material-symbols-outlined" aria-hidden="true">
-                notifications
-              </span>
-            </button>
             <Button
-              icon={<span className="material-symbols-outlined" aria-hidden="true">add</span>}
+              icon={<Plus size={16} aria-hidden="true" />}
               type="button"
             >
               Ajouter
@@ -91,7 +81,7 @@ function Accueil() {
             </div>
             <Button
               className="dashboard-title-action"
-              icon={<span className="material-symbols-outlined" aria-hidden="true">add</span>}
+              icon={<Plus size={16} aria-hidden="true" />}
               type="button"
             >
               Ajouter un mouvement
@@ -108,7 +98,7 @@ function Accueil() {
               valeur_hier={8000}
               valeur_now={1000}
               props_color="var(--color-primary-soft)"
-              icon="input"
+              icon={LogIn}
             />
             <GraphicCard
               designation="Sorties aujourd’hui"
@@ -116,7 +106,7 @@ function Accueil() {
               valeur_hier={18000}
               valeur_now={25000}
               props_color="var(--color-danger-soft)"
-              icon="output"
+              icon={LogOut}
             />
             <GraphicCard
               designation="Total mouvement"
@@ -124,7 +114,7 @@ function Accueil() {
               valeur_hier={10000}
               valeur_now={12000}
               props_color="var(--color-secondary-soft)"
-              icon="inventory_2"
+              icon={Package}
             />
           </section>
 

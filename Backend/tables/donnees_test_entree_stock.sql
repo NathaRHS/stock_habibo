@@ -121,14 +121,14 @@ INSERT INTO t_journal_mouvement (
     url_piece_jointe,
     fournisseur_id,
     type_mouvement_journal_id,
-    statut_journal_mouvement_id
+    statut_id
 ) VALUES (
     NULL,
     'STOCK-INITIAL-001',
     NULL,
     @fournisseur_id,
     (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'ENTREE' LIMIT 1),
-    (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'VALIDE' LIMIT 1)
+    (SELECT id FROM t_statut WHERE nom = 'VALIDE' LIMIT 1)
 );
 SET @journal_initial_id = LAST_INSERT_ID();
 
@@ -180,14 +180,14 @@ INSERT INTO t_journal_mouvement (
     url_piece_jointe,
     fournisseur_id,
     type_mouvement_journal_id,
-    statut_journal_mouvement_id
+    statut_id
 ) VALUES (
     NULL,
     'REC-TEST-001',
     NULL,
     @fournisseur_id,
     (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'ENTREE' LIMIT 1),
-    (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'VALIDE' LIMIT 1)
+    (SELECT id FROM t_statut WHERE nom = 'VALIDE' LIMIT 1)
 );
 SET @journal_test_id = LAST_INSERT_ID();
 
@@ -223,14 +223,14 @@ INSERT INTO t_journal_mouvement (
     url_piece_jointe,
     fournisseur_id,
     type_mouvement_journal_id,
-    statut_journal_mouvement_id
+    statut_id
 ) VALUES (
     NULL,
     'REC-SCAN-001',
     NULL,
     @fournisseur_id,
     (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'ENTREE' LIMIT 1),
-    (SELECT id FROM t_statut_journal_mouvement WHERE nom_statut = 'EN COURS' LIMIT 1)
+    (SELECT id FROM t_statut WHERE nom = 'EN COURS' LIMIT 1)
 );
 
 COMMIT;

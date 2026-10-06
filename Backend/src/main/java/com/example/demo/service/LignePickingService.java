@@ -24,8 +24,8 @@ import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.LignePicking;
 import com.example.demo.entity.Picking;
 import com.example.demo.entity.Prelevement;
-import com.example.demo.entity.StatutLignePicking;
-import com.example.demo.entity.StatutPicking;
+import com.example.demo.entity.StatutLignePickingCode;
+import com.example.demo.entity.StatutPickingCode;
 import com.example.demo.entity.StatutPrelevement;
 import com.example.demo.repository.ArticleConditionnementRepository;
 import com.example.demo.repository.CommandeRepository;
@@ -53,6 +53,7 @@ public class LignePickingService {
         private final StatutPrelevementRepository statutPrelevementRepository;
         private final JournalMouvementRepository journalMouvementRepository;
         private final PrelevementRepository prelevementRepository;
+        private final LignePickingStatutService lignePickingStatutService;
 
         public LignePickingService(
                         LignePickingRepository lignePickingRepository,
@@ -65,7 +66,8 @@ public class LignePickingService {
                         ArticleConditionnementRepository articleConditionnementRepository,
                         MouvementStockRepository mouvementStockRepository,
                         StatutPrelevementRepository statutPrelevementRepository,
-                        StockRepository stockRepository) {
+                        StockRepository stockRepository,
+                        LignePickingStatutService lignePickingStatutService) {
                 this.lignePickingRepository = lignePickingRepository;
                 this.pickingRepository = pickingRepository;
                 this.commandeRepository = commandeRepository;
@@ -77,6 +79,7 @@ public class LignePickingService {
                 this.statutPrelevementRepository = statutPrelevementRepository;
                 this.prelevementRepository = prelevementRepository;
                 this.journalMouvementRepository = journalMouvementRepository;
+                this.lignePickingStatutService = lignePickingStatutService;
         }
 
         @Transactional
@@ -143,8 +146,8 @@ public class LignePickingService {
                                                 "Conditionnement introuvable"));
 
                 // 3. Le picking doit encore accepter des reservations.
-                if (picking.getStatut() == StatutPicking.TERMINE
-                                || picking.getStatut() == StatutPicking.ANNULE) {
+                if (picking.getStatutCode() == StatutPickingCode.TERMINE
+                                || picking.getStatutCode() == StatutPickingCode.ANNULE) {
                         throw new ResponseStatusException(
                                         HttpStatus.CONFLICT,
                                         "Impossible d'ajouter une ligne a un picking termine ou annule");
@@ -225,8 +228,8 @@ public class LignePickingService {
                                 .findAllByCommandeId(commande.getId());
 
                 for (LignePicking ligneExistante : lignesCommande) {
-                        if (ligneExistante.getStatut() != StatutLignePicking.ANNULEE
-                                        && ligneExistante.getStatut() != StatutLignePicking.IMPOSSIBLE) {
+                        if (ligneExistante.getStatutCode() != StatutLignePickingCode.ANNULEE
+                                        && ligneExistante.getStatutCode() != StatutLignePickingCode.IMPOSSIBLE) {
                                 quantiteConditionnementsDejaAllouee += ligneExistante
                                                 .getQuantiteConditionnementsAPrelever();
                         }
@@ -263,8 +266,8 @@ public class LignePickingService {
                                                 commande.getArticle().getId());
 
                 for (LignePicking ligneExistante : lignesDejaPlacees) {
-                        if (ligneExistante.getStatut() == StatutLignePicking.RESERVEE
-                                        || ligneExistante.getStatut() == StatutLignePicking.EN_COURS) {
+                        if (ligneExistante.getStatutCode() == StatutLignePickingCode.RESERVEE
+                                        || ligneExistante.getStatutCode() == StatutLignePickingCode.EN_COURS) {
                                 quantitePiecesDejaReservee += ligneExistante.getQuantitePiecesAPrelever();
                         }
                 }
@@ -285,11 +288,13 @@ public class LignePickingService {
                                 articleConditionnement,
                                 request.ordrePassage(),
                                 request.quantiteConditionnementsAPrelever(),
-                                quantitePiecesAPrelever);
+                                quantitePiecesAPrelever,
+                                lignePickingStatutService.trouverStatut(StatutLignePickingCode.RESERVEE));
 
                 lignePicking.setPicking(picking);
 
                 LignePicking ligneSauvegardee = lignePickingRepository.save(lignePicking);
+                lignePickingStatutService.enregistrerStatutInitial(ligneSauvegardee);
 
                 return new LignePickingResponse(
                                 ligneSauvegardee.getId(),
@@ -304,7 +309,7 @@ public class LignePickingService {
                                 ligneSauvegardee.getOrdrePassage(),
                                 ligneSauvegardee.getQuantiteConditionnementsAPrelever(),
                                 ligneSauvegardee.getQuantitePiecesAPrelever(),
-                                ligneSauvegardee.getStatut());
+                                ligneSauvegardee.getStatutCode());
         }
 
         @Transactional
@@ -317,8 +322,8 @@ public class LignePickingService {
                                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                                                 "ligne introuvable"));
 
-                if (lignePicking.getStatut() != StatutLignePicking.RESERVEE
-                                && lignePicking.getStatut() != StatutLignePicking.EN_COURS) {
+                if (lignePicking.getStatutCode() != StatutLignePickingCode.RESERVEE
+                                && lignePicking.getStatutCode() != StatutLignePickingCode.EN_COURS) {
 
                         throw new ResponseStatusException(
                                         HttpStatus.BAD_REQUEST,
@@ -399,9 +404,9 @@ public class LignePickingService {
                 boolean ligneTerminee = quantitePiecesRestante == 0;
 
                 if (ligneTerminee) {
-                        lignePicking.setStatut(StatutLignePicking.PRELEVEE);
+                        lignePickingStatutService.changerStatut(lignePicking, StatutLignePickingCode.PRELEVEE);
                 } else {
-                        lignePicking.setStatut(StatutLignePicking.EN_COURS);
+                        lignePickingStatutService.changerStatut(lignePicking, StatutLignePickingCode.EN_COURS);
                 }
 
                 lignePickingRepository.save(lignePicking);
@@ -429,9 +434,11 @@ public class LignePickingService {
 
                 }
 
-                List<StatutPicking> statutsActifs = List.of(
-                                StatutPicking.GENERE,
-                                StatutPicking.EN_COURS);
+                // TERMINE est inclus : une sortie cloturee reste consultable comme resume.
+                List<StatutPickingCode> statutsActifs = List.of(
+                                StatutPickingCode.GENERE,
+                                StatutPickingCode.EN_COURS,
+                                StatutPickingCode.TERMINE);
 
                 Picking pickingCorrespondant = pickingRepository
                                 .findFirstByJournalMouvementIdAndStatutInOrderByIdDesc(idJournal, statutsActifs)
@@ -459,7 +466,7 @@ public class LignePickingService {
                                                         ligne.getOrdrePassage(),
                                                         ligne.getQuantiteConditionnementsAPrelever(),
                                                         ligne.getQuantitePiecesAPrelever(),
-                                                        ligne.getStatut()));
+                                                        ligne.getStatutCode()));
                 }
 
                 lignePickingResponses.sort(

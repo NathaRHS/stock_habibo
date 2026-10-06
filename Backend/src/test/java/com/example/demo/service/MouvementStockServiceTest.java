@@ -29,7 +29,7 @@ import com.example.demo.entity.Emplacement;
 import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.MouvementStock;
 import com.example.demo.entity.PaletteConditionnement;
-import com.example.demo.entity.StatutjournalMouvement;
+import com.example.demo.entity.StatutJournalMouvement;
 import com.example.demo.entity.TypeMouvementStock;
 import com.example.demo.entity.User;
 import com.example.demo.repository.DetailJournalRepository;
@@ -70,6 +70,9 @@ class MouvementStockServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private JournalStatutService journalStatutService;
+
+    @Mock
     private TypeMouvementStockRepository typeMouvementStockRepository;
 
     private MouvementStockService mouvementStockService;
@@ -85,6 +88,7 @@ class MouvementStockServiceTest {
                 emplacementRepository,
                 paletteConditionnementRepository,
                 userRepository,
+                journalStatutService,
                 typeMouvementStockRepository);
     }
 
@@ -97,7 +101,7 @@ class MouvementStockServiceTest {
         Long emplacementId = 100L;
 
         JournalMouvement journal = mock(JournalMouvement.class);
-        StatutjournalMouvement statut = mock(StatutjournalMouvement.class);
+        StatutJournalMouvement statut = mock(StatutJournalMouvement.class);
         DetailJournal detail = mock(DetailJournal.class);
         Article article = mock(Article.class);
         ArticleConditionnement conditionnement = mock(ArticleConditionnement.class);
@@ -110,8 +114,8 @@ class MouvementStockServiceTest {
         // soit exactement 180 pieces avec 6 pieces par conditionnement.
         when(journal.getId()).thenReturn(journalId);
         when(journal.getReference()).thenReturn("REC-TEST-001");
-        when(journal.getStatutJournalMouvement()).thenReturn(statut);
-        when(statut.getNomStatut()).thenReturn("VALIDE");
+        when(journal.getStatut()).thenReturn(statut);
+        when(statut.getNom()).thenReturn("VALIDE");
         when(journal.getDetails()).thenReturn(List.of(detail));
 
         when(detail.getId()).thenReturn(detailId);

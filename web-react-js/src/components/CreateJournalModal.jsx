@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { getAccessToken } from "../services/authService";
 import Button from "./Button";
 import "../pages/css/CreateJournalModal.css";
@@ -110,7 +111,7 @@ export default function CreateJournalModal({ isOpen, onClose, onCreated }) {
       <section className="journal-modal" role="dialog" aria-modal="true" aria-labelledby="create-journal-title">
         <header className="journal-modal-header">
           <div><span className="journal-modal-kicker">Nouvelle opération</span><h2 id="create-journal-title">Créer un journal</h2><p>Déclarez un nouveau mouvement dans l'entrepôt.</p></div>
-          <button className="journal-modal-close" onClick={onClose} type="button" aria-label="Fermer"><span className="material-symbols-outlined">close</span></button>
+          <button className="journal-modal-close" onClick={onClose} type="button" aria-label="Fermer"><X size={18} /></button>
         </header>
         <form className="journal-modal-form" onSubmit={handleSubmit}>
           <label>Référence générée automatiquement<input name="reference" value={journal.reference} readOnly /></label>
