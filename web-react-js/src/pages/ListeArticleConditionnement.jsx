@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Shapes } from "lucide-react";
 import { getAccessToken } from "../services/authService";
 import PageLayout from "../components/PageLayout";
 import Panel from "../components/Panel";
@@ -65,7 +66,7 @@ function ListeArticleConditionnement() {
       description="Associez un article à un type de conditionnement et à sa quantité standard."
       actions={
         <Link className="layout-link-button" to="/type-conditionnement">
-          <span className="material-symbols-outlined">category</span>
+          <Shapes size={17} />
           Types de conditionnement
         </Link>
       }

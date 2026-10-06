@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { getAccessToken } from "../services/authService";
 import PageLayout from "../components/PageLayout";
 import Panel from "../components/Panel";
@@ -54,7 +55,7 @@ function ListeTypeConditionnement() {
       description="Les formats disponibles pour conditionner un article."
       actions={
         <Link className="layout-link-button" to="/article-conditionnements">
-          <span className="material-symbols-outlined">arrow_back</span>
+          <ArrowLeft size={17} />
           Conditionnements
         </Link>
       }

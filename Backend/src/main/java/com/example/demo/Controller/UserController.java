@@ -3,11 +3,13 @@ package com.example.demo.Controller;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.demo.dto.user.UserInfoResponse;
 import com.example.demo.dto.utilisateur.CreateUserRequest;
 import com.example.demo.dto.utilisateur.LoginRequest;
 import com.example.demo.dto.utilisateur.LoginResponse;
@@ -38,6 +40,12 @@ public class UserController {
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginRequest request) {
         return userService.login(request);
+    }
+
+
+    @GetMapping ("/nombreOperations/{id}")
+    public UserInfoResponse getUserInfo(@PathVariable Long id){
+        return userService.findUserInformation(id);
     }
 
 

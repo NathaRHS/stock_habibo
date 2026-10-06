@@ -24,6 +24,7 @@ import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.Statut;
 import com.example.demo.entity.StatutJournalMouvementCode;
 import com.example.demo.entity.TypeMouvementJournal;
+import com.example.demo.entity.User;
 import com.example.demo.repository.ArticleConditionnementRepository;
 import com.example.demo.repository.ArticleRepository;
 import com.example.demo.repository.ComptageInventaireRepository;
@@ -33,6 +34,7 @@ import com.example.demo.repository.SocieteRepository;
 import com.example.demo.repository.JournalMouvementRepository;
 import com.example.demo.repository.StatutRepository;
 import com.example.demo.repository.TypeMouvementJournalRepository;
+import com.example.demo.repository.UserRepository;
 
 @Service
 @Transactional
@@ -47,6 +49,7 @@ public class JournalMouvementService {
     private final ArticleConditionnementRepository articleConditionnementRepository;
     private final EmplacementRepository emplacementRepository;
     private final ComptageInventaireRepository comptageInventaireRepository;
+    private final UserRepository userRepository;
 
     public JournalMouvementService(
             JournalMouvementRepository journalRepository,
@@ -57,7 +60,7 @@ public class JournalMouvementService {
             ArticleRepository articleRepository, DetailJournalRepository detailJournalRepository,
             ArticleConditionnementRepository articleConditionnementRepository,
             EmplacementRepository emplacementRepository,
-            ComptageInventaireRepository comptageInventaireRepository) {
+            ComptageInventaireRepository comptageInventaireRepository, UserRepository userRepository) {
         this.journalRepository = journalRepository;
         this.typeRepository = typeRepository;
         this.userJournalMouvementService = userJournalMouvementService;
@@ -68,6 +71,7 @@ public class JournalMouvementService {
         this.articleConditionnementRepository = articleConditionnementRepository;
         this.emplacementRepository = emplacementRepository;
         this.comptageInventaireRepository = comptageInventaireRepository;
+        this.userRepository = userRepository;
 
     }
 
@@ -91,6 +95,11 @@ public class JournalMouvementService {
     @Transactional(readOnly = true)
     public List<JournalMouvementResponse> findAll() {
         return journalRepository.findAll().stream().map(this::versResponse).toList();
+    }
+
+    @Transactional
+    public JournalMouvementResponse findAllByParticipantsId(Long id) {
+        return versResponse(journalRepository.findByParticipantsId(id));
     }
 
     @Transactional(readOnly = true)
@@ -451,6 +460,9 @@ public class JournalMouvementService {
 
         userJournalMouvementService.ajouterParticipant(journalId, matricule);
 
+        User user = userRepository.findByMatricule(matricule)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "le participant est introuvable"));
+
         // DetailJournal conserve le total compte pour l'article dans la session.
         detailJournalRepository.ajouterOuIncrementer(
                 journalId,
@@ -473,17 +485,19 @@ public class JournalMouvementService {
                 detailJournal.getId(),
                 emplacement.getId(),
                 quantiteReelle,
+
                 dateComptage);
 
         ComptageInventaire comptage = comptageInventaireRepository
                 .findByDetailJournalIdAndEmplacementId(detailJournal.getId(), emplacement.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                         "Le comptage d'inventaire n'a pas pu etre recupere"));
-
+        comptage.setUser(user);
         return versComptageInventaireResponse(comptage);
     }
 
-    // Résout le conditionnement standard d'un article (celui scanné, sinon le premier configuré)
+    // Résout le conditionnement standard d'un article (celui scanné, sinon le
+    // premier configuré)
     // et vérifie que sa quantité par pièce est valide.
     private ArticleConditionnement resoudreConditionnementStandard(
             ArticleConditionnement conditionnementScanne, Article article) {
@@ -504,7 +518,8 @@ public class JournalMouvementService {
         return conditionnement;
     }
 
-    // Convertit une quantité de conditionnements en quantité de pièces, en détectant le dépassement.
+    // Convertit une quantité de conditionnements en quantité de pièces, en
+    // détectant le dépassement.
     private int convertirEnQuantitePiece(int quantiteConditionnements, int quantitePieceStandard) {
         try {
             return Math.multiplyExact(quantiteConditionnements, quantitePieceStandard);
@@ -520,6 +535,7 @@ public class JournalMouvementService {
                 detail.getId(),
                 detail.getArticle().getId(),
                 detail.getArticle().getNomArticle(),
+                comptage.getUser().getUsername(),
                 comptage.getEmplacement().getId(),
                 comptage.getEmplacement().getNomEmplacement(),
                 comptage.getQuantiteComptee(),

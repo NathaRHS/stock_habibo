@@ -227,9 +227,10 @@
   border-color: #9fcdb6;
   background: #fbfefc;
 }
-.confirmation-upload > .material-symbols-outlined {
+.confirmation-upload > svg {
   margin-bottom: 10px;
-  font-size: 24px;
+  width: 24px;
+  height: 24px;
 }
 .confirmation-upload strong {
   max-width: 100%;

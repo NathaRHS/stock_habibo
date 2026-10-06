@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -38,6 +39,7 @@ public class FileStorageService {
         }
 
         String nomOriginal = nettoyerNomOriginal(file.getOriginalFilename());
+        verifierPdf(file, nomOriginal);
         String nomUnique = UUID.randomUUID() + "_" + nomOriginal;
         Path destination = uploadDirectory.resolve(nomUnique).normalize();
 
@@ -91,6 +93,29 @@ public class FileStorageService {
             return typeContenu == null ? "application/octet-stream" : typeContenu;
         } catch (IOException exception) {
             return "application/octet-stream";
+        }
+    }
+
+    private void verifierPdf(MultipartFile file, String nomOriginal) {
+        if (!nomOriginal.toLowerCase().endsWith(".pdf")) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Seuls les fichiers PDF sont acceptes");
+        }
+
+        byte[] entete = new byte[5];
+
+        try (var contenu = file.getInputStream()) {
+            int lus = contenu.readNBytes(entete, 0, entete.length);
+
+            if (lus < entete.length || !new String(entete, StandardCharsets.US_ASCII).equals("%PDF-")) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Le fichier n'est pas un PDF valide");
+            }
+        } catch (IOException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Impossible de lire le fichier",
+                    exception);
         }
     }
 

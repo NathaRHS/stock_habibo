@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, ArrowRight, CheckSquare, ChevronRight, FileUp, Info, Receipt, Search } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import { getAccessToken } from "../services/authService";
 import "./css/AffectationSortie.css";
@@ -14,6 +15,27 @@ const normalize = (value) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+
+async function lireMessageErreur(response, messageParDefaut) {
+  const contenu = await response.text();
+  if (!contenu.trim()) return messageParDefaut;
+
+  try {
+    const erreur = JSON.parse(contenu);
+    const message =
+      erreur.detail ??
+      erreur.message ??
+      erreur.title ??
+      erreur.error;
+
+    if (typeof message === "string" && message.trim()) return message;
+  } catch {
+    const typeContenu = response.headers.get("content-type") ?? "";
+    if (typeContenu.includes("text/plain")) return contenu.trim();
+  }
+
+  return messageParDefaut;
+}
 
 function AffectationSortie() {
   const { id } = useParams();
@@ -51,7 +73,10 @@ function AffectationSortie() {
 
         if (!response.ok) {
           throw new Error(
-            `Impossible de charger la sortie (${response.status}).`,
+            await lireMessageErreur(
+              response,
+              `Impossible de charger la sortie (${response.status}).`,
+            ),
           );
         }
 
@@ -137,7 +162,7 @@ function AffectationSortie() {
           <span>Opérations / Confirmation de sortie</span>
           <div className="confirmation-topbar-right">
             <label className="confirmation-global-search">
-              <span className="material-symbols-outlined">search</span>
+              <Search size={16} />
               <input
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Rechercher"
@@ -157,7 +182,7 @@ function AffectationSortie() {
 
         <main className="confirmation-page">
           <Link className="confirmation-back" to="/journaux-mouvements">
-            <span className="material-symbols-outlined">arrow_back</span>
+            <ArrowLeft size={16} />
             Journaux de mouvements
           </Link>
 
@@ -192,7 +217,7 @@ function AffectationSortie() {
               </p>
 
               <div className="confirmation-journal-info">
-                <span className="material-symbols-outlined">receipt_long</span>
+                <Receipt size={18} />
                 <div>
                   <small>Journal sélectionné</small>
                   <strong>Sortie #{id}</strong>
@@ -211,9 +236,7 @@ function AffectationSortie() {
                 onClick={() => fileInput.current?.click()}
                 type="button"
               >
-                <span className="material-symbols-outlined">
-                  {file ? "task" : "upload_file"}
-                </span>
+                {file ? <CheckSquare size={22} /> : <FileUp size={22} />}
                 <strong>{file ? file.name : "Importer un document"}</strong>
                 <small>
                   {file
@@ -247,7 +270,7 @@ function AffectationSortie() {
 
               <div className="confirmation-toolbar">
                 <label className="confirmation-search">
-                  <span className="material-symbols-outlined">search</span>
+                  <Search size={16} />
                   <input
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Rechercher un article ou emplacement"
@@ -325,14 +348,12 @@ function AffectationSortie() {
 
               <footer className="confirmation-footer">
                 <div>
-                  <span className="material-symbols-outlined">info</span>
+                  <Info size={16} />
                   Vérifiez les quantités et le document avant validation.
                 </div>
                 <button onClick={validerSortie} type="button">
                   Valider la sortie
-                  <span className="material-symbols-outlined">
-                    arrow_forward
-                  </span>
+                  <ArrowRight size={16} />
                 </button>
               </footer>
             </section>
@@ -365,9 +386,7 @@ function PickingRow({ line, open, toggle }) {
           <strong>{line.quantiteConditionnementsAPrelever ?? 0}</strong>
           <small>conditionnements</small>
         </span>
-        <span className="material-symbols-outlined confirmation-chevron">
-          chevron_right
-        </span>
+        <ChevronRight className="confirmation-chevron" size={17} />
       </button>
       {open && (
         <div className="confirmation-details">

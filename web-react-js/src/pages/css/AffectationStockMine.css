@@ -653,10 +653,10 @@
   align-items: flex-start;
   gap: 9px;
 }
-.affectation-page .suggestion-popover-heading > .material-symbols-outlined {
+.affectation-page .suggestion-popover-heading > svg {
+  flex: none;
   margin-top: 1px;
   color: #2563eb;
-  font-size: 19px;
 }
 .affectation-page .suggestion-popover-heading strong,
 .affectation-page .suggestion-popover-reasons strong {
@@ -682,7 +682,7 @@
   place-items: center;
 }
 .affectation-page .suggestion-popover-close:hover { background: #edf4ff; color: #2563eb; }
-.affectation-page .suggestion-popover-close .material-symbols-outlined { font-size: 16px; }
+.affectation-page .suggestion-popover-close svg { width: 16px; height: 16px; }
 .affectation-page .suggestion-popover-places {
   display: flex;
   flex-wrap: wrap;

@@ -164,7 +164,7 @@
   font-weight: 500;
 }
 
-.stock-status-card > button .material-symbols-outlined { font-size: 15px; }
+.stock-status-card > button svg { width: 15px; height: 15px; }
 
 .journal-panel {
   display: flex;
@@ -186,7 +186,7 @@
 
 .journal-actions { display: flex; align-items: center; gap: 18px; }
 .journal-actions button { display: inline-flex; align-items: center; gap: 6px; color: var(--color-secondary); background: transparent; border: 0; cursor: pointer; font-size: 11px; }
-.journal-actions .material-symbols-outlined { font-size: 17px; }
+.journal-actions svg { width: 17px; height: 17px; }
 .journal-actions .export-button { min-height: 35px; padding: 0 13px; border: 1px solid var(--color-border); border-radius: 6px; }
 .journal-actions .primary-button { color: #fff; background: var(--color-primary); }
 

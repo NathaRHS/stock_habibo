@@ -24,7 +24,7 @@
   text-decoration: none;
 }
 .back:hover { color: var(--color-primary); }
-.back :global(.material-symbols-outlined) { font-size: 16px; }
+.back svg { flex: none; }
 
 .titleRow {
   display: flex;
@@ -101,7 +101,7 @@
   border-radius: 8px;
   font-size: 13px;
 }
-.error :global(.material-symbols-outlined) { font-size: 18px; }
+.error svg { flex: none; }
 .error button {
   display: grid;
   margin-left: auto;

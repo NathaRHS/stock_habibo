@@ -53,7 +53,7 @@ const Chevron = ({ right }) => (
   </svg>
 );
 
-function Table({ objetsProps, title = "Données", pageSizeInitial = 10 }) {
+function Table({ objetsProps, title = "Données", pageSizeInitial = 10, renderCell }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(pageSizeInitial);
@@ -197,7 +197,9 @@ function Table({ objetsProps, title = "Données", pageSizeInitial = 10 }) {
                         />
                       </td>
                       {columns.map((column) => (
-                        <td key={column}>{renderValue(row[column], column)}</td>
+                        <td key={column}>
+                          {renderCell?.(row, column) ?? renderValue(row[column], column)}
+                        </td>
                       ))}
                       <td className="actions-column">
                         <button

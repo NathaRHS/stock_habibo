@@ -1,0 +1,23 @@
+.lien-user {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.lien-user:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+.lien-user:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.lien-user--indisponible {
+  color: var(--color-text-muted);
+  cursor: default;
+}

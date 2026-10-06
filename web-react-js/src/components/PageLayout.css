@@ -99,7 +99,7 @@
   color: var(--color-primary);
   border-color: var(--color-primary);
 }
-.layout-link-button .material-symbols-outlined { font-size: 17px; }
+.layout-link-button svg { width: 17px; height: 17px; }
 
 .layout-panel {
   overflow: hidden;

@@ -1,5 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import {
+  ArrowDown,
+  ArrowDownLeft,
+  ArrowUp,
+  ArrowUpRight,
+  Check,
+  ChevronDown,
+  ChevronsUpDown,
+  Clock,
+  FileText,
+  MoreHorizontal,
+  Pencil,
+  RefreshCw,
+  Search,
+} from "lucide-react";
 import { getAccessToken } from "../../services/authService";
 import Sidebar from "../../components/Sidebar";
 import CreateJournalModal from "../../components/CreateJournalModal";
@@ -8,10 +23,10 @@ import styles from "./ListeJournal.module.css";
 const PAGE = 10;
 
 const STATUTS = {
-  VALIDE: { label: "Validé", icon: "check", tone: "success" },
-  "EN COURS": { label: "En cours", icon: "sync", tone: "progress" },
-  "EN ATTENTE": { label: "En attente", icon: "schedule", tone: "warning" },
-  MODIFIE: { label: "Modifié", icon: "edit", tone: "danger" },
+  VALIDE: { label: "Validé", icon: Check, tone: "success" },
+  "EN COURS": { label: "En cours", icon: RefreshCw, tone: "progress" },
+  "EN ATTENTE": { label: "En attente", icon: Clock, tone: "warning" },
+  MODIFIE: { label: "Modifié", icon: Pencil, tone: "danger" },
 };
 
 const normaliser = (valeur) =>
@@ -63,14 +78,20 @@ function ListeJournal() {
       }
       try {
         const response = await fetch(`${springUrl}/journaux-mouvements`, {
-          headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           signal: controller.signal,
         });
         if (!response.ok)
-          throw new Error(`Impossible de récupérer les journaux (${response.status}).`);
+          throw new Error(
+            `Impossible de récupérer les journaux (${response.status}).`,
+          );
         setJournaux(await response.json());
       } catch (erreur) {
-        if (erreur.name !== "AbortError") setError(erreur.message || "Chargement impossible.");
+        if (erreur.name !== "AbortError")
+          setError(erreur.message || "Chargement impossible.");
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -78,6 +99,17 @@ function ListeJournal() {
     charger();
     return () => controller.abort();
   }, [springUrl, token]);
+
+  const statuts = useMemo(() => {
+    const noms = new Map();
+    journaux.forEach((journal) => {
+      const cle = normaliser(journal.statut);
+      if (cle && !noms.has(cle)) noms.set(cle, journal.statut);
+    });
+    return [...noms.entries()]
+      .map(([cle, nom]) => ({ cle, label: STATUTS[cle]?.label ?? nom }))
+      .sort((a, b) => a.label.localeCompare(b.label, "fr"));
+  }, [journaux]);
 
   const types = useMemo(() => {
     const compte = new Map();
@@ -91,12 +123,20 @@ function ListeJournal() {
   const resultats = useMemo(() => {
     const texte = normaliser(recherche);
     const filtres = journaux.filter((journal) => {
-      if (type !== "TOUS" && (normaliser(journal.typeMouvementJournal) || "AUTRE") !== type)
+      if (
+        type !== "TOUS" &&
+        (normaliser(journal.typeMouvementJournal) || "AUTRE") !== type
+      )
         return false;
       if (statut && normaliser(journal.statut) !== statut) return false;
       if (!texte) return true;
       return normaliser(
-        [journal.reference, journal.nomClient, journal.fournisseur, nomFichier(journal.urlPieceJointe)].join(" "),
+        [
+          journal.reference,
+          journal.nomClient,
+          journal.fournisseur,
+          nomFichier(journal.urlPieceJointe),
+        ].join(" "),
       ).includes(texte);
     });
     if (!tri.cle) return filtres;
@@ -132,20 +172,30 @@ function ListeJournal() {
       <main className={styles.page}>
         <header className={styles.heading}>
           <h1>Journaux</h1>
-          <button className={styles.primary} onClick={() => setModalOuverte(true)} type="button">
+          <button
+            className={styles.primary}
+            onClick={() => setModalOuverte(true)}
+            type="button"
+          >
             Nouveau journal
           </button>
         </header>
 
         <nav className={styles.tabs} aria-label="Sections">
-          <NavLink end to="/new/journaux-mouvements">Tous les journaux</NavLink>
+          <NavLink end to="/new/journaux-mouvements">
+            Tous les journaux
+          </NavLink>
           <NavLink to="/types-mouvements-journal">Types de mouvement</NavLink>
           <NavLink to="/inventaires">Inventaires</NavLink>
         </nav>
 
         <div className={styles.toolbar}>
           <div className={styles.filters}>
-            <div className={styles.segmented} role="group" aria-label="Type de mouvement">
+            <div
+              className={styles.segmented}
+              role="group"
+              aria-label="Type de mouvement"
+            >
               <button
                 className={type === "TOUS" ? styles.segmentActive : undefined}
                 onClick={() => choisirType("TOUS")}
@@ -160,7 +210,8 @@ function ListeJournal() {
                   onClick={() => choisirType(cle)}
                   type="button"
                 >
-                  {cle.charAt(0) + cle.slice(1).toLowerCase()} <span>{nombre}</span>
+                  {cle.charAt(0) + cle.slice(1).toLowerCase()}{" "}
+                  <span>{nombre}</span>
                 </button>
               ))}
             </div>
@@ -172,16 +223,18 @@ function ListeJournal() {
                 value={statut}
               >
                 <option value="">Statut</option>
-                {Object.entries(STATUTS).map(([cle, { label }]) => (
-                  <option key={cle} value={cle}>{label}</option>
+                {statuts.map(({ cle, label }) => (
+                  <option key={cle} value={cle}>
+                    {label}
+                  </option>
                 ))}
               </select>
-              <span className="material-symbols-outlined" aria-hidden="true">expand_more</span>
+              <ChevronDown size={18} aria-hidden="true" />
             </label>
           </div>
 
           <label className={styles.search}>
-            <span className="material-symbols-outlined" aria-hidden="true">search</span>
+            <Search size={18} aria-hidden="true" />
             <input
               aria-label="Rechercher un journal"
               onChange={(event) => rechercher(event.target.value)}
@@ -192,24 +245,40 @@ function ListeJournal() {
           </label>
         </div>
 
-        {error && <p className={styles.error} role="alert">{error}</p>}
+        {error && (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        )}
 
         <div className={styles.tableScroll}>
           <table className={styles.table}>
             <thead>
               <tr>
-                <EnTeteTriable cle="reference" tri={tri} onTri={trier}>Journal</EnTeteTriable>
-                <EnTeteTriable cle="partenaire" tri={tri} onTri={trier}>Partenaire</EnTeteTriable>
+                <EnTeteTriable cle="reference" tri={tri} onTri={trier}>
+                  Journal
+                </EnTeteTriable>
+                <EnTeteTriable cle="partenaire" tri={tri} onTri={trier}>
+                  Partenaire
+                </EnTeteTriable>
                 <th>Statut</th>
-                <EnTeteTriable cle="articles" tri={tri} onTri={trier}>Articles</EnTeteTriable>
-                <EnTeteTriable cle="quantite" tri={tri} onTri={trier}>Quantité</EnTeteTriable>
+                <EnTeteTriable cle="articles" tri={tri} onTri={trier}>
+                  Articles
+                </EnTeteTriable>
+                <EnTeteTriable cle="quantite" tri={tri} onTri={trier}>
+                  Quantité
+                </EnTeteTriable>
                 <th>Pièce jointe</th>
                 <th aria-label="Actions" />
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td className={styles.empty} colSpan={7}>Chargement des journaux…</td></tr>
+                <tr>
+                  <td className={styles.empty} colSpan={7}>
+                    Chargement des journaux…
+                  </td>
+                </tr>
               ) : resultats.length === 0 ? (
                 <tr>
                   <td className={styles.empty} colSpan={7}>
@@ -217,18 +286,24 @@ function ListeJournal() {
                   </td>
                 </tr>
               ) : (
-                resultats.slice(0, visibles).map((journal) => (
-                  <LigneJournal journal={journal} key={journal.id} />
-                ))
+                resultats
+                  .slice(0, visibles)
+                  .map((journal) => (
+                    <LigneJournal journal={journal} key={journal.id} />
+                  ))
               )}
             </tbody>
           </table>
         </div>
 
         {!loading && resultats.length > visibles && (
-          <button className={styles.loadMore} onClick={() => setVisibles((n) => n + PAGE)} type="button">
+          <button
+            className={styles.loadMore}
+            onClick={() => setVisibles((n) => n + PAGE)}
+            type="button"
+          >
             Afficher plus
-            <span className="material-symbols-outlined" aria-hidden="true">expand_more</span>
+            <ChevronDown size={18} aria-hidden="true" />
           </button>
         )}
       </main>
@@ -246,12 +321,18 @@ function ListeJournal() {
 
 function EnTeteTriable({ cle, tri, onTri, children }) {
   const actif = tri.cle === cle;
-  const icone = !actif ? "unfold_more" : tri.sens === 1 ? "arrow_upward" : "arrow_downward";
+  const Icone = !actif ? ChevronsUpDown : tri.sens === 1 ? ArrowUp : ArrowDown;
   return (
-    <th aria-sort={!actif ? "none" : tri.sens === 1 ? "ascending" : "descending"}>
-      <button className={styles.sortButton} onClick={() => onTri(cle)} type="button">
+    <th
+      aria-sort={!actif ? "none" : tri.sens === 1 ? "ascending" : "descending"}
+    >
+      <button
+        className={styles.sortButton}
+        onClick={() => onTri(cle)}
+        type="button"
+      >
         {children}
-        <span className="material-symbols-outlined" aria-hidden="true">{icone}</span>
+        <Icone size={14} aria-hidden="true" />
       </button>
     </th>
   );
@@ -261,28 +342,41 @@ function LigneJournal({ journal }) {
   const sortie = normaliser(journal.typeMouvementJournal).includes("SORTIE");
   const statut = STATUTS[normaliser(journal.statut)] ?? {
     label: journal.statut || "Inconnu",
-    icon: "draft",
+    icon: FileText,
     tone: "neutral",
   };
+  const StatutIcon = statut.icon;
   const document = nomFichier(journal.urlPieceJointe);
   const nbLignes = lignes(journal).length;
   const partenaire = journal.fournisseur || journal.nomClient;
   const lienAction = sortie
-    ? { to: `/createListeArticle/${journal.id}`, label: "Créer la liste de commande" }
-    : { to: `/journaux-mouvements/${journal.id}`, label: "Contrôler le journal" };
+    ? {
+        to: `/createListeArticle/${journal.id}`,
+        label: "Créer la liste de commande",
+      }
+    : {
+        to: `/journaux-mouvements/${journal.id}`,
+        label: "Contrôler le journal",
+      };
 
   return (
     <tr>
       <td>
         <div className={styles.identity}>
-          <span className={`${styles.thumb} ${sortie ? styles.thumbOut : styles.thumbIn}`}>
-            <span className="material-symbols-outlined" aria-hidden="true">
-              {sortie ? "north_east" : "south_west"}
-            </span>
+          <span
+            className={`${styles.thumb} ${sortie ? styles.thumbOut : styles.thumbIn}`}
+          >
+            {sortie ? (
+              <ArrowUpRight size={18} aria-hidden="true" />
+            ) : (
+              <ArrowDownLeft size={18} aria-hidden="true" />
+            )}
           </span>
           <div>
             <strong>{journal.reference}</strong>
-            <small>{journal.typeMouvementJournal || "—"} · #{journal.id}</small>
+            <small>
+              {journal.typeMouvementJournal || "—"} · #{journal.id}
+            </small>
           </div>
         </div>
       </td>
@@ -290,7 +384,9 @@ function LigneJournal({ journal }) {
         {partenaire ? (
           <>
             <span className={styles.primaryText}>{partenaire}</span>
-            <small className={styles.subText}>{journal.fournisseur ? "Fournisseur" : "Client"}</small>
+            <small className={styles.subText}>
+              {journal.fournisseur ? "Fournisseur" : "Client"}
+            </small>
           </>
         ) : (
           <span className={styles.muted}>--</span>
@@ -298,17 +394,25 @@ function LigneJournal({ journal }) {
       </td>
       <td>
         <span className={`${styles.badge} ${styles[statut.tone]}`}>
-          <span className="material-symbols-outlined" aria-hidden="true">{statut.icon}</span>
+          <StatutIcon size={15} aria-hidden="true" />
           {statut.label}
         </span>
       </td>
-      <td className={styles.number}>{nbLignes || <span className={styles.muted}>--</span>}</td>
       <td className={styles.number}>
-        {nbLignes ? quantiteTotale(journal) : <span className={styles.muted}>--</span>}
+        {nbLignes || <span className={styles.muted}>--</span>}
+      </td>
+      <td className={styles.number}>
+        {nbLignes ? (
+          quantiteTotale(journal)
+        ) : (
+          <span className={styles.muted}>--</span>
+        )}
       </td>
       <td>
         {document ? (
-          <span className={styles.document} title={document}>{document}</span>
+          <span className={styles.document} title={document}>
+            {document}
+          </span>
         ) : (
           <span className={styles.muted}>--</span>
         )}
@@ -347,11 +451,13 @@ function MenuActions({ journal, lienAction }) {
         onClick={() => setOuvert((valeur) => !valeur)}
         type="button"
       >
-        <span className="material-symbols-outlined" aria-hidden="true">more_horiz</span>
+        <MoreHorizontal size={18} aria-hidden="true" />
       </button>
       {ouvert && (
         <div className={styles.menuList} role="menu">
-          <Link role="menuitem" to={lienAction.to}>{lienAction.label}</Link>
+          <Link role="menuitem" to={lienAction.to}>
+            {lienAction.label}
+          </Link>
           <button
             onClick={() => {
               navigator.clipboard?.writeText(journal.reference ?? "");

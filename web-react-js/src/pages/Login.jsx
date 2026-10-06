@@ -35,13 +35,19 @@ function Login() {
       }
 
       const loginResponse = await response.json();
-      console.log("LOGIN RESPONSE" + loginResponse.token);
+      // console.log("LOGIN RESPONSE" + loginResponse.token);
       if (!loginResponse.token) {
         throw new Error("Le serveur n’a pas renvoyé de token.");
       }
 
       setAuthSession(loginResponse);
-      navigate("/accueil");
+      console.log(loginResponse?.user?.role);
+      if (loginResponse?.user?.role === "ADMIN") {
+        navigate("/accueil");
+      }
+      else{
+       setError("vous n'êtes pas admin et n'êtes pas autorisé à consulter cette page !")
+      }
     } catch (requestError) {
       setError(
         requestError instanceof Error

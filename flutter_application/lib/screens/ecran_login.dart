@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application/screens/ecran_liste_journaux.dart';
+import 'package:flutter_application/theme/habibo.dart';
 import 'package:http/http.dart' as http;
 
 class EcranLogin extends StatefulWidget {
@@ -14,6 +16,13 @@ class EcranLogin extends StatefulWidget {
 }
 
 class _EcranLoginState extends State<EcranLogin> {
+  static const _bleu = Habibo.bleu;
+  static const _fond = Habibo.fond;
+  static const _texte = Habibo.texte;
+  static const _texteSecondaire = Habibo.texteSecondaire;
+  static const _bordure = Habibo.bordure;
+  static const _rouge = Habibo.rouge;
+
   final _formKey = GlobalKey<FormState>();
   final _matriculeController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -82,6 +91,7 @@ class _EcranLoginState extends State<EcranLogin> {
             accessToken: token,
             role: role,
             userId: userId,
+            nomUtilisateur: utilisateur?['username'] as String?,
           ),
         ),
       );
@@ -102,79 +112,84 @@ class _EcranLoginState extends State<EcranLogin> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF001A38),
-      appBar: AppBar(
-        title: const Text('Connexion'),
-        backgroundColor: const Color(0xFF064B9C),
-        foregroundColor: Colors.white,
-      ),
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0752A7), Color(0xFF001A38)],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 430),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // Fond clair : icônes de la barre d'état en sombre.
+      value: SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: _fond,
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, contraintes) => SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: contraintes.maxHeight,
+                    maxWidth: 430,
+                  ),
+                  child: IntrinsicHeight(
                     child: Form(
                       key: _formKey,
                       child: Column(
-                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Icon(
-                            Icons.lock_person_outlined,
-                            size: 58,
-                            color: Color(0xFF064B9C),
+                          const SizedBox(height: 24),
+                          _entete(),
+                          const Spacer(flex: 3),
+                          const SizedBox(height: 32),
+                          const Text(
+                            'Bonjour.',
+                            style: TextStyle(
+                              color: _texte,
+                              fontSize: 44,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -1.5,
+                              height: 1.1,
+                            ),
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'Connexion utilisateur',
-                            textAlign: TextAlign.center,
+                            'Connectez-vous avec votre matricule pour '
+                            'accéder à l’entrepôt.',
                             style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
+                              color: _texteSecondaire,
+                              fontSize: 16,
+                              height: 1.45,
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 32),
+                          _libelle('Matricule'),
                           TextFormField(
                             controller: _matriculeController,
                             enabled: !_connexionEnCours,
                             textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: 'Matricule',
-                              prefixIcon: Icon(Icons.badge_outlined),
-                              border: OutlineInputBorder(),
-                            ),
+                            autofillHints: const [AutofillHints.username],
+                            style: const TextStyle(fontSize: 16, color: _texte),
+                            decoration: _decorationChamp(hint: 'Ex. 10482'),
                             validator: (valeur) {
                               if (valeur == null || valeur.trim().isEmpty) {
-                                return 'Le matricule est obligatoire.';
+                                return 'Saisissez votre matricule.';
                               }
                               return null;
                             },
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 20),
+                          _libelle('Mot de passe'),
                           TextFormField(
                             controller: _passwordController,
                             enabled: !_connexionEnCours,
                             obscureText: _masquerMotDePasse,
                             textInputAction: TextInputAction.done,
+                            autofillHints: const [AutofillHints.password],
                             onFieldSubmitted: (_) => _seConnecter(),
-                            decoration: InputDecoration(
-                              labelText: 'Mot de passe',
-                              prefixIcon: const Icon(Icons.lock_outline),
+                            style: const TextStyle(fontSize: 16, color: _texte),
+                            decoration: _decorationChamp(
+                              hint: '••••••••',
                               suffixIcon: IconButton(
+                                tooltip: _masquerMotDePasse
+                                    ? 'Afficher le mot de passe'
+                                    : 'Masquer le mot de passe',
                                 onPressed: () {
                                   setState(() {
                                     _masquerMotDePasse = !_masquerMotDePasse;
@@ -184,48 +199,60 @@ class _EcranLoginState extends State<EcranLogin> {
                                   _masquerMotDePasse
                                       ? Icons.visibility_outlined
                                       : Icons.visibility_off_outlined,
+                                  color: _texteSecondaire,
                                 ),
                               ),
-                              border: const OutlineInputBorder(),
                             ),
                             validator: (valeur) {
                               if (valeur == null || valeur.isEmpty) {
-                                return 'Le mot de passe est obligatoire.';
+                                return 'Saisissez votre mot de passe.';
                               }
                               return null;
                             },
                           ),
                           if (_erreur != null) ...[
                             const SizedBox(height: 16),
-                            Text(
-                              _erreur!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.red),
-                            ),
+                            _messageErreur(_erreur!),
                           ],
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 28),
                           SizedBox(
-                            height: 52,
-                            child: ElevatedButton(
+                            height: 54,
+                            child: FilledButton(
                               onPressed: _connexionEnCours
                                   ? null
                                   : _seConnecter,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF064B9C),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: _bleu,
                                 foregroundColor: Colors.white,
+                                disabledBackgroundColor: _bleu.withValues(
+                                  alpha: 0.6,
+                                ),
+                                disabledForegroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                               child: _connexionEnCours
                                   ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
+                                      width: 22,
+                                      height: 22,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
                                         color: Colors.white,
                                       ),
                                     )
-                                  : const Text('Se connecter'),
+                                  // Style sur le texte : il garde la police du thème.
+                                  : const Text(
+                                      'Se connecter',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                             ),
                           ),
+                          const Spacer(flex: 2),
+                          const SizedBox(height: 24),
                         ],
                       ),
                     ),
@@ -235,6 +262,109 @@ class _EcranLoginState extends State<EcranLogin> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _entete() {
+    return Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: _bleu,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Text(
+            'H',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(width: 14),
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Habibo',
+              style: TextStyle(
+                color: _texte,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(height: 2),
+            Text(
+              'Gestion d’entrepôt',
+              style: TextStyle(color: _texteSecondaire, fontSize: 15),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _libelle(String texte) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        texte,
+        style: const TextStyle(
+          color: _texte,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _decorationChamp({required String hint, Widget? suffixIcon}) {
+    OutlineInputBorder bordure(Color couleur, {double epaisseur = 1}) {
+      return OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: couleur, width: epaisseur),
+      );
+    }
+
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Color(0xFF98A2AB)),
+      filled: true,
+      fillColor: Colors.white,
+      suffixIcon: suffixIcon,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      enabledBorder: bordure(_bordure),
+      disabledBorder: bordure(_bordure),
+      focusedBorder: bordure(_bleu, epaisseur: 1.5),
+      errorBorder: bordure(_rouge),
+      focusedErrorBorder: bordure(_rouge, epaisseur: 1.5),
+      errorStyle: const TextStyle(color: _rouge, fontSize: 13),
+    );
+  }
+
+  Widget _messageErreur(String message) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFBECEC),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: _rouge, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: _rouge, fontSize: 14),
+            ),
+          ),
+        ],
       ),
     );
   }

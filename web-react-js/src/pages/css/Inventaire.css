@@ -133,8 +133,9 @@
   background: var(--color-primary);
   color: #fff;
 }
-.inventory-actions .material-symbols-outlined {
-  font-size: 17px;
+.inventory-actions svg {
+  width: 17px;
+  height: 17px;
 }
 .inventory-error {
   margin-bottom: 14px;

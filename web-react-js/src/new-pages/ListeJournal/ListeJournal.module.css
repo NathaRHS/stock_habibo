@@ -129,11 +129,12 @@
   appearance: none;
   cursor: pointer;
 }
-.select > :global(.material-symbols-outlined) {
+.select > svg {
   position: absolute;
   right: 8px;
+  width: 18px;
+  height: 18px;
   color: var(--color-text-muted);
-  font-size: 18px;
   pointer-events: none;
 }
 
@@ -153,7 +154,7 @@
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
-.search :global(.material-symbols-outlined) { font-size: 18px; }
+.search svg { width: 18px; height: 18px; }
 .search input {
   width: 100%;
   color: var(--color-text);
@@ -207,9 +208,10 @@
   text-transform: inherit;
   cursor: pointer;
 }
-.sortButton :global(.material-symbols-outlined) {
+.sortButton svg {
+  width: 14px;
+  height: 14px;
   color: var(--color-text-muted);
-  font-size: 14px;
 }
 .sortButton:hover { color: var(--color-text); }
 
@@ -250,7 +252,7 @@
   border-radius: 7px;
   place-items: center;
 }
-.thumb :global(.material-symbols-outlined) { font-size: 18px; }
+.thumb svg { width: 18px; height: 18px; }
 .thumbIn {
   color: var(--color-primary);
   background: var(--color-primary-soft);
@@ -271,7 +273,7 @@
   font-weight: 500;
   white-space: nowrap;
 }
-.badge :global(.material-symbols-outlined) { font-size: 15px; }
+.badge svg { width: 15px; height: 15px; }
 .success { color: #1c7a52; background: var(--color-success-soft); }
 .progress { color: #2f5fb3; background: #eaf1ff; }
 .warning { color: #9a5f12; background: var(--color-warning-soft); }
@@ -369,7 +371,7 @@
   cursor: pointer;
 }
 .loadMore:hover { background: var(--color-primary-soft); }
-.loadMore :global(.material-symbols-outlined) { font-size: 18px; }
+.loadMore svg { width: 18px; height: 18px; }
 
 .srOnly {
   position: absolute;

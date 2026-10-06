@@ -15,7 +15,7 @@
   font-weight: 600;
   text-decoration: none;
 }
-.create-user-back .material-symbols-outlined { font-size: 16px; }
+.create-user-back svg { width: 16px; height: 16px; }
 .create-user-back:hover { text-decoration: underline; }
 .create-user-header {
   margin-bottom: 24px;
@@ -60,7 +60,7 @@
   font-size: 15px;
   font-weight: 500;
 }
-.create-user-section-title .material-symbols-outlined {
+.create-user-section-icon {
   display: grid;
   width: 30px;
   height: 30px;
@@ -68,7 +68,6 @@
   background: var(--color-primary-soft);
   border-radius: 5px;
   place-items: center;
-  font-size: 17px;
 }
 .create-user-grid + .create-user-section-title {
   margin-top: 26px;
@@ -219,7 +218,7 @@
   color: var(--color-text-muted);
   font-size: 12px;
 }
-.create-user-rules .material-symbols-outlined { font-size: 17px; }
+.create-user-rules svg { flex: none; width: 17px; height: 17px; }
 .create-user-rules li.is-ok { color: var(--color-success); }
 .create-user-tip {
   display: flex;
@@ -227,9 +226,11 @@
   background: var(--color-primary-soft);
   border-color: transparent;
 }
-.create-user-tip .material-symbols-outlined {
+.create-user-tip svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
   color: var(--color-primary);
-  font-size: 18px;
 }
 .create-user-tip p {
   margin: 0;

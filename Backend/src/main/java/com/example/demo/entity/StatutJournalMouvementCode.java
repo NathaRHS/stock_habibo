@@ -13,7 +13,8 @@ public enum StatutJournalMouvementCode {
     EN_COURS("EN COURS"),
     EN_ATTENTE("EN ATTENTE"),
     VALIDE("VALIDE"),
-    MODIFIE("MODIFIE");
+    MODIFIE("MODIFIE"),
+    AFFECTEE("AFFECTEE");
 
     private final String nom;
 

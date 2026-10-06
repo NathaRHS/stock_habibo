@@ -67,9 +67,9 @@
   display: flex;
   gap: 10px;
 }
-.suggestionHead > :global(.material-symbols-outlined) {
+.suggestionHead > svg {
+  flex: none;
   color: var(--color-primary);
-  font-size: 20px;
 }
 .suggestionHead strong {
   font-size: 13px;
@@ -282,9 +282,8 @@
   min-height: 0;
   place-items: center;
 }
-.content :global(.material-symbols-outlined) {
+.content svg {
   color: var(--color-text-muted);
-  font-size: 18px;
 }
 .article {
   display: -webkit-box;
@@ -296,30 +295,6 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
-.plus {
-  position: relative;
-  width: 12px;
-  height: 12px;
-}
-.plus::before,
-.plus::after {
-  position: absolute;
-  background: #d3dae1;
-  content: "";
-}
-.plus::before {
-  top: 5.5px;
-  left: 0;
-  width: 12px;
-  height: 1px;
-}
-.plus::after {
-  top: 0;
-  left: 5.5px;
-  width: 1px;
-  height: 12px;
-}
-
 .foot {
   display: flex;
   align-items: center;
@@ -384,8 +359,7 @@
   color: var(--color-primary);
   background: #fff;
 }
-.active .plus::before,
-.active .plus::after { background: rgba(255, 255, 255, 0.6); }
+.active .content svg { color: rgba(255, 255, 255, 0.75); }
 .active .meter { background: rgba(255, 255, 255, 0.25); }
 .active .meter span { background: #fff; }
 

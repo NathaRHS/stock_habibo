@@ -42,7 +42,7 @@
   font-size: 11px;
   font-weight: 600;
 }
-.stepIndex :global(.material-symbols-outlined) { font-size: 14px; }
+.stepIndex svg { width: 14px; height: 14px; }
 .stepDone {
   color: #fff;
   background: var(--color-primary);
@@ -145,7 +145,7 @@
   background: var(--color-secondary-soft);
   cursor: not-allowed;
 }
-.primary :global(.material-symbols-outlined) { font-size: 18px; }
+.primary svg { flex: none; }
 
 .next {
   display: flex;
@@ -165,7 +165,7 @@
   text-align: left;
   cursor: pointer;
 }
-.next :global(.material-symbols-outlined) { font-size: 16px; }
+.next svg { flex: none; }
 
 .plan {
   min-height: 0;
@@ -242,7 +242,7 @@
   color: var(--color-danger);
   background: var(--color-danger-soft);
 }
-.plan li button :global(.material-symbols-outlined) { font-size: 16px; }
+.plan li button svg { width: 16px; height: 16px; }
 
 .footer {
   padding: 14px 16px;

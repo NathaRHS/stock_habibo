@@ -1,5 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  Building2,
+  CheckCircle2,
+  Clock,
+  FileText,
+  Package,
+  QrCode,
+  Search,
+  SquarePen,
+  Truck,
+  ArrowLeftRight,
+} from "lucide-react";
 import Button from "../components/Button";
 import PdfViewer from "../components/PdfViewer";
 import Sidebar from "../components/Sidebar";
@@ -142,7 +156,7 @@ function ControleJournal() {
         <header className="controle-global-topbar">
           <p>Opérations / Contrôle du journal</p>
           <label>
-            <span className="material-symbols-outlined">search</span>
+            <Search size={16} />
             <input placeholder="Rechercher" type="search" />
           </label>
           <div className="controle-global-user">
@@ -168,18 +182,13 @@ function ControleJournal() {
                   marginRight: "8px",
                 }}
               >
-                <span className="material-symbols-outlined">arrow_back</span>
+                <ArrowLeft size={18} />
               </Link>
               <div className="title-group">
                 <h1>
                   {journal.reference}
                   <span className="badge-status">
-                    <span
-                      className="material-symbols-outlined"
-                      style={{ fontSize: "13px" }}
-                    >
-                      schedule
-                    </span>
+                    <Clock size={13} />
                     {journal.statut}
                   </span>
                 </h1>
@@ -205,7 +214,7 @@ function ControleJournal() {
                     }
                     type="button"
                   >
-                    <span className="material-symbols-outlined">edit_note</span>
+                    <SquarePen size={16} />
                     Modifier
                   </Button>
                   <Button
@@ -216,9 +225,7 @@ function ControleJournal() {
                     }
                     type="button"
                   >
-                    <span className="material-symbols-outlined">
-                      check_circle
-                    </span>
+                    <CheckCircle2 size={16} />
                     {saving ? "Enregistrement…" : "Valider la session"}
                   </Button>
                 </>
@@ -230,7 +237,7 @@ function ControleJournal() {
           <section className="metrics-grid">
             <div className="metric-item">
               <span className="metric-label">
-                <span className="material-symbols-outlined">swap_horiz</span>
+                <ArrowLeftRight size={16} />
                 Type de flux
               </span>
               <span className="metric-value">
@@ -239,9 +246,7 @@ function ControleJournal() {
             </div>
             <div className="metric-item">
               <span className="metric-label">
-                <span className="material-symbols-outlined">
-                  local_shipping
-                </span>
+                <Truck size={16} />
                 Fournisseur
               </span>
               <span className="metric-value">
@@ -250,7 +255,7 @@ function ControleJournal() {
             </div>
             <div className="metric-item">
               <span className="metric-label">
-                <span className="material-symbols-outlined">apartment</span>
+                <Building2 size={16} />
                 Client
               </span>
               <span className="metric-value">
@@ -259,9 +264,7 @@ function ControleJournal() {
             </div>
             <div className="metric-item">
               <span className="metric-label">
-                <span className="material-symbols-outlined">
-                  qr_code_scanner
-                </span>
+                <QrCode size={16} />
                 Lignes scannées
               </span>
               <span className="metric-value">
@@ -292,12 +295,7 @@ function ControleJournal() {
             <section className="viewer-pane">
               <div className="pane-header">
                 <span>
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ verticalAlign: "-3px", marginRight: "6px" }}
-                  >
-                    description
-                  </span>
+                  <FileText size={16} style={{ verticalAlign: "-3px", marginRight: "6px" }} />
                   Document d'origine
                 </span>
                 <span
@@ -360,12 +358,7 @@ function ControleJournal() {
             <aside className="results-pane">
               <div className="pane-header">
                 <span>
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ verticalAlign: "-3px", marginRight: "6px" }}
-                  >
-                    inventory_2
-                  </span>
+                  <Package size={16} style={{ verticalAlign: "-3px", marginRight: "6px" }} />
                   Résultat du terrain
                 </span>
                 <span
@@ -404,9 +397,7 @@ function ControleJournal() {
                           <div className="item-info">
                             <h4>{d.nomArticle}</h4>
                             <span>
-                              <span className="material-symbols-outlined">
-                                verified
-                              </span>
+                              <BadgeCheck size={16} />
                               Code scanné validé
                             </span>
                           </div>
@@ -454,9 +445,7 @@ function ControleJournal() {
                     type="button"
                     style={{ width: "100%" }}
                   >
-                    <span className="material-symbols-outlined">
-                      check_circle
-                    </span>
+                    <CheckCircle2 size={16} />
                     {saving ? "Enregistrement…" : "Valider la réception"}
                   </Button>
                 )}

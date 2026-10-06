@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Table from "../components/Table";
+import LienUser from "../components/LienUser";
 import { getAccessToken } from "../services/authService";
 import "./css/CreateUtilisateur.css";
 import Sidebar from "../components/Sidebar";
@@ -80,7 +81,15 @@ function ListeUtilisateur() {
           {error ? (
             <p role="alert">{error}</p>
           ) : (
-            <Table objetsProps={utilisateurs} title="Utilisateurs" />
+            <Table
+              objetsProps={utilisateurs}
+              title="Utilisateurs"
+              renderCell={(utilisateur, colonne) =>
+                colonne === "username" ? (
+                  <LienUser userId={utilisateur.id} nom={utilisateur.username} />
+                ) : undefined
+              }
+            />
           )}
         </main>
       </section>

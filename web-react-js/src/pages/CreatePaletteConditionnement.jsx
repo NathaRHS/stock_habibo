@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAccessToken } from "../services/authService";
 import { Link } from "react-router-dom";
+import { PackageOpen } from "lucide-react";
 import Button from "../components/Button";
 import PageLayout from "../components/PageLayout";
 import Panel from "../components/Panel";
@@ -144,7 +145,7 @@ function CreatePaletteConditionnement() {
       description="Nombre maximum d’unités d’un conditionnement sur une place palette."
       actions={
         <Link className="layout-link-button" to="/article-conditionnements">
-          <span className="material-symbols-outlined">package_2</span>
+          <PackageOpen size={17} />
           Conditionnements
         </Link>
       }

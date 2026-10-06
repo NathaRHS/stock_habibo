@@ -18,6 +18,17 @@ public class User {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
+    @OneToMany (mappedBy = "user")
+    private List<ComptageInventaire>comptagesInventaires;
+
+    public List<ComptageInventaire> getComptagesInventaires() {
+        return comptagesInventaires;
+    }
+
+    public void setComptagesInventaires(List<ComptageInventaire> comptagesInventaires) {
+        this.comptagesInventaires = comptagesInventaires;
+    }
+
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 

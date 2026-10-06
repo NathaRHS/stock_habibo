@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Bell, BellOff, ClipboardCheck, LogOut, Package } from "lucide-react";
 import {
   chargerNotifications,
   marquerNotificationLue,
@@ -102,9 +103,7 @@ function NotificationBell() {
         aria-expanded={ouvert}
         onClick={() => setOuvert((valeur) => !valeur)}
       >
-        <span className="material-symbols-outlined" aria-hidden="true">
-          notifications
-        </span>
+        <Bell size={20} aria-hidden="true" />
         {nonLues > 0 && (
           <span className="notification-bell-count">
             {nonLues > 9 ? "9+" : nonLues}
@@ -150,9 +149,7 @@ function NotificationBell() {
           <div className="notification-panel-list">
             {!notificationsAffichees.length ? (
               <div className="notification-empty">
-                <span className="material-symbols-outlined">
-                  notifications_off
-                </span>
+                <BellOff size={20} />
                 <strong>Aucune notification</strong>
                 <span>Les nouvelles actions apparaîtront ici.</span>
               </div>
@@ -167,13 +164,13 @@ function NotificationBell() {
                   <span
                     className={`notification-item-icon priority-${String(notification.priorite ?? "INFORMATION").toLowerCase()}`}
                   >
-                    <span className="material-symbols-outlined">
-                      {notification.categorie === "SORTIE"
-                        ? "output"
-                        : notification.categorie === "INVENTAIRE"
-                          ? "fact_check"
-                          : "inventory_2"}
-                    </span>
+                    {notification.categorie === "SORTIE" ? (
+                      <LogOut size={16} />
+                    ) : notification.categorie === "INVENTAIRE" ? (
+                      <ClipboardCheck size={16} />
+                    ) : (
+                      <Package size={16} />
+                    )}
                   </span>
                   <span className="notification-item-content">
                     <strong>{notification.titre}</strong>

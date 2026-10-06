@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { AlertCircle, ArrowLeft, X } from "lucide-react";
 import {
   chargerDonneesAffectation,
   chargerSuggestionEmplacements,
@@ -261,6 +262,18 @@ function AffectationStock() {
         ),
       })),
   }));
+/*
+niveau : 1,
+cases : [
+{
+
+}
+]
+
+
+*/ 
+
+
   const casesRack = niveaux.flatMap((niveau) => niveau.cases);
   const occupationRack =
     casesRack.length > 0
@@ -301,12 +314,12 @@ function AffectationStock() {
       <main className={styles.page}>
         <header className={styles.header}>
           <Link className={styles.back} to="/journaux-mouvements">
-            <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            <ArrowLeft size={16} aria-hidden="true" />
             Journaux
           </Link>
           <div className={styles.titleRow}>
             <div>
-              <h1>Affectation du stock</h1>
+             {journal?.statut !== "AFFECTEE" ? <h1>Affectation du stock</h1> : <h1>Résumé de l'affectation </h1>} 
               <p>
                 {journal ? (
                   <>
@@ -334,10 +347,10 @@ function AffectationStock() {
 
         {error && (
           <p className={styles.error} role="alert">
-            <span className="material-symbols-outlined" aria-hidden="true">error</span>
+            <AlertCircle size={18} aria-hidden="true" />
             {error}
             <button aria-label="Fermer le message" onClick={() => setError("")} type="button">
-              <span className="material-symbols-outlined" aria-hidden="true">close</span>
+              <X size={16} aria-hidden="true" />
             </button>
           </p>
         )}
@@ -346,6 +359,7 @@ function AffectationStock() {
           <p className={styles.placeholder}>Chargement de l’entrepôt…</p>
         ) : !ToutesLesDonnees ? null : (
           <div className={styles.workspace}>
+            
             <ProductList
               articles={articles}
               articleSelectionneId={articleSelectionne?.id}
@@ -353,6 +367,7 @@ function AffectationStock() {
               onSuggest={demanderSuggestion}
               chargementSuggestion={chargementSuggestion}
               suggestion={suggestionActive}
+              
             />
 
             <RackView

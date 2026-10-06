@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight, FileText, Package, Plus, Search } from "lucide-react";
 import { getAccessToken } from "../services/authService";
 import Sidebar from "../components/Sidebar";
 import CreateJournalModal from "../components/CreateJournalModal";
@@ -81,7 +82,7 @@ function ListeJournal() {
         <header className="journal-page-topbar">
           <p>Opérations / Journaux</p>
           <label>
-            <span className="material-symbols-outlined">search</span>
+            <Search size={16} />
             <input
               onChange={(event) => setRecherche(event.target.value)}
               placeholder="Rechercher un journal"
@@ -111,7 +112,7 @@ function ListeJournal() {
               onClick={() => setModalOuverte(true)}
               type="button"
             >
-              <span className="material-symbols-outlined">add</span>Nouveau
+              <Plus size={19} />Nouveau
               journal
             </button>
           </header>
@@ -140,7 +141,7 @@ function ListeJournal() {
                 ))}
               </nav>
               <label className="journal-search">
-                <span className="material-symbols-outlined">search</span>
+                <Search size={18} />
                 <span className="journal-sr-only">Rechercher un journal</span>
                 <input
                   onChange={(event) => setRecherche(event.target.value)}
@@ -183,7 +184,7 @@ function ListeJournal() {
 
             {!loading && !journauxFiltres.length && (
               <div className="journal-list-empty">
-                <span className="material-symbols-outlined">inventory_2</span>
+                <Package size={30} />
                 <strong>Aucun journal trouvé</strong>
                 <p>Modifiez la recherche ou choisissez un autre statut.</p>
               </div>
@@ -257,7 +258,7 @@ function JournalRow({ journal, filtre }) {
           className="journal-document"
           title={documentNom || "Aucun document"}
         >
-          <span className="material-symbols-outlined">description</span>
+          <FileText size={17} />
           {documentNom || "Aucun document"}
         </span>
       </td>
@@ -278,7 +279,7 @@ function JournalRow({ journal, filtre }) {
                 ? "Creer liste commande"
                 : "Controler"}
             </span>
-            <span className="material-symbols-outlined">arrow_forward</span>
+            <ArrowRight size={16} />
           </Link>
         ) : (
           <Link
@@ -290,7 +291,7 @@ function JournalRow({ journal, filtre }) {
                 ? "Creer liste commande"
                 : "Controler"}
             </span>
-            <span className="material-symbols-outlined">arrow_forward</span>
+            <ArrowRight size={16} />
           </Link>
         )}
       </td>

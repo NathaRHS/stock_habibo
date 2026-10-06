@@ -9,7 +9,7 @@ import Button from "../components/Button";
 import Modal from "../components/Modal";
 import Sidebar from "../components/Sidebar";
 import "./css/AffectationStockMine.css";
-import { Info } from "lucide-react";
+import { Info, Sparkles, X } from "lucide-react";
 function AffectationStockMine() {
   const { journalId } = useParams();
   const navigate = useNavigate();
@@ -412,7 +412,7 @@ function AffectationStockMine() {
       <section className="affectation-main-section">
         {/* <header className="affectation-global-topbar">
           <p>Réceptions / Affectation du stock</p>
-          <label><span className="material-symbols-outlined">search</span><input placeholder="Rechercher" type="search" /></label>
+          <label><Search size={16} /><input placeholder="Rechercher" type="search" /></label>
           <div className="affectation-global-user"><span>AR</span><div><strong>Administrateur</strong><small>Responsable entrepôt</small></div></div>
         </header> */}
         <div className="affectation-page main-wrapper">
@@ -606,9 +606,7 @@ function AffectationStockMine() {
                   {suggestionAConfirmerPourArticle && (
                     <section className="suggestion-popover" role="status">
                       <div className="suggestion-popover-heading">
-                        <span className="material-symbols-outlined">
-                          auto_awesome
-                        </span>
+                        <Sparkles size={20} />
                         <div>
                           <strong>Suggestion prête à appliquer</strong>
                           <p>
@@ -622,9 +620,7 @@ function AffectationStockMine() {
                           onClick={annulerSuggestion}
                           type="button"
                         >
-                          <span className="material-symbols-outlined">
-                            close
-                          </span>
+                          <X size={18} />
                         </button>
                       </div>
                       <div className="suggestion-popover-places">

@@ -1,3 +1,4 @@
+import { Download, ListFilter, Plus, Trash2 } from "lucide-react";
 import "../assets/css/Dashboard.css";
 import Button from "./Button";
 
@@ -12,10 +13,10 @@ function JournalTable() {
         <p>Consultez et gérez les derniers mouvements de stock</p>
       </div>
       <div className="journal-actions">
-        <Button icon={<span className="material-symbols-outlined" aria-hidden="true">delete</span>} variant="danger">Supprimer</Button>
-        <Button icon={<span className="material-symbols-outlined" aria-hidden="true">filter_list</span>} variant="secondary">Filtres</Button>
-        <Button icon={<span className="material-symbols-outlined" aria-hidden="true">download</span>} variant="secondary">Exporter</Button>
-        <Button icon={<span className="material-symbols-outlined" aria-hidden="true">add</span>}>Ajouter</Button>
+        <Button icon={<Trash2 size={16} aria-hidden="true" />} variant="danger">Supprimer</Button>
+        <Button icon={<ListFilter size={16} aria-hidden="true" />} variant="secondary">Filtres</Button>
+        <Button icon={<Download size={16} aria-hidden="true" />} variant="secondary">Exporter</Button>
+        <Button icon={<Plus size={16} aria-hidden="true" />}>Ajouter</Button>
       </div>
     </section>
   );

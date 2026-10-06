@@ -1,3 +1,4 @@
+import { ArrowRight, Check, Plus, X } from "lucide-react";
 import QuantitySlider from "./QuantitySlider";
 import styles from "./AssignmentPanel.module.css";
 
@@ -5,7 +6,7 @@ function Etape({ numero, fait, titre, children }) {
   return (
     <section className={styles.step}>
       <span className={`${styles.stepIndex} ${fait ? styles.stepDone : ""}`} aria-hidden="true">
-        {fait ? <span className="material-symbols-outlined">check</span> : numero}
+        {fait ? <Check size={14} /> : numero}
       </span>
       <div className={styles.stepBody}>
         <h3>{titre}</h3>
@@ -112,7 +113,7 @@ function AssignmentPanel({
             />
             {blocage && <p className={styles.blocked}>{blocage}</p>}
             <button className={styles.primary} disabled={Boolean(blocage)} type="submit">
-              <span className="material-symbols-outlined" aria-hidden="true">add</span>
+              <Plus size={18} aria-hidden="true" />
               {emplacement && !blocage
                 ? `Ajouter à ${emplacement.nomEmplacement}`
                 : "Ajouter au plan"}
@@ -122,7 +123,7 @@ function AssignmentPanel({
           {article && resteArticle === 0 && articleSuivant && (
             <button className={styles.next} onClick={onArticleSuivant} type="button">
               Article suivant : {articleSuivant.nomArticle}
-              <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+              <ArrowRight size={16} aria-hidden="true" />
             </button>
           )}
         </Etape>
@@ -156,7 +157,7 @@ function AssignmentPanel({
                   onClick={() => onRetirer(ligne.id)}
                   type="button"
                 >
-                  <span className="material-symbols-outlined" aria-hidden="true">close</span>
+                  <X size={16} aria-hidden="true" />
                 </button>
               </li>
             ))}

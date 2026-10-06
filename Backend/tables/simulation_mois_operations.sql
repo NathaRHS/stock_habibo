@@ -7,10 +7,67 @@
 --   - entrees de stock et mouvements d'entree ;
 --   - sorties, pickings, lignes de picking et prelevements ;
 --   - inventaires et comptages ;
+--   - une participation par operateur/inventoriste et par journal traite ;
 --   - notifications administrateur.
 --
--- Prerequis : lancer le backend une fois pour creer t_notification avec JPA.
+-- Prerequis : lancer le backend une fois pour creer les tables et colonnes JPA,
+-- notamment t_notification et t_comptage_inventaire.user_id.
+-- Le referentiel doit contenir ADM001, OPE001, OPE002, INV001 et INV002.
 -- Dates : le script simule les 30 derniers jours a partir de CURDATE().
+-- Executer sans --force : une erreur de precontrole doit arreter le script.
+
+USE stock_habibo;
+
+-- Ce controle echoue avant tout TRUNCATE si un prerequis du referentiel manque.
+DROP TEMPORARY TABLE IF EXISTS tmp_seed_prerequis;
+CREATE TEMPORARY TABLE tmp_seed_prerequis (id BIGINT NOT NULL);
+INSERT INTO tmp_seed_prerequis (id) VALUES
+    ((SELECT IF(COUNT(*) = 1, 1, NULL) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 't_comptage_inventaire'
+        AND COLUMN_NAME = 'user_id')),
+    ((SELECT IF(COUNT(*) = 1, 1, NULL) FROM information_schema.TABLES
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 't_notification')),
+    ((SELECT IF(COUNT(*) = 1, 1, NULL) FROM information_schema.TABLES
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 't_statut_prelevement')),
+    ((SELECT id FROM t_user WHERE matricule = 'ADM001' LIMIT 1)),
+    ((SELECT id FROM t_user WHERE matricule = 'OPE001' LIMIT 1)),
+    ((SELECT id FROM t_user WHERE matricule = 'OPE002' LIMIT 1)),
+    ((SELECT id FROM t_user WHERE matricule = 'INV001' LIMIT 1)),
+    ((SELECT id FROM t_user WHERE matricule = 'INV002' LIMIT 1)),
+    ((SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'ENTREE' LIMIT 1)),
+    ((SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'SORTIE' LIMIT 1)),
+    ((SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'INVENTAIRE' LIMIT 1)),
+    ((SELECT id FROM t_type_mouvement WHERE nom_type_mouvement = 'ENTREE' LIMIT 1)),
+    ((SELECT id FROM t_type_mouvement WHERE nom_type_mouvement = 'SORTIE' LIMIT 1)),
+    ((SELECT id FROM t_statut WHERE nom = 'VALIDE' LIMIT 1)),
+    ((SELECT id FROM t_statut WHERE nom = 'EN COURS' LIMIT 1)),
+    ((SELECT id FROM t_statut WHERE nom = 'EN ATTENTE' LIMIT 1)),
+    ((SELECT id FROM t_article WHERE nom_article LIKE 'Coca-Cola%' LIMIT 1)),
+    ((SELECT id FROM t_article WHERE nom_article LIKE 'Lait Candia%' LIMIT 1)),
+    ((SELECT id FROM t_article WHERE nom_article LIKE 'Eau Vive%' LIMIT 1)),
+    ((SELECT id FROM t_article WHERE nom_article LIKE 'Savon liquide%' LIMIT 1)),
+    ((SELECT id FROM t_emplacement WHERE nom_emplacement = 'A-001' LIMIT 1)),
+    ((SELECT id FROM t_emplacement WHERE nom_emplacement = 'A-002' LIMIT 1)),
+    ((SELECT id FROM t_emplacement WHERE nom_emplacement = 'A-003' LIMIT 1)),
+    ((SELECT id FROM t_emplacement WHERE nom_emplacement = 'B-001' LIMIT 1)),
+    ((SELECT id FROM t_emplacement WHERE nom_emplacement = 'B-002' LIMIT 1)),
+    ((SELECT id FROM t_emplacement WHERE nom_emplacement = 'C-001' LIMIT 1)),
+    ((SELECT id FROM t_rack WHERE nom_rack = 'RACK-A' LIMIT 1)),
+    ((SELECT id FROM t_rack WHERE nom_rack = 'RACK-B' LIMIT 1)),
+    ((SELECT id FROM t_rack WHERE nom_rack = 'RACK-C' LIMIT 1)),
+    ((SELECT c.id FROM t_article_conditionnement c
+      JOIN t_article a ON a.id = c.article_id
+      WHERE a.nom_article LIKE 'Coca-Cola%' AND c.quantite_piece_standard = 6 LIMIT 1)),
+    ((SELECT c.id FROM t_article_conditionnement c
+      JOIN t_article a ON a.id = c.article_id
+      WHERE a.nom_article LIKE 'Lait Candia%' AND c.quantite_piece_standard = 12 LIMIT 1)),
+    ((SELECT c.id FROM t_article_conditionnement c
+      JOIN t_article a ON a.id = c.article_id
+      WHERE a.nom_article LIKE 'Eau Vive%' AND c.quantite_piece_standard = 6 LIMIT 1)),
+    ((SELECT c.id FROM t_article_conditionnement c
+      JOIN t_article a ON a.id = c.article_id
+      WHERE a.nom_article LIKE 'Savon liquide%' AND c.quantite_piece_standard = 12 LIMIT 1));
+DROP TEMPORARY TABLE tmp_seed_prerequis;
 
 SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE t_notification;
@@ -34,24 +91,11 @@ START TRANSACTION;
 INSERT IGNORE INTO t_statut_prelevement (nom_statut)
 VALUES ('CONFIRME');
 
-SET @admin_id = (
-    SELECT u.id
-    FROM t_user u JOIN t_roles r ON r.id = u.role_id
-    WHERE r.nom_role = 'ADMIN'
-    ORDER BY u.id LIMIT 1
-);
-SET @operateur_id = (
-    SELECT u.id
-    FROM t_user u JOIN t_roles r ON r.id = u.role_id
-    WHERE r.nom_role = 'OPERATEUR'
-    ORDER BY u.id LIMIT 1
-);
-SET @inventoriste_id = (
-    SELECT u.id
-    FROM t_user u JOIN t_roles r ON r.id = u.role_id
-    WHERE r.nom_role = 'INVENTORISTE'
-    ORDER BY u.id LIMIT 1
-);
+SET @admin_id = (SELECT id FROM t_user WHERE matricule = 'ADM001' LIMIT 1);
+SET @operateur_id = (SELECT id FROM t_user WHERE matricule = 'OPE001' LIMIT 1);
+SET @operateur_2_id = (SELECT id FROM t_user WHERE matricule = 'OPE002' LIMIT 1);
+SET @inventoriste_id = (SELECT id FROM t_user WHERE matricule = 'INV001' LIMIT 1);
+SET @inventoriste_2_id = (SELECT id FROM t_user WHERE matricule = 'INV002' LIMIT 1);
 
 SET @type_entree = (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'ENTREE' LIMIT 1);
 SET @type_sortie = (SELECT id FROM t_type_mouvement_journal WHERE nom_type_mouvement = 'SORTIE' LIMIT 1);
@@ -68,10 +112,10 @@ SET @article_lait = (SELECT id FROM t_article WHERE nom_article LIKE 'Lait Candi
 SET @article_eau = (SELECT id FROM t_article WHERE nom_article LIKE 'Eau Vive%' ORDER BY id LIMIT 1);
 SET @article_savon = (SELECT id FROM t_article WHERE nom_article LIKE 'Savon liquide%' ORDER BY id LIMIT 1);
 
-SET @cond_coca = (SELECT id FROM t_article_conditionnement WHERE article_id = @article_coca ORDER BY id LIMIT 1);
-SET @cond_lait = (SELECT id FROM t_article_conditionnement WHERE article_id = @article_lait ORDER BY id LIMIT 1);
-SET @cond_eau = (SELECT id FROM t_article_conditionnement WHERE article_id = @article_eau ORDER BY id LIMIT 1);
-SET @cond_savon = (SELECT id FROM t_article_conditionnement WHERE article_id = @article_savon ORDER BY id LIMIT 1);
+SET @cond_coca = (SELECT id FROM t_article_conditionnement WHERE article_id = @article_coca AND quantite_piece_standard = 6 ORDER BY id LIMIT 1);
+SET @cond_lait = (SELECT id FROM t_article_conditionnement WHERE article_id = @article_lait AND quantite_piece_standard = 12 ORDER BY id LIMIT 1);
+SET @cond_eau = (SELECT id FROM t_article_conditionnement WHERE article_id = @article_eau AND quantite_piece_standard = 6 ORDER BY id LIMIT 1);
+SET @cond_savon = (SELECT id FROM t_article_conditionnement WHERE article_id = @article_savon AND quantite_piece_standard = 12 ORDER BY id LIMIT 1);
 
 SET @rack_a = (SELECT id FROM t_rack WHERE nom_rack = 'RACK-A' LIMIT 1);
 SET @rack_b = (SELECT id FROM t_rack WHERE nom_rack = 'RACK-B' LIMIT 1);
@@ -85,7 +129,9 @@ SET @emp_c001 = (SELECT id FROM t_emplacement WHERE nom_emplacement = 'C-001' LI
 
 -- Affiche les references essentielles avant insertion. Elles ne doivent pas etre NULL.
 SELECT @admin_id AS admin_id, @operateur_id AS operateur_id,
-       @inventoriste_id AS inventoriste_id, @type_entree AS type_entree,
+       @operateur_2_id AS operateur_2_id,
+       @inventoriste_id AS inventoriste_id,
+       @inventoriste_2_id AS inventoriste_2_id, @type_entree AS type_entree,
        @type_sortie AS type_sortie, @type_inventaire AS type_inventaire,
        @article_coca AS article_coca, @article_lait AS article_lait,
        @article_eau AS article_eau, @article_savon AS article_savon;
@@ -105,6 +151,27 @@ SET @rec_1 = (SELECT id FROM t_journal_mouvement WHERE reference = 'REC-202609-0
 SET @rec_2 = (SELECT id FROM t_journal_mouvement WHERE reference = 'REC-202609-002');
 SET @rec_3 = (SELECT id FROM t_journal_mouvement WHERE reference = 'REC-202609-003');
 SET @rec_4 = (SELECT id FROM t_journal_mouvement WHERE reference = 'REC-202609-004');
+
+-- Une ligne par personne ayant effectue des scans dans chaque session d'entree.
+-- Le mouvement de stock porte l'admin qui a valide l'affectation : ce n'est pas
+-- une participation physique supplementaire a la session de reception.
+INSERT INTO t_user_journal_mouvement
+    (journal_mouvement_id, user_id, statut_participation, date_debut, date_fin)
+VALUES
+    (@rec_1, @operateur_id, 'TERMINE',
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 27 DAY), '07:55:00'),
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 27 DAY), '08:15:00')),
+    (@rec_1, @operateur_2_id, 'TERMINE',
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 27 DAY), '08:00:00'),
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 27 DAY), '08:35:00')),
+    (@rec_2, @operateur_2_id, 'TERMINE',
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 19 DAY), '08:40:00'),
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 19 DAY), '09:05:00')),
+    (@rec_3, @operateur_id, 'EN_COURS',
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 2 DAY), '09:00:00'), NULL),
+    (@rec_4, @operateur_id, 'TERMINE',
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '08:00:00'),
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '08:35:00'));
 
 INSERT INTO t_detail_journal
     (journal_mouvement_id, article_id, quantite, quantite_conditionnement, dlc, dlv)
@@ -152,6 +219,19 @@ SET @sor_1 = (SELECT id FROM t_journal_mouvement WHERE reference = 'SOR-202609-0
 SET @sor_2 = (SELECT id FROM t_journal_mouvement WHERE reference = 'SOR-202609-002');
 SET @sor_3 = (SELECT id FROM t_journal_mouvement WHERE reference = 'SOR-202609-003');
 
+-- La sortie est aussi une operation suivie dans t_user_journal_mouvement.
+INSERT INTO t_user_journal_mouvement
+    (journal_mouvement_id, user_id, statut_participation, date_debut, date_fin)
+VALUES
+    (@sor_1, @operateur_id, 'TERMINE',
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 16 DAY), '08:00:00'),
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 16 DAY), '08:45:00')),
+    (@sor_2, @operateur_id, 'EN_COURS',
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 3 DAY), '09:10:00'), NULL),
+    (@sor_3, @operateur_2_id, 'TERMINE',
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '13:20:00'),
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '14:15:00'));
+
 INSERT INTO t_commande
     (etat, isChecked, quantite_demande, quantite_reel, remarque, article_id, journal_mouvement_id, user_id)
 VALUES
@@ -159,7 +239,7 @@ VALUES
     (1, 1, 10, 10, 'Sortie deja confirmee', @article_lait, @sor_1, @operateur_id),
     (0, 1, 30, NULL, 'Picking en cours', @article_coca, @sor_2, @operateur_id),
     (0, 1, 8, NULL, 'Picking en cours', @article_lait, @sor_2, @operateur_id),
-    (0, 1, 20, 20, 'Prelevement termine, confirmation admin attendue', @article_eau, @sor_3, @operateur_id);
+    (0, 1, 20, 20, 'Prelevement termine, confirmation admin attendue', @article_eau, @sor_3, @operateur_2_id);
 
 SET @cmd_sor1_coca = (SELECT id FROM t_commande WHERE journal_mouvement_id = @sor_1 AND article_id = @article_coca);
 SET @cmd_sor1_lait = (SELECT id FROM t_commande WHERE journal_mouvement_id = @sor_1 AND article_id = @article_lait);
@@ -172,7 +252,7 @@ INSERT INTO t_picking
 VALUES
     (TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 16 DAY), '07:50:00'), TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 16 DAY), '08:00:00'), TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 16 DAY), '08:45:00'), @sor_1, @operateur_id, @rack_a, 'TERMINE'),
     (TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 3 DAY), '09:00:00'), TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 3 DAY), '09:10:00'), NULL, @sor_2, @operateur_id, @rack_a, 'EN_COURS'),
-    (TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '13:10:00'), TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '13:20:00'), TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '14:15:00'), @sor_3, @operateur_id, @rack_c, 'TERMINE');
+    (TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '13:10:00'), TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '13:20:00'), TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '14:15:00'), @sor_3, @operateur_2_id, @rack_c, 'TERMINE');
 
 SET @pick_sor1 = (SELECT id FROM t_picking WHERE journal_mouvement_id = @sor_1);
 SET @pick_sor2 = (SELECT id FROM t_picking WHERE journal_mouvement_id = @sor_2);
@@ -201,7 +281,7 @@ VALUES
     (@cmd_sor1_coca, @lp_sor1_coca, @emp_a001, @statut_prelevement_confirme, 150, @operateur_id, TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 16 DAY), '08:12:00'), DATE_ADD(CURDATE(), INTERVAL 150 DAY), DATE_ADD(CURDATE(), INTERVAL 140 DAY)),
     (@cmd_sor1_lait, @lp_sor1_lait, @emp_b001, @statut_prelevement_confirme, 120, @operateur_id, TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 16 DAY), '08:30:00'), DATE_ADD(CURDATE(), INTERVAL 70 DAY), DATE_ADD(CURDATE(), INTERVAL 60 DAY)),
     (@cmd_sor2_coca, @lp_sor2_coca, @emp_a001, @statut_prelevement_confirme, 120, @operateur_id, TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 3 DAY), '09:25:00'), DATE_ADD(CURDATE(), INTERVAL 150 DAY), DATE_ADD(CURDATE(), INTERVAL 140 DAY)),
-    (@cmd_sor3_eau, @lp_sor3_eau, @emp_c001, @statut_prelevement_confirme, 120, @operateur_id, TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '13:55:00'), DATE_ADD(CURDATE(), INTERVAL 210 DAY), DATE_ADD(CURDATE(), INTERVAL 200 DAY));
+    (@cmd_sor3_eau, @lp_sor3_eau, @emp_c001, @statut_prelevement_confirme, 120, @operateur_2_id, TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '13:55:00'), DATE_ADD(CURDATE(), INTERVAL 210 DAY), DATE_ADD(CURDATE(), INTERVAL 200 DAY));
 
 -- Seule la sortie confirmee cree les mouvements SORTIE definitifs.
 INSERT INTO t_mouvement_stock
@@ -223,24 +303,37 @@ VALUES
 SET @inv_1 = (SELECT id FROM t_journal_mouvement WHERE reference = 'INV-202609-001');
 SET @inv_2 = (SELECT id FROM t_journal_mouvement WHERE reference = 'INV-202609-002');
 
+INSERT INTO t_user_journal_mouvement
+    (journal_mouvement_id, user_id, statut_participation, date_debut, date_fin)
+VALUES
+    (@inv_1, @inventoriste_id, 'TERMINE',
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 8 DAY), '10:00:00'),
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 8 DAY), '10:20:00')),
+    (@inv_1, @inventoriste_2_id, 'TERMINE',
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 8 DAY), '10:00:00'),
+     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 8 DAY), '10:35:00')),
+    (@inv_2, @inventoriste_id, 'EN_COURS',
+     DATE_SUB(NOW(), INTERVAL 2 HOUR), NULL);
+
 INSERT INTO t_detail_journal
     (journal_mouvement_id, article_id, quantite, quantite_conditionnement, dlc, dlv)
 VALUES
-    (@inv_1, @article_coca, 330, NULL, NULL, NULL),
+    (@inv_1, @article_coca, 205, NULL, NULL, NULL),
     (@inv_1, @article_lait, 360, NULL, NULL, NULL),
-    (@inv_2, @article_eau, 240, NULL, NULL, NULL),
-    (@inv_2, @article_savon, 180, NULL, NULL, NULL);
+    (@inv_2, @article_eau, 360, NULL, NULL, NULL),
+    (@inv_2, @article_savon, 240, NULL, NULL, NULL);
 
 SET @d_inv1_coca = (SELECT id FROM t_detail_journal WHERE journal_mouvement_id = @inv_1 AND article_id = @article_coca);
 SET @d_inv1_lait = (SELECT id FROM t_detail_journal WHERE journal_mouvement_id = @inv_1 AND article_id = @article_lait);
 SET @d_inv2_eau = (SELECT id FROM t_detail_journal WHERE journal_mouvement_id = @inv_2 AND article_id = @article_eau);
+SET @d_inv2_savon = (SELECT id FROM t_detail_journal WHERE journal_mouvement_id = @inv_2 AND article_id = @article_savon);
 
 INSERT INTO t_comptage_inventaire
-    (date_comptage, quantite_comptee, detail_journal_id, emplacement_id)
+    (date_comptage, quantite_comptee, detail_journal_id, emplacement_id, user_id)
 VALUES
-    (TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 8 DAY), '10:15:00'), 325, @d_inv1_coca, @emp_a001),
-    (TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 8 DAY), '10:28:00'), 360, @d_inv1_lait, @emp_b001),
-    (TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 0 DAY), '09:30:00'), 240, @d_inv2_eau, @emp_c001);
+    (TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 8 DAY), '10:15:00'), 205, @d_inv1_coca, @emp_a001, @inventoriste_id),
+    (TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 8 DAY), '10:28:00'), 360, @d_inv1_lait, @emp_b001, @inventoriste_2_id),
+    (DATE_SUB(NOW(), INTERVAL 1 HOUR), 240, @d_inv2_savon, @emp_b002, @inventoriste_id);
 
 -- --------------------------------------------------------------------------
 -- 5. NOTIFICATIONS ADMINISTRATEUR : ACTIONS EN ATTENTE ET HISTORIQUE
@@ -273,8 +366,8 @@ VALUES
     ('INVENTAIRE', 'INVENTAIRE_A_REALISER', 'INFORMATION',
      'Inventaire en cours',
      'L''inventaire INV-202609-002 contient encore des emplacements a compter.',
-     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 2 DAY), '08:30:00'),
-     TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 2 DAY), '09:00:00'), NULL,
+     DATE_SUB(NOW(), INTERVAL 2 HOUR),
+     DATE_SUB(NOW(), INTERVAL 1 HOUR), NULL,
      CONCAT('/inventaire/', @inv_2), TRUE, TRUE,
      @admin_id, @inv_2, @d_inv2_eau, @emp_c001);
 
@@ -308,3 +401,56 @@ SELECT 'Notifications' AS controle;
 SELECT id, categorie, type, priorite, titre, lu, traitee, url_cible
 FROM t_notification
 ORDER BY date_creation DESC;
+
+SELECT 'Participations par utilisateur et operation' AS controle;
+SELECT utilisateur.matricule, type.nom_type_mouvement AS operation,
+       participation.statut_participation, COUNT(*) AS total
+FROM t_user_journal_mouvement participation
+JOIN t_user utilisateur ON utilisateur.id = participation.user_id
+JOIN t_journal_mouvement journal ON journal.id = participation.journal_mouvement_id
+JOIN t_type_mouvement_journal type ON type.id = journal.type_mouvement_journal_id
+GROUP BY utilisateur.id, utilisateur.matricule,
+         type.nom_type_mouvement, participation.statut_participation
+ORDER BY utilisateur.matricule, type.nom_type_mouvement,
+         participation.statut_participation;
+
+-- Ces controles doivent tous retourner zero ligne.
+SELECT journal.reference AS journal_sans_participant
+FROM t_journal_mouvement journal
+LEFT JOIN t_user_journal_mouvement participation
+    ON participation.journal_mouvement_id = journal.id
+WHERE participation.id IS NULL;
+
+SELECT picking.id AS picking_sans_participation
+FROM t_picking picking
+LEFT JOIN t_user_journal_mouvement participation
+    ON participation.journal_mouvement_id = picking.journal_mouvement_id
+   AND participation.user_id = picking.user_id
+WHERE participation.id IS NULL;
+
+SELECT comptage.id AS comptage_sans_participation
+FROM t_comptage_inventaire comptage
+JOIN t_detail_journal detail ON detail.id = comptage.detail_journal_id
+LEFT JOIN t_user_journal_mouvement participation
+    ON participation.journal_mouvement_id = detail.journal_mouvement_id
+   AND participation.user_id = comptage.user_id
+WHERE participation.id IS NULL;
+
+SELECT prelevement.id AS prelevement_sans_participation
+FROM t_prelevement prelevement
+JOIN t_commande commande ON commande.id = prelevement.commande_id
+LEFT JOIN t_user_journal_mouvement participation
+    ON participation.journal_mouvement_id = commande.journal_mouvement_id
+   AND participation.user_id = prelevement.user_id
+WHERE participation.id IS NULL;
+
+SELECT mouvement.id AS mouvement_avec_quantite_incoherente
+FROM t_mouvement_stock mouvement
+JOIN t_article_conditionnement conditionnement
+    ON conditionnement.id = mouvement.conditionnement_id
+WHERE mouvement.quantite_pieces_reelle <>
+      mouvement.nombre_conditionnements * conditionnement.quantite_piece_standard;
+
+SELECT emplacement_id, article_id, quantite_stock
+FROM v_stock_par_emplacement
+WHERE quantite_stock < 0;

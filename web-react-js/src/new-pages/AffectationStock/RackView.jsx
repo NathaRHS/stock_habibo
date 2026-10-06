@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { Lock, Plus, Sparkles } from "lucide-react";
 import styles from "./RackView.module.css";
 
 const LEGENDE = [
@@ -11,12 +12,18 @@ const LEGENDE = [
 
 function decrire(emplacement, infos, suggestion) {
   const morceaux = [emplacement.nomEmplacement];
-  if (infos.incompatible) morceaux.push(`occupé par ${infos.nomArticle}, non disponible`);
+  if (infos.incompatible)
+    morceaux.push(`occupé par ${infos.nomArticle}, non disponible`);
   else if (infos.nomArticle) morceaux.push(infos.nomArticle);
   else morceaux.push("libre");
-  if (infos.capacite > 0) morceaux.push(`${infos.placeRestante} places sur ${infos.capacite}`);
-  if (infos.planifie > 0) morceaux.push(`${infos.planifie} colis déjà planifiés`);
-  if (suggestion) morceaux.push(`suggestion : ${suggestion.quantiteConditionnementsProposee} colis`);
+  if (infos.capacite > 0)
+    morceaux.push(`${infos.placeRestante} places sur ${infos.capacite}`);
+  if (infos.planifie > 0)
+    morceaux.push(`${infos.planifie} colis déjà planifiés`);
+  if (suggestion)
+    morceaux.push(
+      `suggestion : ${suggestion.quantiteConditionnementsProposee} colis`,
+    );
   return morceaux.join(", ");
 }
 
@@ -41,7 +48,11 @@ function RackView({
     if (!emplacementSelectionneId) return;
     grilleRef.current
       ?.querySelector(`[data-emplacement="${emplacementSelectionneId}"]`)
-      ?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+      ?.scrollIntoView({
+        block: "nearest",
+        inline: "nearest",
+        behavior: "smooth",
+      });
   }, [emplacementSelectionneId, rackSelectionne?.id]);
 
   const aucuneCase = niveaux.every((niveau) => niveau.cases.length === 0);
@@ -56,7 +67,11 @@ function RackView({
           </p>
         </div>
         {racks.length > 1 && (
-          <div className={styles.tabs} role="group" aria-label="Choisir un rack">
+          <div
+            className={styles.tabs}
+            role="group"
+            aria-label="Choisir un rack"
+          >
             {racks.map((rack) => (
               <button
                 aria-pressed={rack.id === rackSelectionne?.id}
@@ -74,7 +89,7 @@ function RackView({
       {suggestion && (
         <div className={styles.suggestion} role="status">
           <div className={styles.suggestionHead}>
-            <span className="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+            <Sparkles size={20} aria-hidden="true" />
             <div>
               <strong>
                 {suggestion.suggestions?.length
@@ -93,7 +108,9 @@ function RackView({
             <div className={styles.chips}>
               {suggestion.suggestions.map((element) => (
                 <button
-                  aria-pressed={element.emplacementId === emplacementSelectionneId}
+                  aria-pressed={
+                    element.emplacementId === emplacementSelectionneId
+                  }
                   key={element.emplacementId}
                   onClick={() => onFocusEmplacement(element.emplacementId)}
                   type="button"
@@ -117,7 +134,11 @@ function RackView({
           )}
 
           <div className={styles.suggestionActions}>
-            <button className={styles.ghost} onClick={onDismissSuggestion} type="button">
+            <button
+              className={styles.ghost}
+              onClick={onDismissSuggestion}
+              type="button"
+            >
               Ignorer
             </button>
             <button
@@ -135,7 +156,10 @@ function RackView({
       <ul className={styles.legend} aria-label="Légende">
         {LEGENDE.map((element) => (
           <li key={element.cle}>
-            <i className={`${styles.swatch} ${styles[element.cle]}`} aria-hidden="true" />
+            <i
+              className={`${styles.swatch} ${styles[element.cle]}`}
+              aria-hidden="true"
+            />
             {element.label}
           </li>
         ))}
@@ -158,67 +182,77 @@ function RackView({
             <div className={styles.row} key={niveau}>
               <span className={styles.level}>N{niveau}</span>
               <div className={styles.cells}>
-
                 {/* liste des emplacements */}
-                
-                {cases.map(({ emplacement, infos, suggestion: suggestionCase }) => {
-                  const selectionne = emplacement.id === emplacementSelectionneId;
-                  const presquePlein = infos.tauxOccupation >= 75 && infos.placeRestante > 0;
-                  const plein = infos.capacite > 0 && infos.placeRestante === 0;
-                  const classes = [
-                    styles.cell,
-                    infos.incompatible ? styles.blocked : "",
-                    infos.memeArticle ? styles.same : "",
-                    presquePlein ? styles.almost : "",
-                    suggestionCase ? styles.suggested : "",
-                    selectionne ? styles.active : "",
-                  ].join(" ");
-                  const libelle = decrire(emplacement, infos, suggestionCase);
 
-                  return (
-                    <button
-                      aria-label={libelle}
-                      aria-pressed={selectionne}
-                      className={classes}
-                      data-emplacement={emplacement.id}
-                      disabled={infos.incompatible}
-                      key={emplacement.id}
-                      onClick={() => onSelect(emplacement)}
-                      title={libelle}
-                      type="button"
-                    >
-                      <span className={styles.code}>{emplacement.nomEmplacement}</span>
+                {cases.map(
+                  ({ emplacement, infos, suggestion: suggestionCase }) => {
+                    const selectionne =
+                      emplacement.id === emplacementSelectionneId;
+                    const presquePlein =
+                      infos.tauxOccupation >= 75 && infos.placeRestante > 0;
+                    const plein =
+                      infos.capacite > 0 && infos.placeRestante === 0;
+                    const classes = [
+                      styles.cell,
+                      infos.incompatible ? styles.blocked : "",
+                      infos.memeArticle ? styles.same : "",
+                      presquePlein ? styles.almost : "",
+                      suggestionCase ? styles.suggested : "",
+                      selectionne ? styles.active : "",
+                    ].join(" ");
+                    const libelle = decrire(emplacement, infos, suggestionCase);
 
-                      {suggestionCase && (
-                        <span className={styles.badge}>
-                          {suggestionCase.quantiteConditionnementsProposee}
+                    return (
+                      <button
+                        aria-label={libelle}
+                        aria-pressed={selectionne}
+                        className={classes}
+                        data-emplacement={emplacement.id}
+                        disabled={infos.incompatible}
+                        key={emplacement.id}
+                        onClick={() => onSelect(emplacement)}
+                        title={libelle}
+                        type="button"
+                      >
+                        <span className={styles.code}>
+                          {emplacement.nomEmplacement}
                         </span>
-                      )}
 
-                      <span className={styles.content}>
-                        {infos.incompatible ? (
-                          <span className="material-symbols-outlined" aria-hidden="true">lock</span>
-                        ) : infos.nomArticle ? (
-                          <span className={styles.article}>{infos.nomArticle}</span>
-                        ) : (
-                          <span className={styles.plus} aria-hidden="true" />
+                        {suggestionCase && (
+                          <span className={styles.badge}>
+                            {suggestionCase.quantiteConditionnementsProposee}
+                          </span>
                         )}
-                      </span>
 
-                      <span className={styles.foot}>
-                        {infos.planifie > 0 && (
-                          <span className={styles.planned}>+{infos.planifie}</span>
-                        )}
-                        <span className={styles.meter} aria-hidden="true">
-                          <span
-                            className={plein ? styles.meterFull : undefined}
-                            style={{ width: `${infos.tauxOccupation}%` }}
-                          />
+                        <span className={styles.content}>
+                          {infos.incompatible ? (
+                            <Lock size={18} aria-hidden="true" />
+                          ) : infos.nomArticle ? (
+                            <span className={styles.article}>
+                              {infos.nomArticle}
+                            </span>
+                          ) : (
+                            <Plus size={14} aria-hidden="true" />
+                          )}
                         </span>
-                      </span>
-                    </button>
-                  );
-                })}
+
+                        <span className={styles.foot}>
+                          {infos.planifie > 0 && (
+                            <span className={styles.planned}>
+                              +{infos.planifie}
+                            </span>
+                          )}
+                          <span className={styles.meter} aria-hidden="true">
+                            <span
+                              className={plein ? styles.meterFull : undefined}
+                              style={{ width: `${infos.tauxOccupation}%` }}
+                            />
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  },
+                )}
               </div>
             </div>
           ))}

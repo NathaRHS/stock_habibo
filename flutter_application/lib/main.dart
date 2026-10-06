@@ -20,8 +20,11 @@ class MyApp extends StatelessWidget {
       title: 'Habibo Group',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF064B9C)),
-        fontFamily: 'Arial',
+        fontFamily: 'Inter',
         useMaterial3: true,
+        // Pas d'ondulation Material au toucher : un simple voile gris.
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: const Color(0x0F18212A),
       ),
       home: const EcranLogin(baseUrl: apiBaseUrl),
     );

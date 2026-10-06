@@ -1,3 +1,4 @@
+import { Check, Sparkles } from "lucide-react";
 import styles from "./ProductList.module.css";
 
 const initiales = (nom) =>
@@ -58,7 +59,7 @@ function ProductList({
                 >
                   <span className={styles.thumb} aria-hidden="true">
                     {termine ? (
-                      <span className="material-symbols-outlined">check</span>
+                      <Check size={18} aria-hidden="true" />
                     ) : (
                       initiales(detail.nomArticle)
                     )}
@@ -94,9 +95,7 @@ function ProductList({
                     onClick={onSuggest}
                     type="button"
                   >
-                    <span className="material-symbols-outlined" aria-hidden="true">
-                      auto_awesome
-                    </span>
+                    <Sparkles size={16} aria-hidden="true" />
                     {chargementSuggestion ? "Calcul en cours…" : "Suggérer des emplacements"}
                   </button>
                 )}

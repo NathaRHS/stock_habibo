@@ -1,5 +1,6 @@
 package com.example.demo.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,8 +9,32 @@ import org.springframework.data.repository.query.Param;
 
 import com.example.demo.entity.Article;
 import com.example.demo.entity.MouvementStock;
+import com.example.demo.projection.ActiviteEmplacementProjection;
 
 public interface MouvementStockRepository extends JpaRepository<MouvementStock, Long> {
+
+    // Stock cumule jusqu'a finExclue, plus variation et nombre de mouvements
+    // sur [debut, finExclue[. Une ligne par emplacement, meme vide.
+    @Query(value = """
+            SELECT e.id AS emplacementId,
+                   CAST(COALESCE(SUM(CASE WHEN m.date_mouvement < :finExclue
+                                          THEN m.quantite_pieces_reelle * t.sens END), 0)
+                        AS SIGNED) AS stockFin,
+                   CAST(COALESCE(SUM(CASE WHEN m.date_mouvement >= :debut
+                                           AND m.date_mouvement < :finExclue
+                                          THEN m.quantite_pieces_reelle * t.sens END), 0)
+                        AS SIGNED) AS variation,
+                   COUNT(CASE WHEN m.date_mouvement >= :debut
+                               AND m.date_mouvement < :finExclue
+                              THEN m.id END) AS nbMouvements
+            FROM t_emplacement e
+            LEFT JOIN t_mouvement_stock m ON m.emplacement_id = e.id
+            LEFT JOIN t_type_mouvement t ON t.id = m.type_mouvement_id
+            GROUP BY e.id
+            """, nativeQuery = true)
+    List<ActiviteEmplacementProjection> calculerActiviteParEmplacement(
+            @Param("debut") LocalDateTime debut,
+            @Param("finExclue") LocalDateTime finExclue);
 
     List<MouvementStock> findAllByTypeMouvementNomTypeMouvement(String nomTypeMouvement);
 

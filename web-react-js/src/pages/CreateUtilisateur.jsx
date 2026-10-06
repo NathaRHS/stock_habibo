@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, CheckCircle2, Circle, IdCard, Info, Lock } from "lucide-react";
 import { getAccessToken } from "../services/authService";
 import Button from "../components/Button";
 import Sidebar from "../components/Sidebar";
@@ -163,7 +164,7 @@ function CreateUtilisateur() {
 
         <main className="create-user-page">
           <Link className="create-user-back" to="/users">
-            <span className="material-symbols-outlined">arrow_back</span>
+            <ArrowLeft size={16} />
             Retour aux utilisateurs
           </Link>
           <header className="create-user-header">
@@ -180,7 +181,7 @@ function CreateUtilisateur() {
             </p>
           )}
           <h2 className="create-user-section-title">
-            <span className="material-symbols-outlined">badge</span>
+            <span className="create-user-section-icon"><IdCard size={17} /></span>
             Identité
           </h2>
           <div className="create-user-grid">
@@ -222,7 +223,7 @@ function CreateUtilisateur() {
             </label>
           </div>
           <h2 className="create-user-section-title">
-            <span className="material-symbols-outlined">lock</span>
+            <span className="create-user-section-icon"><Lock size={17} /></span>
             Accès
           </h2>
           <div className="create-user-grid">
@@ -310,9 +311,7 @@ function CreateUtilisateur() {
                 <ul className="create-user-rules">
                   {reglesMotDePasse.map((regle) => (
                     <li className={regle.ok ? "is-ok" : ""} key={regle.texte}>
-                      <span className="material-symbols-outlined">
-                        {regle.ok ? "check_circle" : "radio_button_unchecked"}
-                      </span>
+                      {regle.ok ? <CheckCircle2 size={17} /> : <Circle size={17} />}
                       {regle.texte}
                     </li>
                   ))}
@@ -320,7 +319,7 @@ function CreateUtilisateur() {
               </section>
 
               <section className="create-user-card create-user-tip">
-                <span className="material-symbols-outlined">info</span>
+                <Info size={18} />
                 <p>
                   Le rôle détermine les pages accessibles. Il pourra être
                   modifié plus tard par un administrateur.

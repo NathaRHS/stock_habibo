@@ -66,6 +66,34 @@ class ScanService {
     return DetailJournal.fromJson(donnees);
   }
 
+  /// Produits déjà enregistrés dans le journal, tous opérateurs confondus.
+  Future<List<DetailJournal>> chargerDetails({required int journalId}) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/journaux-mouvements/$journalId'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ScanException(
+        _messageErreur(response.statusCode, response.bodyBytes),
+        response.statusCode,
+      );
+    }
+
+    final donnees = jsonDecode(utf8.decode(response.bodyBytes));
+    if (donnees is! Map<String, dynamic>) {
+      throw const ScanException('Réponse inattendue du serveur.', 500);
+    }
+
+    final details = donnees['details'] as List? ?? const [];
+    return details
+        .map((element) => DetailJournal.fromJson(element as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<List<EmplacementInventaire>> chargerEmplacements() async {
     final response = await http.get(
       Uri.parse('$baseUrl/emplacements'),

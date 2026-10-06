@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, Search } from "lucide-react";
 import Sidebar from "../components/Sidebar";
+import LienUser from "../components/LienUser";
 import { useNavigate } from "react-router-dom";
 import {
   changerStatutInventaire,
@@ -56,6 +58,8 @@ function Inventaire() {
           quantiteComptee:
             ligne.quantiteComptee ?? ligne.quanantiteComptee ?? 0,
           ecart: ligne.ecart ?? 0,
+          user: ligne.user ?? "",
+          userId: ligne.userId ?? "",
         }));
         setInventaire({ ...dataInventaire, details: lignes });
         setRacks(dataRacks);
@@ -72,6 +76,10 @@ function Inventaire() {
   }, [id, springUrl]);
 
   const lignes = inventaire?.details || [];
+
+  lignes.map((l) => {
+    console.log("USER , " + l.user);
+  });
   const lignesAvecEcart = lignes.filter((ligne) => ligne.ecart !== 0);
   const emplacementsDuRack = emplacements.filter(
     (emplacement) => emplacement.rackId === rackSelectionne?.id,
@@ -152,7 +160,7 @@ function Inventaire() {
         <header className="inventory-topbar">
           <p>Inventaires / {inventaire.reference}</p>
           <label>
-            <span className="material-symbols-outlined">search</span>
+            <Search size={16} />
             <input
               value={recherche}
               onChange={(e) => setRecherche(e.target.value)}
@@ -184,7 +192,7 @@ function Inventaire() {
             </div>
             <div className="inventory-actions">
               <Link to="/inventaires">
-                <span className="material-symbols-outlined">arrow_back</span>
+                <ArrowLeft size={16} />
                 Retour
               </Link>
               {inventaire.statut !== "VALIDE" && (
@@ -393,6 +401,7 @@ function Inventaire() {
                   <th>Théorique</th>
                   <th>Comptée</th>
                   <th>Écart</th>
+                  <th>Utilisateurs responsable </th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -411,6 +420,9 @@ function Inventaire() {
                     <td className={ligne.ecart < 0 ? "negative" : "positive"}>
                       {ligne.ecart > 0 ? "+" : ""}
                       {ligne.ecart}
+                    </td>
+                    <td>
+                      <LienUser userId={ligne.userId} nom={ligne.user} />
                     </td>
                     <td>
                       <button
