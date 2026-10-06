@@ -1,0 +1,191 @@
+TODO - ANOMALIES DE LOGIQUE METIER (audit du flux entree / sortie / stock / inventaire)
+=====================================================================================
+Source : lecture du code (rien execute). Chaque point est un raisonnement sur le code,
+a CONFIRMER par un test avant de corriger (voir "Tests pour prouver" en bas).
+Legende : [ ] a faire   [x] fait   (CRITIQUE = stock faux, ELEVEE, MOYENNE)
+
+
+-------------------------------------------------------
+CRITIQUE - LE STOCK PEUT DEVENIR FAUX
+-------------------------------------------------------
+
+[ ] 1. validerSortie n'est pas idempotente
+    Ou : MouvementStockService.validerSortie
+    Probleme : lit les prelevements et cree des mouvements de sortie sans jamais
+      verifier qu'elle l'a deja fait. Aucun garde-fou (statut journal, statut picking,
+      "sortie deja enregistree"). Un double clic double la sortie : stock negatif.
+      Elle ne change pas non plus le statut du journal de sortie : rien ne cloture
+      le cycle (le journal d'entree finit a AFFECTEE, celui de sortie n'a pas de
+      statut final).
+    A faire :
+      [ ] Refuser si des mouvements de sortie existent deja pour ce journal
+      [ ] Exiger un picking TERMINE (ou toutes les lignes PRELEVEE) avant la sortie
+      [ ] Verrouiller le journal (findByIdForUpdate) pendant la validation
+      [ ] Definir un statut final du journal de sortie et le poser via changerStatut
+
+[ ] 2. findPicking peut renvoyer le mauvais picking
+    Ou : PickingRepository.findPicking (requete native)
+      SELECT * FROM t_picking WHERE journal_mouvement_id = :journalId
+      ORDER BY date_fin DESC LIMIT 1
+    Probleme : aucun filtre sur le statut. En MySQL un tri DESC place les NULL a la fin :
+      un picking en cours (date_fin NULL) n'est JAMAIS choisi s'il en existe un autre
+      avec une date. Scenario : picking annule (date_fin renseignee), nouveau picking
+      regenere -> findPicking renvoie l'ANNULE.
+    Utilise par : MouvementStockService.validerSortie, ConfirmationSortieService
+    A faire :
+      [ ] Exclure les pickings ANNULE
+      [ ] Choisir le picking actif (GENERE / EN_COURS) ou le dernier TERMINE,
+          trie par id desc, pas par date_fin
+      [ ] Reecrire la requete avec JOIN sur t_statut_picking (plus de SQL natif brut)
+
+[ ] 3. Fenetre de double allocation entre "prelevee" et "sortie"
+    Ou : LignePickingService.creerLigne, etape 10 (stock disponible) ;
+         MouvementStockService.validerSortie (le stock baisse seulement ici)
+    Probleme : une ligne passe a PRELEVEE au scan, mais le stock ne baisse qu'a
+      validerSortie. Le calcul des reservations ne compte que RESERVEE et EN_COURS :
+      pendant cet intervalle, la marchandise deja prise n'est plus reservee ET reste
+      dans le stock -> un autre picking peut la reserver une seconde fois.
+    A faire :
+      [ ] Compter aussi les lignes PRELEVEE dont la sortie n'est pas encore validee
+          dans la quantite reservee (ou creer le mouvement de sortie au scan)
+      [ ] Meme correction dans OptimisationService.filtrerEmplacementsCandidats
+          (statuts actifs RESERVEE / EN_COURS)
+
+[ ] 4. Le stock "en reserve" est inutilisable (stock fantome)
+    Ou : MouvementStockService.creerEntreeStock ; v_stock_par_emplacement ;
+         StockRepository.findBestArticle
+    Probleme : a l'entree, tout ce qui ne rentre pas dans l'emplacement part en
+      mouvement en_reserve = TRUE sans emplacement. Toutes les requetes de stock
+      excluent ces mouvements. Aucun flux pour deplacer la reserve vers un emplacement.
+      Cette marchandise existe en base mais n'est jamais proposee au picking ni
+      comptee a l'inventaire.
+    A faire :
+      [ ] DECISION METIER : comment la reserve se reintegre (transfert reserve ->
+          emplacement ? nouveau type de mouvement ?)
+      [ ] Creer ce flux (type de mouvement + service + ecran)
+      [ ] Au minimum : afficher le stock en reserve dans une vue / un rapport
+
+[ ] 5. L'ancien chemin de prelevement fait diverger sortie et confirmation
+    Ou : CommandeService.UpdateCommandeAndDetailJournal (ancien chemin) ;
+         MouvementStockService.validerSortie ; ConfirmationSortieService
+    Probleme : les prelevements de l'ancien chemin n'ont pas de ligne de picking.
+      validerSortie ne parcourt que les lignes du picking : ces prelevements ne sortent
+      JAMAIS du stock. ConfirmationSortieService les compte quand meme, en PIECES alors
+      que la quantite demandee est en CONDITIONNEMENTS -> ecart faux.
+    A faire :
+      [ ] Retirer l'ancien chemin (ou le bloquer) et ses routes
+      [ ] Rendre Prelevement.lignePicking obligatoire
+      [ ] Unifier l'unite dans ConfirmationSortieService (conditionnements partout)
+
+
+-------------------------------------------------------
+ELEVEE
+-------------------------------------------------------
+
+[ ] 6. L'inventaire ne corrige rien
+    Ou : InventaireService.getInventaireLignes ; ComptageInventaire
+    Probleme :
+      - aucun mouvement d'ajustement n'est cree : le stock theorique reste faux
+      - le stock theorique est relu a l'instant de la consultation, pas a l'instant
+        du comptage : l'ecart bouge avec les mouvements qui suivent
+      - un article NON compte n'apparait pas : un emplacement oublie ne remonte
+        jamais comme manquant
+      - ComptageInventaire.user est nullable -> NullPointerException possible
+        (le test InventaireServiceTest casse le montre deja)
+    A faire :
+      [ ] Figer la quantite theorique dans le comptage (colonne quantite_theorique)
+      [ ] Detecter les articles / emplacements non comptes
+      [ ] Creer un type de mouvement AJUSTEMENT et une validation d'inventaire
+      [ ] Rendre user obligatoire ou gerer le null
+
+[ ] 7. Un journal reste modifiable a tout moment
+    Ou : JournalMouvementService.update / delete ; CommandeService.InsertAllCommande
+    Probleme :
+      - update change reference, fournisseur et TYPE de mouvement quel que soit le
+        statut, meme AFFECTEE avec du stock deja mouvemente (une entree peut devenir
+        une sortie)
+      - InsertAllCommande accepte des commandes apres la generation du picking :
+        elles ne seront jamais dans la tournee
+      - delete n'a aucune regle metier (seules les cles etrangeres l'arretent)
+    A faire :
+      [ ] Interdire la modification du type et de la reference apres le statut EN COURS
+      [ ] Refuser InsertAllCommande si un picking actif existe ou si le journal est valide
+      [ ] Refuser delete si le journal a des mouvements, details valides ou pickings
+
+[ ] 8. La proposition de parcours ignore les reservations
+    Ou : CommandeService.proposerEmplacement / genererMeilleurParcours ;
+         StockRepository.findBestArticle
+    Probleme : findBestArticle ne soustrait pas les lignes deja reservees. La generation
+      echoue en 409 "Stock disponible insuffisant" sur une ligne et TOUT le picking est
+      refuse, alors qu'un autre emplacement aurait pu convenir.
+    A faire :
+      [ ] Soustraire les lignes RESERVEE / EN_COURS (et PRELEVEE non sortie, voir 3)
+          par emplacement ET par lot dans la proposition
+
+[ ] 9. L'entree n'est pas protegee contre la concurrence
+    Ou : MouvementStockService.creerEntreeStock
+    Probleme : lit la capacite d'un emplacement puis ecrit, sans verrou -> deux entrees
+      simultanees sur le meme emplacement peuvent le faire deborder. Le journal n'est
+      pas verrouille (findById au lieu de findByIdForUpdate) : le controle "mouvements
+      deja crees" est fait avant l'ecriture, deux appels peuvent passer en parallele.
+    A faire :
+      [ ] findByIdForUpdate sur le journal
+      [ ] Verrou (ou controle unique) sur l'emplacement pendant l'ecriture
+
+
+-------------------------------------------------------
+MOYENNE
+-------------------------------------------------------
+
+[ ] 10. Unites melangees et troncatures
+    Probleme : .get(0) pour choisir le conditionnement (plusieurs endroits) ; divisions
+      entieres (pieces / quantitePieceStandard) qui masquent une boite partielle ;
+      quantites tantot en pieces, tantot en conditionnements selon la methode.
+    A faire :
+      [ ] Conditionnement de reference explicite (voir todo.txt, entites)
+      [ ] Refuser (ou signaler) une quantite non multiple du conditionnement
+      [ ] Documenter l'unite de chaque champ (pieces / conditionnements)
+
+[ ] 11. Le picking ne change jamais de statut tout seul
+    Probleme : ni EN_COURS au premier scan, ni TERMINE quand toutes les lignes sont
+      prelevees. Seul un PUT manuel le fait -> historique bloque a GENERE.
+    A faire :
+      [ ] scan() passe le picking a EN_COURS au premier scan (changerStatut)
+      [ ] Passer le picking a TERMINE quand toutes les lignes sont PRELEVEE / ANNULEE
+
+[ ] 12. Les regles de statut sont dispersees
+    Probleme : le journal controle ses transitions par un verifierStatutActuel ponctuel
+      (valider, demanderModification seulement) ; le picking par un switch dans un autre
+      service ; la ligne n'en a aucun.
+    A faire :
+      [ ] Une table de transitions autorisees par entite (dans l'enum ou le service
+          de statut) appliquee dans changerStatut
+
+
+-------------------------------------------------------
+TESTS POUR PROUVER LES ANOMALIES (a ecrire avant de corriger)
+-------------------------------------------------------
+Base H2 en memoire, meme modele que JournalStatutHistoriqueTest.
+
+[ ] T1 : appeler validerSortie deux fois -> les mouvements de sortie doublent (anomalie 1)
+[ ] T2 : picking annule puis regenere -> findPicking renvoie l'annule (anomalie 2)
+[ ] T3 : ligne PRELEVEE non sortie -> une 2e reservation sur la meme marchandise
+         est acceptee (anomalie 3)
+[ ] T4 : entree avec surplus -> le surplus (en_reserve) n'apparait dans aucune
+         requete de stock exploitable (anomalie 4)
+[ ] T5 : prelevement de l'ancien chemin -> absent de validerSortie, present dans la
+         confirmation avec une unite differente (anomalie 5)
+[ ] T6 : modifier le type d'un journal AFFECTEE (anomalie 7)
+Lancer un test : .\mvnw test -Dtest=NomDuTest
+
+
+-------------------------------------------------------
+ORDRE CONSEILLE
+-------------------------------------------------------
+1. Tests T1 et T2, puis corriger 1 et 2   -> petits correctifs, bugs les plus graves
+2. Anomalie 3 (fenetre prelevee -> sortie)
+3. Anomalie 5 (retirer l'ancien chemin)
+4. Anomalie 11 (scan fait avancer le picking)
+5. DECISIONS METIER a prendre avec l'encadrant : 4 (reserve), 6 (inventaire)
+6. Anomalies 7, 8, 9 (gardes de statut, verrous)
+7. Anomalies 10, 12 (nettoyage)

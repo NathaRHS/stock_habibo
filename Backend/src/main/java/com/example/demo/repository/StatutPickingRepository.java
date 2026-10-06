@@ -5,9 +5,10 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.example.demo.entity.Statut;
+import com.example.demo.entity.StatutPicking;
 
 @Repository
-public interface StatutRepository extends JpaRepository<Statut, Long> {
-    Optional<Statut> findByNom(String nom);
+public interface StatutPickingRepository extends JpaRepository<StatutPicking, Long> {
+
+    Optional<StatutPicking> findByNom(String nom);
 }

@@ -113,7 +113,6 @@ import com.example.demo.entity.MouvementStock;
 import com.example.demo.entity.PaletteConditionnement;
 import com.example.demo.entity.Picking;
 import com.example.demo.entity.Prelevement;
-import com.example.demo.entity.Statut;
 import com.example.demo.entity.StatutJournalMouvementCode;
 import com.example.demo.entity.TypeMouvementStock;
 import com.example.demo.entity.User;
@@ -124,7 +123,6 @@ import com.example.demo.repository.MouvementStockRepository;
 import com.example.demo.repository.PaletteConditionnementRepository;
 import com.example.demo.repository.PickingRepository;
 import com.example.demo.repository.PrelevementRepository;
-import com.example.demo.repository.StatutRepository;
 import com.example.demo.repository.TypeMouvementStockRepository;
 import com.example.demo.repository.UserRepository;
 
@@ -136,7 +134,7 @@ public class MouvementStockService {
     private final JournalMouvementRepository journalMouvementRepository;
     private final PaletteConditionnementRepository palelConditionnementRepository;
     private final DetailJournalRepository detailJournalRepository;
-    private final StatutRepository statutRepository;
+    private final JournalStatutService journalStatutService;
     private final EmplacementRepository emplacementRepository;
     private final MouvementStockRepository mouvementStockRepository;
     private final PickingRepository pickingRepository;
@@ -156,7 +154,7 @@ public class MouvementStockService {
             EmplacementRepository emplacementRepository,
             PaletteConditionnementRepository palelConditionnementRepository,
             UserRepository userRepository,
-            StatutRepository statutRepository,
+            JournalStatutService journalStatutService,
             TypeMouvementStockRepository typeMouvementStockRepository) {
         this.journalMouvementRepository = journalMouvementRepository;
         this.palelConditionnementRepository = palelConditionnementRepository;
@@ -167,7 +165,7 @@ public class MouvementStockService {
         this.typeMouvementStockRepository = typeMouvementStockRepository;
         this.pickingRepository = pickingRepository;
         this.prelevementRepository = prelevementRepository;
-        this.statutRepository = statutRepository;
+        this.journalStatutService = journalStatutService;
     }
 
     @Transactional
@@ -424,12 +422,7 @@ public class MouvementStockService {
             }
         }
 
-        Statut statutAffectee = statutRepository.findByNom(StatutJournalMouvementCode.AFFECTEE.getNom())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Le statut AFFECTEE n'est pas configuré"));
-
-        journalMouvement.setStatut(statutAffectee);
+        journalStatutService.changerStatut(journalMouvement, StatutJournalMouvementCode.AFFECTEE, utilisateur);
         // Un seul enregistrement pour tous les mouvements. La transaction annule tout
         // si l'une des insertions echoue.
         return mouvementStockRepository.saveAll(mouvementsAPreparer)
@@ -500,7 +493,8 @@ public class MouvementStockService {
     @Transactional
     public List<MouvementStockResponse> validerSortie(Long journalId) {
         List<MouvementStock> mouvements = new ArrayList<>();
-        JournalMouvement journal = journalMouvementRepository.findById(journalId).orElseThrow(
+        // Verrou sur le journal : deux validations simultanees sont serialisees.
+        JournalMouvement journal = journalMouvementRepository.findByIdForUpdate(journalId).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Le journal sortie n'existe pas."));
 
         if (!"SORTIE".equals(
@@ -509,6 +503,13 @@ public class MouvementStockService {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Le journal n'est pas de type sortie");
+        }
+
+        // Une sortie deja cloturee ne peut pas etre validee une seconde fois.
+        if (StatutJournalMouvementCode.CLOTURE.getNom().equals(journal.getStatut().getNom())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Cette sortie est deja cloturee");
         }
         Picking picking = pickingRepository.findPicking(journalId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Picking introuvable"));
@@ -559,8 +560,12 @@ public class MouvementStockService {
                     "Aucun mouvement de aaasortie à enregistrer");
         }
 
-        return mouvementStockRepository
-                .saveAll(mouvements)
+        List<MouvementStock> mouvementsEnregistres = mouvementStockRepository.saveAll(mouvements);
+
+        // La validation de la sortie est l'etape finale : le journal est cloture.
+        journalStatutService.changerStatut(journal, StatutJournalMouvementCode.CLOTURE);
+
+        return mouvementsEnregistres
                 .stream()
                 .map(this::versResponse)
                 .toList();

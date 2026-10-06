@@ -21,7 +21,7 @@ import com.example.demo.entity.DetailJournal;
 import com.example.demo.entity.Emplacement;
 import com.example.demo.entity.Societe;
 import com.example.demo.entity.JournalMouvement;
-import com.example.demo.entity.Statut;
+import com.example.demo.entity.StatutJournalMouvement;
 import com.example.demo.entity.StatutJournalMouvementCode;
 import com.example.demo.entity.TypeMouvementJournal;
 import com.example.demo.entity.User;
@@ -32,7 +32,7 @@ import com.example.demo.repository.DetailJournalRepository;
 import com.example.demo.repository.EmplacementRepository;
 import com.example.demo.repository.SocieteRepository;
 import com.example.demo.repository.JournalMouvementRepository;
-import com.example.demo.repository.StatutRepository;
+import com.example.demo.repository.StatutJournalMouvementRepository;
 import com.example.demo.repository.TypeMouvementJournalRepository;
 import com.example.demo.repository.UserRepository;
 
@@ -41,7 +41,7 @@ import com.example.demo.repository.UserRepository;
 public class JournalMouvementService {
     private final JournalMouvementRepository journalRepository;
     private final TypeMouvementJournalRepository typeRepository;
-    private final StatutRepository statutRepository;
+    private final StatutJournalMouvementRepository statutRepository;
     private final SocieteRepository fournisseurRepository;
     private final UserJournalMouvementService userJournalMouvementService;
     private final ArticleRepository articleRepository;
@@ -50,17 +50,19 @@ public class JournalMouvementService {
     private final EmplacementRepository emplacementRepository;
     private final ComptageInventaireRepository comptageInventaireRepository;
     private final UserRepository userRepository;
+    private final JournalStatutService journalStatutService;
 
     public JournalMouvementService(
             JournalMouvementRepository journalRepository,
             TypeMouvementJournalRepository typeRepository,
-            StatutRepository statutRepository,
+            StatutJournalMouvementRepository statutRepository,
             SocieteRepository fournisseurRepository,
             UserJournalMouvementService userJournalMouvementService,
             ArticleRepository articleRepository, DetailJournalRepository detailJournalRepository,
             ArticleConditionnementRepository articleConditionnementRepository,
             EmplacementRepository emplacementRepository,
-            ComptageInventaireRepository comptageInventaireRepository, UserRepository userRepository) {
+            ComptageInventaireRepository comptageInventaireRepository, UserRepository userRepository,
+            JournalStatutService journalStatutService) {
         this.journalRepository = journalRepository;
         this.typeRepository = typeRepository;
         this.userJournalMouvementService = userJournalMouvementService;
@@ -72,6 +74,7 @@ public class JournalMouvementService {
         this.emplacementRepository = emplacementRepository;
         this.comptageInventaireRepository = comptageInventaireRepository;
         this.userRepository = userRepository;
+        this.journalStatutService = journalStatutService;
 
     }
 
@@ -79,7 +82,7 @@ public class JournalMouvementService {
         String reference = EnleverEspaceReference(request.reference());
         verifierReferenceDisponible(reference, null);
         // validerDetails(request.details());
-        Statut statut = trouverStatutMetier(StatutJournalMouvementCode.EN_COURS);
+        StatutJournalMouvement statut = journalStatutService.trouverStatut(StatutJournalMouvementCode.EN_COURS);
         JournalMouvement journal = new JournalMouvement(
                 trouverFournisseur(request.fournisseurId()),
                 reference,
@@ -89,7 +92,9 @@ public class JournalMouvementService {
                 statut);
 
         // remplacerDetails(journal, request.details());
-        return versResponse(journalRepository.save(journal));
+        JournalMouvement journalSauvegarde = journalRepository.save(journal);
+        journalStatutService.enregistrerStatutInitial(journalSauvegarde);
+        return versResponse(journalSauvegarde);
     }
 
     @Transactional(readOnly = true)
@@ -118,7 +123,9 @@ public class JournalMouvementService {
         journal.setNomClient(normaliserFacultatif(request.nomClient()));
         journal.setFournisseur(trouverFournisseur(request.fournisseurId()));
         journal.setTypeMouvementJournal(trouverType(request.typeMouvementJournalId()));
-        journal.setStatut(trouverStatut(request.statutJournalMouvementId()));
+        journalStatutService.changerStatut(
+                journal,
+                convertirStatut(trouverStatut(request.statutJournalMouvementId())));
         // remplacerDetails(journal, request.details());
 
         return versResponse(journalRepository.save(journal));
@@ -144,12 +151,12 @@ public class JournalMouvementService {
                         HttpStatus.NOT_FOUND, "Type de mouvement journal introuvable : " + id));
     }
 
-    private Statut trouverStatut(Long id) {
+    private StatutJournalMouvement trouverStatut(Long id) {
         if (id == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "statutJournalMouvementId est obligatoire");
         }
-        Statut statut = statutRepository.findById(id)
+        StatutJournalMouvement statut = statutRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Statut de journal introuvable : " + id));
         verifierStatutDeJournal(statut);
@@ -218,7 +225,7 @@ public class JournalMouvementService {
     // change le statut du journal
     public JournalMouvementResponse updateStatutJournal(Long journalId, Long idStatut) {
         JournalMouvement journal = trouverJournal(journalId);
-        journal.setStatut(trouverStatut(idStatut));
+        journalStatutService.changerStatut(journal, convertirStatut(trouverStatut(idStatut)));
         return versResponse(journalRepository.save(journal));
     }
 
@@ -226,7 +233,7 @@ public class JournalMouvementService {
     public JournalMouvementResponse valider(Long journalId) {
         JournalMouvement journal = trouverJournal(journalId);
         verifierStatutActuel(journal, StatutJournalMouvementCode.EN_ATTENTE);
-        journal.setStatut(trouverStatutMetier(StatutJournalMouvementCode.VALIDE));
+        journalStatutService.changerStatut(journal, StatutJournalMouvementCode.VALIDE);
         return versResponse(journalRepository.save(journal));
     }
 
@@ -234,7 +241,7 @@ public class JournalMouvementService {
     public JournalMouvementResponse demanderModification(Long journalId) {
         JournalMouvement journal = trouverJournal(journalId);
         verifierStatutActuel(journal, StatutJournalMouvementCode.EN_ATTENTE);
-        journal.setStatut(trouverStatutMetier(StatutJournalMouvementCode.MODIFIE));
+        journalStatutService.changerStatut(journal, StatutJournalMouvementCode.MODIFIE);
         return versResponse(journalRepository.save(journal));
     }
 
@@ -249,15 +256,7 @@ public class JournalMouvementService {
         }
     }
 
-    //
-    private Statut trouverStatutMetier(StatutJournalMouvementCode statutMetier) {
-        return statutRepository.findByNom(statutMetier.getNom())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Le statut " + statutMetier.getNom() + " n'est pas configure"));
-    }
-
-    private StatutJournalMouvementCode convertirStatut(Statut statut) {
+    private StatutJournalMouvementCode convertirStatut(StatutJournalMouvement statut) {
         try {
             return StatutJournalMouvementCode.depuisNom(statut.getNom());
         } catch (IllegalArgumentException exception) {
@@ -265,7 +264,7 @@ public class JournalMouvementService {
         }
     }
 
-    private void verifierStatutDeJournal(Statut statut) {
+    private void verifierStatutDeJournal(StatutJournalMouvement statut) {
         if (!StatutJournalMouvementCode.accepte(statut.getNom())) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,

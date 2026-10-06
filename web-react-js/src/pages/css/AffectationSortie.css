@@ -581,6 +581,12 @@
 .confirmation-footer button:hover {
   background: var(--color-primary-hover);
 }
+.confirmation-footer button:disabled,
+.confirmation-footer button:disabled:hover {
+  background: var(--color-primary);
+  cursor: not-allowed;
+  opacity: 0.45;
+}
 .confirmation-footer button span {
   font-size: 16px;
 }

@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.demo.entity.Picking;
-import com.example.demo.entity.StatutPicking;
+import com.example.demo.entity.StatutPickingCode;
 
 @Repository
 public interface PickingRepository extends JpaRepository<Picking, Long> {
@@ -19,13 +19,28 @@ public interface PickingRepository extends JpaRepository<Picking, Long> {
 
         List<Picking> findAllByJournalMouvementIdOrderByDateGenerationPickingDesc(Long journalId);
 
-        boolean existsByJournalMouvementIdAndStatutIn(
+        boolean existsByJournalMouvementIdAndStatutNomIn(
                         Long journalId,
-                        Collection<StatutPicking> statuts);
+                        Collection<String> nomsStatuts);
 
-        Optional<Picking> findFirstByJournalMouvementIdAndStatutInOrderByIdDesc(
+        Optional<Picking> findFirstByJournalMouvementIdAndStatutNomInOrderByIdDesc(
                         Long journalId,
-                        Collection<StatutPicking> statuts);
+                        Collection<String> nomsStatuts);
+
+        // Les appelants raisonnent avec l'enum, jamais avec du texte.
+        default boolean existsByJournalMouvementIdAndStatutIn(
+                        Long journalId,
+                        Collection<StatutPickingCode> statuts) {
+                return existsByJournalMouvementIdAndStatutNomIn(journalId, StatutPickingCode.versNoms(statuts));
+        }
+
+        default Optional<Picking> findFirstByJournalMouvementIdAndStatutInOrderByIdDesc(
+                        Long journalId,
+                        Collection<StatutPickingCode> statuts) {
+                return findFirstByJournalMouvementIdAndStatutNomInOrderByIdDesc(
+                                journalId,
+                                StatutPickingCode.versNoms(statuts));
+        }
 
         @Query(value = """
                         SELECT *

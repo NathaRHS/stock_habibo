@@ -7,8 +7,6 @@ import java.util.List;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -50,9 +48,9 @@ public class Picking {
     @JoinColumn(name = "rack_depart_id", nullable = false)
     private Rack rackDepart;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "statut", nullable = false, length = 20)
-    private StatutPicking statut = StatutPicking.GENERE;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "statut_id", nullable = false)
+    private StatutPicking statut;
 
     @OneToMany(mappedBy = "picking", cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     private List<LignePicking> lignes = new ArrayList<>();
@@ -60,21 +58,18 @@ public class Picking {
     public Picking() {
     }
 
-    public Picking(JournalMouvement journalMouvement, User user, Rack rackDepart) {
+    public Picking(JournalMouvement journalMouvement, User user, Rack rackDepart, StatutPicking statut) {
         this.journalMouvement = journalMouvement;
         this.user = user;
         this.rackDepart = rackDepart;
         this.dateGenerationPicking = LocalDateTime.now();
-        this.statut = StatutPicking.GENERE;
+        this.statut = statut;
     }
 
     @PrePersist
     private void initialiserAvantCreation() {
         if (dateGenerationPicking == null) {
             dateGenerationPicking = LocalDateTime.now();
-        }
-        if (statut == null) {
-            statut = StatutPicking.GENERE;
         }
     }
 
@@ -138,8 +133,13 @@ public class Picking {
         return statut;
     }
 
+    // A n'appeler que depuis PickingStatutService (qui ecrit aussi l'historique).
     public void setStatut(StatutPicking statut) {
         this.statut = statut;
+    }
+
+    public StatutPickingCode getStatutCode() {
+        return StatutPickingCode.depuisNom(statut.getNom());
     }
 
     public List<LignePicking> getLignes() {

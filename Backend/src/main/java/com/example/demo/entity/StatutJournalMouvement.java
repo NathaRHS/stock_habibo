@@ -8,15 +8,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * Referentiel commun des statuts du WMS.
+ * Referentiel des statuts d'un journal de mouvement.
  *
- * Les regles de transition restent definies par les enums et les services.
- * Cette entite servira a unifier les statuts stockes en base et a alimenter
- * l'historique des changements de statut.
+ * Les valeurs possibles sont definies par l'enum StatutJournalMouvementCode.
+ * Les regles de transition restent dans les services. Chaque changement de
+ * statut est trace dans HistoriqueJournalMouvementStatut.
  */
 @Entity
-@Table(name = "t_statut")
-public class Statut {
+@Table(name = "t_statut_journal_mouvement")
+public class StatutJournalMouvement {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,10 +25,10 @@ public class Statut {
     @Column(name = "nom", nullable = false, unique = true, length = 50)
     private String nom;
 
-    public Statut() {
+    public StatutJournalMouvement() {
     }
 
-    public Statut(String nom) {
+    public StatutJournalMouvement(String nom) {
         this.nom = nom;
     }
 

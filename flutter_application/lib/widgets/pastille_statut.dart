@@ -51,6 +51,8 @@ class PastilleStatut extends StatelessWidget {
         return ('Validé', Habibo.vert, Habibo.vertDoux);
       case 'AFFECTEE':
         return ('Affecté', Habibo.vert, Habibo.vertDoux);
+      case 'CLOTURE':
+        return ('Clôturé', Habibo.vert, Habibo.vertDoux);
       default:
         return (statut, Habibo.texteSecondaire, Habibo.neutreDoux);
     }

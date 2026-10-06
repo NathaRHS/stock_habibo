@@ -52,6 +52,9 @@ function AffectationSortie() {
   const [endTime, setEndTime] = useState("");
   const [openLine, setOpenLine] = useState(null);
   const [notice, setNotice] = useState("");
+  const [statutJournal, setStatutJournal] = useState("");
+  const [validationEnCours, setValidationEnCours] = useState(false);
+  const cloture = statutJournal === "CLOTURE";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -60,6 +63,24 @@ function AffectationSortie() {
       try {
         setLoading(true);
         setError("");
+
+        // Le statut du journal indique si la sortie est deja cloturee.
+        const journalResponse = await fetch(
+          `${springUrl}/journaux-mouvements/${id}`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            signal: controller.signal,
+          },
+        );
+
+        if (journalResponse.ok) {
+          const journal = await journalResponse.json();
+          setStatutJournal(journal.statut ?? "");
+        }
+
         const response = await fetch(
           `${springUrl}/lignes-picking/getLignes/${id}`,
           {
@@ -145,12 +166,21 @@ function AffectationSortie() {
   };
 
   const validerSortie = async () => {
+    if (cloture || validationEnCours) return;
+
     try {
+      setValidationEnCours(true);
+      setError("");
       const mouvementsCrees = await appelerApiSortie();
 
-      setNotice(`${mouvementsCrees.length} mouvement(s) de stock créé(s).`);
+      setStatutJournal("CLOTURE");
+      setNotice(
+        `Sortie clôturée : ${mouvementsCrees.length} mouvement(s) de stock créé(s).`,
+      );
     } catch (erreur) {
       setError(erreur.message);
+    } finally {
+      setValidationEnCours(false);
     }
   };
 
@@ -349,11 +379,17 @@ function AffectationSortie() {
               <footer className="confirmation-footer">
                 <div>
                   <Info size={16} />
-                  Vérifiez les quantités et le document avant validation.
+                  {cloture
+                    ? "Cette sortie est clôturée. Vous consultez son résumé."
+                    : "Vérifiez les quantités et le document avant validation."}
                 </div>
-                <button onClick={validerSortie} type="button">
-                  Valider la sortie
-                  <ArrowRight size={16} />
+                <button
+                  disabled={cloture || validationEnCours}
+                  onClick={validerSortie}
+                  type="button"
+                >
+                  {cloture ? "Sortie clôturée" : "Valider la sortie"}
+                  {!cloture && <ArrowRight size={16} />}
                 </button>
               </footer>
             </section>

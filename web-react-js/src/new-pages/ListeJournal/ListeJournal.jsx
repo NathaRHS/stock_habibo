@@ -10,6 +10,7 @@ import {
   ChevronsUpDown,
   Clock,
   FileText,
+  Lock,
   MoreHorizontal,
   Pencil,
   RefreshCw,
@@ -27,6 +28,7 @@ const STATUTS = {
   "EN COURS": { label: "En cours", icon: RefreshCw, tone: "progress" },
   "EN ATTENTE": { label: "En attente", icon: Clock, tone: "warning" },
   MODIFIE: { label: "Modifié", icon: Pencil, tone: "danger" },
+  CLOTURE: { label: "Clôturé", icon: Lock, tone: "success" },
 };
 
 const normaliser = (valeur) =>

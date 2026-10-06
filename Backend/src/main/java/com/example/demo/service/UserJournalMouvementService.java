@@ -10,13 +10,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.dto.journal.ParticipantJournalResponse;
 import com.example.demo.entity.JournalMouvement;
-import com.example.demo.entity.Statut;
+import com.example.demo.entity.StatutJournalMouvement;
 import com.example.demo.entity.StatutJournalMouvementCode;
 import com.example.demo.entity.StatutParticipation;
 import com.example.demo.entity.User;
 import com.example.demo.entity.UserJournalMouvement;
 import com.example.demo.repository.JournalMouvementRepository;
-import com.example.demo.repository.StatutRepository;
 import com.example.demo.repository.UserJournalMouvementRepository;
 import com.example.demo.repository.UserRepository;
 
@@ -26,17 +25,17 @@ public class UserJournalMouvementService {
     private final UserJournalMouvementRepository participationRepository;
     private final JournalMouvementRepository journalRepository;
     private final UserRepository userRepository;
-    private final StatutRepository statutRepository;
+    private final JournalStatutService journalStatutService;
 
     public UserJournalMouvementService(
             UserJournalMouvementRepository participationRepository,
             JournalMouvementRepository journalRepository,
             UserRepository userRepository,
-            StatutRepository statutRepository) {
+            JournalStatutService journalStatutService) {
         this.participationRepository = participationRepository;
         this.journalRepository = journalRepository;
         this.userRepository = userRepository;
-        this.statutRepository = statutRepository;
+        this.journalStatutService = journalStatutService;
     }
 
     public ParticipantJournalResponse ajouterParticipant(Long journalId, String matricule) {
@@ -86,8 +85,7 @@ public class UserJournalMouvementService {
                         StatutParticipation.EN_COURS);
 
         if (!participantActifRestant) {
-            journal.setStatut(trouverStatutMetier(StatutJournalMouvementCode.EN_ATTENTE));
-            journalRepository.save(journal);
+            journalStatutService.changerStatut(journal, StatutJournalMouvementCode.EN_ATTENTE, user);
         }
 
         return versResponse(participation);
@@ -130,14 +128,7 @@ public class UserJournalMouvementService {
         }
     }
 
-    private Statut trouverStatutMetier(StatutJournalMouvementCode statutMetier) {
-        return statutRepository.findByNom(statutMetier.getNom())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Le statut " + statutMetier.getNom() + " n'est pas configure"));
-    }
-
-    private StatutJournalMouvementCode convertirStatut(Statut statut) {
+    private StatutJournalMouvementCode convertirStatut(StatutJournalMouvement statut) {
         try {
             return StatutJournalMouvementCode.depuisNom(statut.getNom());
         } catch (IllegalArgumentException exception) {

@@ -8,18 +8,18 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.dto.journal.StatutJournalMouvementRequest;
 import com.example.demo.dto.journal.StatutJournalMouvementResponse;
-import com.example.demo.entity.Statut;
+import com.example.demo.entity.StatutJournalMouvement;
 import com.example.demo.entity.StatutJournalMouvementCode;
 import com.example.demo.repository.JournalMouvementRepository;
-import com.example.demo.repository.StatutRepository;
+import com.example.demo.repository.StatutJournalMouvementRepository;
 
 @Service
 public class StatutJournalMouvementService {
-    private final StatutRepository statutRepository;
+    private final StatutJournalMouvementRepository statutRepository;
     private final JournalMouvementRepository journalRepository;
 
     public StatutJournalMouvementService(
-            StatutRepository statutRepository,
+            StatutJournalMouvementRepository statutRepository,
             JournalMouvementRepository journalRepository) {
         this.statutRepository = statutRepository;
         this.journalRepository = journalRepository;
@@ -28,7 +28,7 @@ public class StatutJournalMouvementService {
     public StatutJournalMouvementResponse create(StatutJournalMouvementRequest request) {
         String nom = normaliserNom(request.nomStatut());
         verifierNomDisponible(nom, null);
-        return versResponse(statutRepository.save(new Statut(nom)));
+        return versResponse(statutRepository.save(new StatutJournalMouvement(nom)));
     }
 
     public List<StatutJournalMouvementResponse> findAll() {
@@ -45,7 +45,7 @@ public class StatutJournalMouvementService {
     public StatutJournalMouvementResponse update(
             Long id,
             StatutJournalMouvementRequest request) {
-        Statut statut = trouver(id);
+        StatutJournalMouvement statut = trouver(id);
         String nom = normaliserNom(request.nomStatut());
         verifierNomDisponible(nom, id);
         statut.setNom(nom);
@@ -53,7 +53,7 @@ public class StatutJournalMouvementService {
     }
 
     public void delete(Long id) {
-        Statut statut = trouver(id);
+        StatutJournalMouvement statut = trouver(id);
         if (journalRepository.existsByStatutId(id)) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
@@ -62,8 +62,8 @@ public class StatutJournalMouvementService {
         statutRepository.delete(statut);
     }
 
-    private Statut trouver(Long id) {
-        Statut statut = statutRepository.findById(id)
+    private StatutJournalMouvement trouver(Long id) {
+        StatutJournalMouvement statut = statutRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Statut de journal de mouvement introuvable : " + id));
@@ -93,7 +93,7 @@ public class StatutJournalMouvementService {
     }
 
     private StatutJournalMouvementResponse versResponse(
-            Statut statut) {
+            StatutJournalMouvement statut) {
         return new StatutJournalMouvementResponse(
                 statut.getId(),
                 statut.getNom());

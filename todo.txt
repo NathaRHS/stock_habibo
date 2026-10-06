@@ -11,38 +11,62 @@ FAIT
     Reste : regler la taille max (spring.servlet.multipart.max-file-size)
             et limiter le selecteur Flutter au PDF.
 
+[x] Statuts : modele "table de statuts + enum + historique + methode centrale"
+    applique au Journal, au Picking et a la Ligne de picking.
+    - Base migree avec Backend/tables/badgaga.sql (execute, controles a 0)
+    - Tests : JournalStatutHistoriqueTest, PickingStatutHistoriqueTest,
+      LignePickingStatutHistoriqueTest (H2 en memoire, 14 tests, tous OK)
+    - JSON inchange pour Flutter et React (memes textes RESERVEE, PRELEVEE...)
+
+    Journal
+    [x] StatutJournalMouvement (t_statut_journal_mouvement) + enum StatutJournalMouvementCode
+    [x] HistoriqueJournalMouvementStatut (t_historique_journal_mouvement_statut)
+    [x] JournalStatutService.changerStatut / enregistrerStatutInitial
+    [x] 6 setStatut remplaces (JournalMouvementService x4, MouvementStockService,
+        UserJournalMouvementService) + 1re ligne d'historique a la creation
+    Picking
+    [x] StatutPicking (t_statut_picking) + enum StatutPickingCode
+    [x] HistoriquePickingStatut + PickingStatutService (creerPicking, changerStatut)
+    [x] Les 2 creations de Picking passent par creerPicking
+    Ligne de picking (les 5 statuts gardes, dont IMPOSSIBLE)
+    [x] StatutLignePicking (t_statut_ligne_picking) + enum StatutLignePickingCode
+    [x] HistoriqueLignePickingStatut + LignePickingStatutService
+    [x] scan(), creerLigne et l'annulation du picking passent par changerStatut
+
 
 -------------------------------------------------------
-P1 - STATUTS (demande du prof)
+P1 - STATUTS : CE QU'IL RESTE
 -------------------------------------------------------
-Modele retenu : 1 entite -> 1 table de statuts -> 1 table associative
-d'historique + 1 enum Java. On INSERE a chaque changement, on ne modifie pas.
-
-[ ] Journal (JournalMouvement) - modele de reference
-    [ ] Creer la table d'historique (journal, statut, date, user)
-    [ ] Creer l'enum Java des statuts (existe deja : StatutJournalMouvementCode)
-    [ ] Remplir la table de statuts depuis l'enum au demarrage
-    [ ] Une methode centrale "changer le statut" (update + insert historique)
-    [ ] Remplacer les setStatut dans JournalMouvementService (19 occurrences)
-    [ ] Inserer la 1re ligne d'historique a la creation d'un journal
-    [ ] Script SQL : ligne de depart pour les journaux deja en base
-[ ] Picking
-    [ ] Table de statuts + enum + historique
-    [ ] Remplacer les setStatut dans PickingService (14 occurrences)
-[ ] LignePicking
-    [ ] Table de statuts + enum + historique
-    [ ] Remplacer les setStatut dans LignePickingService (13 occurrences, dont scan())
-[ ] Prelevement : probablement pas d'historique (fait ponctuel) - a trancher
-[ ] UserJournalMouvement : a trancher
-
-Securiser les noms de statuts :
+[ ] Redemarrer le backend et verifier a la main un parcours complet :
+    generer un picking -> scanner une ligne -> regarder les 3 tables d'historique
+    (scan() n'a pas de test automatique : il demande stock, lots et prelevements)
+[ ] Initialiseur au demarrage : inserer les statuts manquants depuis les enums
+    (journal, picking, ligne) -> une base neuve fonctionne sans script de donnees
+[ ] Fermer PUT /journaux-mouvements/{id}/statut (updateStatutJournal) :
+    aucun controle de transition. Flutter l'appelle-t-il ? Sinon le supprimer.
+[ ] JournalMouvementService.update : ne plus accepter statutJournalMouvementId
+    dans la requete (modifier une reference ne doit pas changer le statut)
+[ ] Retirer la page admin de creation / suppression de statuts
+    (StatutJournalMouvementService), ou la passer en lecture seule
 [ ] Chercher tous les textes en dur : "PRELEVE", "CONFIRME", "SORTIE", etc.
     (ex. findByNomStatut("..."), comparaisons avec des chaines)
-[ ] Les remplacer par les constantes de l'enum
-[ ] Retirer la page admin de creation de statuts (ou la passer en lecture seule)
+    et les remplacer par des constantes / enums
+[ ] Le picking ne passe jamais tout seul a EN_COURS / TERMINE (seul PUT /pickings/{id}
+    le fait) : decider si scan() doit le faire (l'historique reste a GENERE sinon)
+[ ] UserJournalMouvement (statut de participation) : a trancher
+    (conseil : le laisser tel quel, c'est un etat de session, pas un cycle de vie)
+[ ] Prelevement : pas d'historique (fait ponctuel, ne change jamais de statut)
 
-Apres chaque entite : rejouer le flux complet
-(creer journal sortie -> generer parcours -> scanner -> terminer).
+Menage lie aux statuts :
+[ ] Supprimer les anciens scripts rendus inutiles par badgaga.sql :
+    migration_statut_picking_vers_table.sql, migration_statut_ligne_picking_vers_table.sql,
+    migration_statut_journal_vers_statut_global.sql (obsolete : rejoue l'ancien chemin)
+[ ] Remplacer t_statut par t_statut_journal_mouvement dans les scripts de tables/
+    (create.sql, seeders.sql, donnees_test_*.sql, ...)
+[ ] Adapter simulation_mois_operations.sql : il insere encore t_picking et
+    t_ligne_picking avec l'ancienne colonne texte "statut"
+[ ] Apres validation, supprimer la table de secours t_statut_journal_mouvement_ancien
+    si elle existe : DROP TABLE t_statut_journal_mouvement_ancien;
 
 
 -------------------------------------------------------
@@ -62,7 +86,16 @@ P1 - CONCURRENCE
     (GlobalExceptionHandler gere deja l'optimistic locking, mais aucune
     entite n'a de @Version : le handler ne se declenche jamais)
 [ ] Proteger scan() contre deux scans simultanes sur la meme ligne
-[ ] Ecrire un test sur scan() avant de migrer les statuts
+[ ] Ecrire un test sur scan()
+
+
+-------------------------------------------------------
+P1 - TESTS
+-------------------------------------------------------
+[ ] Corriger InventaireServiceTest (NullPointer : ComptageInventaire sans user,
+    le service appelle getUser().getUsername()) -> mvnw test passe en entier
+[ ] Couper le SQL affiche pendant les tests (src/test/resources/application.properties)
+Lancer un test : .\mvnw test -Dtest=JournalStatutHistoriqueTest
 
 
 -------------------------------------------------------
@@ -130,6 +163,7 @@ P2 - CONCEPTION DES ENTITES (a decider)
 P3 - AUTRES POINTS RELEVES
 -------------------------------------------------------
 [ ] ddl-auto=update -> scripts versionnes (Flyway) ou validate en production
+    (rappel : update ne renomme ni ne supprime rien, d'ou badgaga.sql a la main)
 [ ] Verifier les droits du role OPERATEUR (SecurityConfig : presque tout en ADMIN)
 [ ] Verifier la protection de /user/** (regles hasRole commentees)
 [ ] Upload : limiter la taille (voir ligne PDF ci-dessus)
@@ -145,19 +179,17 @@ P3 - AUTRES POINTS RELEVES
 [ ] Ajouter @ManyToOne(fetch = LAZY) explicite (par defaut EAGER -> requetes N+1)
 [ ] Champs de tracabilite communs : date_creation, date_modification, cree_par
 [ ] nom_client (texte libre) : en faire une entite ou un lien vers Societe
-[ ] Plus de tests : scan(), generation du parcours, securite
+[ ] Plus de tests : generation du parcours, securite
 
 
 -------------------------------------------------------
 ORDRE CONSEILLE
 -------------------------------------------------------
-1. Securite rapide (secrets, JWT)            -> 10 min, tres visible
-2. @Version + test sur scan()                -> protege la migration
-3. Statuts : Journal, puis Picking, puis LignePicking
-4. Pagination : MouvementStock et JournalMouvement
-5. Pieces jointes
-6. Parametrage de la recommandation
-7. Le reste (P3)
-
-Si le temps manque : s'arreter apres le journal pour les statuts
-("modele applique sur l'entite principale, les autres suivent le meme schema").
+1. Verifier a la main le parcours picking apres badgaga.sql   -> 10 min
+2. Securite rapide (secrets, JWT)                             -> 10 min, tres visible
+3. @Version + test sur scan()                                 -> protege les statuts
+4. Fin des statuts : initialiseur, PUT /statut, page admin, textes en dur
+5. Pagination : MouvementStock et JournalMouvement
+6. Pieces jointes
+7. Parametrage de la recommandation
+8. Le reste (P3)

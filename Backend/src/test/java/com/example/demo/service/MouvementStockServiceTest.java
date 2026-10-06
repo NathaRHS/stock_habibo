@@ -29,7 +29,7 @@ import com.example.demo.entity.Emplacement;
 import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.MouvementStock;
 import com.example.demo.entity.PaletteConditionnement;
-import com.example.demo.entity.Statut;
+import com.example.demo.entity.StatutJournalMouvement;
 import com.example.demo.entity.TypeMouvementStock;
 import com.example.demo.entity.User;
 import com.example.demo.repository.DetailJournalRepository;
@@ -70,6 +70,9 @@ class MouvementStockServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private JournalStatutService journalStatutService;
+
+    @Mock
     private TypeMouvementStockRepository typeMouvementStockRepository;
 
     private MouvementStockService mouvementStockService;
@@ -85,6 +88,7 @@ class MouvementStockServiceTest {
                 emplacementRepository,
                 paletteConditionnementRepository,
                 userRepository,
+                journalStatutService,
                 typeMouvementStockRepository);
     }
 
@@ -97,7 +101,7 @@ class MouvementStockServiceTest {
         Long emplacementId = 100L;
 
         JournalMouvement journal = mock(JournalMouvement.class);
-        Statut statut = mock(Statut.class);
+        StatutJournalMouvement statut = mock(StatutJournalMouvement.class);
         DetailJournal detail = mock(DetailJournal.class);
         Article article = mock(Article.class);
         ArticleConditionnement conditionnement = mock(ArticleConditionnement.class);

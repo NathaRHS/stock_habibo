@@ -5,16 +5,17 @@ import java.util.Arrays;
 /**
  * Statuts autorises pour le workflow d'un journal de mouvement.
  *
- * La table t_statut reste le referentiel commun en base. Cet enum protege les
- * regles propres aux journaux et empeche de leur attribuer un statut reserve a
- * une autre entite, par exemple PRELEVEE.
+ * La table t_statut_journal_mouvement est le referentiel de ces statuts en base.
+ * Cet enum protege les regles propres aux journaux et empeche de leur attribuer
+ * un statut reserve a une autre entite, par exemple PRELEVEE.
  */
 public enum StatutJournalMouvementCode {
     EN_COURS("EN COURS"),
     EN_ATTENTE("EN ATTENTE"),
     VALIDE("VALIDE"),
     MODIFIE("MODIFIE"),
-    AFFECTEE("AFFECTEE");
+    AFFECTEE("AFFECTEE"),
+    CLOTURE("CLOTURE");
 
     private final String nom;
 

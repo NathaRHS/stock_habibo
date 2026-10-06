@@ -1,9 +1,9 @@
 package com.example.demo.dto.picking;
 
-import com.example.demo.entity.StatutPicking;
+import com.example.demo.entity.StatutPickingCode;
 
 public record PickingUpdateRequest(
         Long userId,
         Long rackDepartId,
-        StatutPicking statut) {
+        StatutPickingCode statut) {
 }

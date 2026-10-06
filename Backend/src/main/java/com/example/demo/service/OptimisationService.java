@@ -17,7 +17,7 @@ import com.example.demo.entity.Article;
 import com.example.demo.entity.ArticleConditionnement;
 import com.example.demo.entity.DetailJournal;
 import com.example.demo.entity.JournalMouvement;
-import com.example.demo.entity.StatutLignePicking;
+import com.example.demo.entity.StatutLignePickingCode;
 import com.example.demo.objects.EmplacementEvalue;
 import com.example.demo.projection.EmplacementCandidatProjection;
 import com.example.demo.repository.ArticleConditionnementRepository;
@@ -385,9 +385,9 @@ public class OptimisationService {
                 .filter(id -> id != null)
                 .toList();
 
-        List<StatutLignePicking> statutsActifs = List.of(
-                StatutLignePicking.RESERVEE,
-                StatutLignePicking.EN_COURS);
+        List<StatutLignePickingCode> statutsActifs = List.of(
+                StatutLignePickingCode.RESERVEE,
+                StatutLignePickingCode.EN_COURS);
 
         Set<Long> emplacementIdsAvecPickingActif = new HashSet<>(
                 lignePickingRepository.findEmplacementIdsAvecPickingActif(
