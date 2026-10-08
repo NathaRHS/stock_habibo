@@ -1,0 +1,38 @@
+.vignette-article {
+  display: inline-grid;
+  flex: 0 0 auto;
+  overflow: hidden;
+  color: #94a3b8;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  place-items: center;
+}
+
+.vignette-article img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Vignette cliquable pour changer la photo depuis la liste. */
+.vignette-bouton {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.vignette-bouton input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.vignette-bouton:hover .vignette-article,
+.vignette-bouton:focus-within .vignette-article {
+  border-color: var(--color-primary, #2563eb);
+  box-shadow: 0 0 0 3px var(--color-primary-soft, #eff6ff);
+}

@@ -78,7 +78,7 @@ public class JournalMouvementController {
         return service.valider(id);
     }
 
-    @GetMapping("/{idParticipant}")
+    @GetMapping("/participants/{idParticipant}")
     public JournalMouvementResponse getAllJournauxByParticipant(@PathVariable  Long participantId){
         return service.findAllByParticipantsId(participantId);
     }

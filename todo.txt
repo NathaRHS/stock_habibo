@@ -1,195 +1,302 @@
-TODO - AUDIT DE LA CONCEPTION (backend Java + Flutter)
+TODO UNIQUE - HABIBO WMS (backend Java, React, Flutter)
 =======================================================
-Legende : [ ] a faire   [x] fait   (P1 = urgent, P2 = important, P3 = si le temps le permet)
+Remplace todo.txt + todo_anomalies.txt (a supprimer).
+Legende : [ ] a faire   [x] fait   (P1 urgent, P2 important, P3 si le temps)
 
 
 -------------------------------------------------------
 FAIT
 -------------------------------------------------------
-[x] Import de fichiers limite aux PDF (extension .pdf + signature %PDF-)
-    -> service/FileStorageService.java
-    Reste : regler la taille max (spring.servlet.multipart.max-file-size)
-            et limiter le selecteur Flutter au PDF.
-
-[x] Statuts : modele "table de statuts + enum + historique + methode centrale"
-    applique au Journal, au Picking et a la Ligne de picking.
-    - Base migree avec Backend/tables/badgaga.sql (execute, controles a 0)
-    - Tests : JournalStatutHistoriqueTest, PickingStatutHistoriqueTest,
-      LignePickingStatutHistoriqueTest (H2 en memoire, 14 tests, tous OK)
-    - JSON inchange pour Flutter et React (memes textes RESERVEE, PRELEVEE...)
-
-    Journal
-    [x] StatutJournalMouvement (t_statut_journal_mouvement) + enum StatutJournalMouvementCode
-    [x] HistoriqueJournalMouvementStatut (t_historique_journal_mouvement_statut)
-    [x] JournalStatutService.changerStatut / enregistrerStatutInitial
-    [x] 6 setStatut remplaces (JournalMouvementService x4, MouvementStockService,
-        UserJournalMouvementService) + 1re ligne d'historique a la creation
-    Picking
-    [x] StatutPicking (t_statut_picking) + enum StatutPickingCode
-    [x] HistoriquePickingStatut + PickingStatutService (creerPicking, changerStatut)
-    [x] Les 2 creations de Picking passent par creerPicking
-    Ligne de picking (les 5 statuts gardes, dont IMPOSSIBLE)
-    [x] StatutLignePicking (t_statut_ligne_picking) + enum StatutLignePickingCode
-    [x] HistoriqueLignePickingStatut + LignePickingStatutService
-    [x] scan(), creerLigne et l'annulation du picking passent par changerStatut
+[x] Import limite aux PDF (FileStorageService). Reste : taille max + selecteur Flutter.
+[x] Statuts : table + enum + historique + changerStatut pour Journal, Picking, Ligne
+    (badgaga.sql execute, 14 tests OK)
+[x] Statut CLOTURE du journal : pose par "Valider la sortie", bouton desactive ensuite,
+    page consultable comme resume (React + Flutter + test ValidationSortieClotureTest)
+[x] validerSortie : verrou findByIdForUpdate + refus 409 si deja cloture  (anomalie 1, en grande partie)
 
 
 -------------------------------------------------------
-P1 - STATUTS : CE QU'IL RESTE
+P0 - A VERIFIER SUR TA BASE (5 min)
 -------------------------------------------------------
-[ ] Redemarrer le backend et verifier a la main un parcours complet :
-    generer un picking -> scanner une ligne -> regarder les 3 tables d'historique
-    (scan() n'a pas de test automatique : il demande stock, lots et prelevements)
+[ ] INSERT du statut 'CLOTURE' dans t_statut_journal_mouvement (si pas deja fait)
+[ ] Journal 5 : lancer tables/reparer_prelevements_manquants.sql
+    -> lire d'abord mouvements_sortie_deja_presents ; si > 0, NE PAS valider la sortie apres
+[ ] Tester "Valider la sortie" sur le journal 5
+[ ] Corriger la faute "aaasortie" dans MouvementStockService.validerSortie
+[ ] Parcours manuel : generer picking -> scanner -> regarder les 3 historiques
+
+
+-------------------------------------------------------
+P1 - LE RESTE (reliquat) : PRELEVEMENT PARTIEL + NOUVEAU BON
+-------------------------------------------------------
+Regle : on prend ce qui existe. Le manque = demande - lignes valides. Regle de
+l'encadrant : le manque devient un NOUVEAU bon de commande (nouveau journal SORTIE),
+comme si le client avait redemande. Alerte admin quand le stock revient.
+Stock = 0 au premier essai : meme systeme (plus de 409).
+
+Decisions a prendre :
+ D1. Aucune ligne servie : cloturer le journal d'origine tout de suite (conseil)
+     ou seulement a la creation du bon de reliquat ?
+ D2. Bon de reliquat cree a la main par l'admin apres alerte (conseil) ou automatique ?
+ D3. Reference du nouveau bon : SOR-001-R1 (conseil) ou libre ?
+ D4. Anomalie 3 (PRELEVEE pas encore sortie) : nouveau statut ligne SORTIE
+     ou mouvement cree au scan ? (tu avais dit garder 5 statuts)
+
+Etapes (dans l'ordre) :
+[ ] R1. Calcul commun "stock disponible = stock - reservations" (= anomalie 8)
+        LignePickingRepository.sommePiecesReservees (par emplacement + lot),
+        utilise par CommandeService.proposerEmplacement ET LignePickingService.creerLigne
+        (etape 10, qui boucle a la main aujourd'hui)
+[ ] R2. genererMeilleurParcours : retirer les 2 refus 409
+        ("Stock insuffisant pour l'article", "Aucun stock disponible")
+        -> on genere avec ce qui existe ; aucun picking s'il n'y a rien
+        -> refuser la generation si le journal est CLOTURE
+[ ] R3. Calcul du reste par commande : demande - SUM(lignes RESERVEE/EN_COURS/PRELEVEE)
+        (ANNULEE/IMPOSSIBLE ne comptent pas). Non stocke, calcule.
+        Endpoint GET /commandes/journal/{id}/reliquats (ne casse pas la liste Flutter)
+[ ] R4. Colonne journal_origine_id sur JournalMouvement (+ badgaga.sql / initialiseur)
+[ ] R5. Action "Creer le bon de reliquat" : nouveau journal SORTIE, une commande par
+        article manquant, lien vers l'origine, statut via changerStatut
+[ ] R6. Ne pas recompter un manque deja reporte (journaux enfants) dans le reste
+[ ] R7. Alerte admin : nouveau NotificationType (SORTIE_STOCK_DISPONIBLE) + case dans
+        NotificationService.creer ; destinataires = users ADMIN ; pas de doublon ;
+        marquee traitee quand le bon est cree. Declencheur : fin de creerEntreeStock.
+[ ] R8. React (page sortie) : afficher le reste + bouton "Creer le bon de reliquat"
+[ ] R9. Cas "rien a prelever" : pas de picking, journal CLOTURE (selon D1)
+[ ] R10. Tests : sortie partielle, stock 0, reliquat cree, alerte sur entree de stock
+
+
+-------------------------------------------------------
+P1 - ANOMALIES : LE STOCK PEUT DEVENIR FAUX
+-------------------------------------------------------
+[ ] A2. findPicking renvoie le mauvais picking (SQL natif, tri date_fin DESC, NULL a la fin,
+        ANNULE possible). -> filtrer par statut (GENERE/EN_COURS/TERMINE), trier par id desc,
+        JPQL avec JOIN t_statut_picking. Utilise par validerSortie et ConfirmationSortieService.
+[ ] A1 (reste). validerSortie : exiger picking TERMINE ou toutes lignes PRELEVEE
+[ ] A3. Fenetre PRELEVEE -> sortie : la marchandise prelevee compte encore dans le stock et
+        n'est plus reservee -> double allocation possible. Voir D4.
+        Corriger aussi OptimisationService.filtrerEmplacementsCandidats.
+[ ] A5. Ancien chemin CommandeService.UpdateCommandeAndDetailJournal : prelevements sans
+        ligne de picking, jamais sortis du stock ; ConfirmationSortieService compte en
+        pieces vs conditionnements. -> retirer l'ancien chemin, Prelevement.lignePicking
+        obligatoire, unifier l'unite.
+[ ] A4. Stock "en reserve" (en_reserve = TRUE) inutilisable : DECISION METIER avec
+        l'encadrant (flux de reintegration) ; au minimum l'afficher.
+
+P2 - ANOMALIES ELEVEES / MOYENNES
+[ ] A6. Inventaire ne corrige rien : quantite_theorique figee, articles non comptes,
+        mouvement AJUSTEMENT, ComptageInventaire.user nullable. (DECISION avec l'encadrant)
+[ ] A7. Journal modifiable a tout moment (update/delete/InsertAllCommande apres picking)
+[ ] A9. Entree sans verrou (findByIdForUpdate + verrou emplacement)
+[ ] A10. Unites melangees, .get(0) du conditionnement, divisions entieres
+[ ] A11. Le picking ne passe jamais seul a EN_COURS / TERMINE : scan() doit le faire
+[ ] A12. Regles de transition dispersees : table de transitions par entite dans changerStatut
+
+Tests pour prouver (H2, modele de JournalStatutHistoriqueTest) :
+[ ] T1 double validerSortie   [ ] T2 picking annule puis regenere   [ ] T3 double reservation
+[ ] T4 surplus en_reserve     [ ] T5 ancien chemin                   [ ] T6 modifier type d'un journal AFFECTEE
+
+
+-------------------------------------------------------
+P1 - FLUTTER (incoherences)
+-------------------------------------------------------
+Ordre propose : 2, 3, 1, puis 5, 6, 4. (liste detaillee a refaire en relisant l'app)
+[ ] Messages d'erreur : lire le champ "detail" de la reponse (comme React lireMessageErreur)
+[ ] Statuts terminaux : traiter CLOTURE, IMPOSSIBLE, ANNULEE partout
+[ ] Generation du parcours explicite (bouton) plutot qu'implicite
+[ ] Verifier le mismatch de roles et le 403 du scan d'inventaire (POST /** reserve ADMIN)
+[ ] Afficher le reste a servir (apres R3)
+
+
+-------------------------------------------------------
+P1 - CHEMINS MORTS (releve des liens reels)
+-------------------------------------------------------
+[ ] React : aucun lien vers /sortie/:id (AffectationSortie) -> ajouter l'action
+    "Confirmer la sortie" dans le menu de new-pages/ListeJournal/ListeJournal.jsx (l.356)
+[ ] React : /upload (UploadFile) et CreateTypeMouvementJournal sans lien ; CreateJournal
+    seulement lie depuis ListeInventaire (le modal a pris le relais)
+[ ] React : fichiers sans route : pages/ListeJournal, AffectationStockMine, ListeSociete,
+    Animate, CrudElement ; routes doublons /new/... ; imports inutiles dans main.jsx
+[ ] Flutter : SortiePage jamais ouverte ; EcranInsertionSortie = ancien chemin (anomalie 5)
+Decompte reel : 19 ecrans React vivants + 9 Flutter vivants (28-29 avec l'ecran sortie relie)
+
+
+-------------------------------------------------------
+P2 - FINITION PRODUIT (apres LE RESTE ; rend le projet "fini" a l'ecran)
+-------------------------------------------------------
+Ordre conseille :
+[x] F0e. CREATION D'ARTICLE GUIDEE (fait) : modal + stepper 3 etapes (identite, conditionnement,
+        palette), POST /articles/complet transactionnel (ArticleCompletService), CreateArticle.jsx supprime
+        reste : bouton "Parametres article" dans la fiche -> pages conditionnement / capacite palette
+        filtrees sur l'article ; retirer ces 2 entrees du Sidebar ; badge "incomplet" ;
+        TEST du rollback (article + conditionnement + palette : tout ou rien)
+[x] F0. PHOTOS D'ARTICLES -- FAIT (08/10) : photo_url, FileStorageService.verifierPhoto/enregistrerPhoto
+        (JPG/PNG/WebP, signature, 2 Mo), GET /photos/{nom} PUBLIC (permitAll, seulement photo-*),
+        PUT /articles/{id}/photo, photo facultative a la creation (multipart "data" + "photo") pour
+        /articles/complet et /articles/{id}/variantes, vignette dans la liste (clic = changer la photo),
+        apercu dans le modal. Reste : vignette Flutter, image de remplacement deja faite (icone).
+        (detail d'origine ci-dessous)
+        - t_article.photo_url (texte, facultatif)
+        - controle des IMAGES separe (JPG, PNG, WebP : extension + signature, ~2 Mo max) ;
+          NE PAS toucher a la regle "PDF seulement" des pieces jointes (verifierPdf)
+        - endpoint d'upload photo d'article (renvoie le chemin) ; lecture via GET /uploads/{nom}
+        - React : champ photo + apercu dans le formulaire article, vignette dans la liste et la fiche
+        - Flutter : vignette dans les listes (articles, lignes de picking, scan) :
+          l'operateur reconnait la boite avant de scanner
+        - image de remplacement neutre si pas de photo ; redimensionner cote navigateur
+        - chaque variante (PM, GM) a sa propre photo
+[ ] F0b. CARTE D'ARTICLE AU SURVOL (apres F0 : elle a besoin de la photo)
+        - un seul composant React reutilisable, place partout ou un produit apparait :
+          liste d'articles, detail de journal, lignes de picking, inventaire, vue des racks
+        - contenu : photo, nom, code-barres, famille, contenance, stock total
+          (+ par emplacement), DLC la plus proche
+        - petit endpoint "resume d'article" (GET /articles/{id}/resume)
+        - Flutter : pas de survol -> appui long / tap = petite fiche (bottom sheet)
+        - REGLE : on ne charge QU'AU SURVOL (delai ~300 ms) + cache par id ; jamais a
+          l'affichage de la liste (sinon des dizaines d'appels inutiles)
+        - il faut l'id de l'article dans les reponses : verifier les 14 DTO qui exposent
+          nomArticle/articleId, ajouter articleId la ou il manque
+        - positionnement auto de la carte (ne pas sortir de l'ecran) : popover
+        - ampleur React : nomArticle = 43 occurrences / 16 fichiers (AffectationStockMine 7,
+          Inventaire 5, RackView 5, AssignmentPanel 4...) ; remplacer page par page,
+          en commencant par les ecrans qui seront captures pour le memoire (~10 pages)
+        - composant ecrit une fois : <NomArticle article=... />, aspect epure, peu d'infos
+[ ] F0c. PAGE SCORING (moteur de recommandation d'emplacement, OptimisationService l.330)
+        - 4 poids modifiables par l'admin (proximite 0,25 / capacite 0,30 / fiabilite 0,30 /
+          regroupement 0,15) : 4 curseurs, somme = 100 %, bouton Enregistrer
+          -> table t_parametrage_recommandation (voir "PARAMETRAGE" en P2)
+        - detail d'une proposition : emplacements candidats avec les 4 scores et le score final,
+          meilleur en haut ("pourquoi ce rack ?") ; les scores detailles existent deja
+          (EmplacementEvalue)
+        - tres bon ecran pour le memoire (module 5, entree de stock)
+[ ] F0a. PHOTO A LA CREATION D'ARTICLE (detail de F0, decision du 08/10 : UNE SEULE photo)
+        - photo OPTIONNELLE dans le formulaire de creation (apercu avant envoi)
+        - flux en 2 temps : 1) creer l'article comme aujourd'hui ; 2) si une photo est choisie,
+          PUT /articles/{id}/photo (multipart) -> enregistre le fichier et remplit photo_url
+          (pas de fichier orphelin si la creation echoue ; si l'envoi echoue, l'article existe
+          sans photo + message "reessayer depuis la fiche")
+        - le meme endpoint sert a CHANGER la photo depuis la fiche produit
+        - validation image : JPG, PNG, WebP (extension + signature), ~2 Mo, nom de fichier genere ;
+          fichiers a plat dans uploads/ (GET /uploads/{nom} ne gere pas les sous-dossiers)
+        - pas de table image : seulement t_article.photo_url. Si un jour plusieurs photos :
+          creer t_article_image (article_id, url, ordre) et y copier les photo_url existantes
+[ ] F0d. FICHE PRODUIT (page /article/:id, lien depuis <NomArticle>)
+        - GET /articles/{id}/fiche : nom, photo, famille, contenance, code-barres, stock
+          (physique / reserve / disponible), DLC la plus proche
+        - GET /articles/{id}/mouvements/totaux?du=&au= : pieces ET nombre d'operations,
+          entrees et sorties, avec FILTRE DE DATES (facultatif ; raccourcis 30 j / 3 mois / annee ;
+          par defaut : tout). Endpoint separe : changer la date ne recharge pas toute la fiche.
+          Bornes : date_mouvement >= du ET < au + 1 jour
+        - blocs a ajouter ensuite : emplacements + lots, 5 derniers mouvements
+        - la carte au survol (F0b) reutilise /fiche en version reduite
+[ ] F1. Ecran "Historique du statut" d'un journal (timeline : qui, quand, de quoi a quoi)
+        -> les tables d'historique existent deja, il manque la page
+[ ] F2. Jeu de donnees de demonstration complet (listes jamais vides pour les captures ET soutenance)
+        Methode retenue (08/10) : NE PAS ecrire des INSERT a la main ; faire rejouer au programme
+        ses propres regles (services / API) dans l'ordre chronologique, sur 3 a 6 mois, puis CONTROLER.
+        1. Catalogue ~40 articles reels (CSV : nom, code-barres, famille, contenance, type, pieces par
+           conditionnement, unites par palette) -> source : liste de l'encadreur / Open Food Facts
+        2. Photos : recuperees automatiquement par code-barres (Open Food Facts) ou catalogue Habibo,
+           envoyees par PUT /articles/{id}/photo ; noter la source pour le memoire
+        3. Referentiels : societes, racks/emplacements, utilisateurs (ADMIN + OPERATEUR)
+        4. Scenario : entrees hebdomadaires, sorties frequentes (dates reparties), quelques
+           inventaires, un reste/reliquat, quelques produits proches de la DLC, un stock bas
+        5. Controles : aucun stock negatif (requete "Controle" physique/reserve/disponible),
+           chaque sortie precedee d'une entree, comptage par table
+        6. mysqldump de la base propre = point de restauration avant la soutenance
+        (simulation_mois_operations.sql actuel est casse : le remplacer, ne pas le reparer)
+[ ] F3. Etats vides / chargement / erreur sur les listes principales
+        (journaux, inventaires, stock) ; design epure, un seul accent bleu Habibo
+[ ] F4. Profil / parametres : voir son role, changer son mot de passe
+[ ] F5. Cloche de notifications dans l'interface (le backend existe deja)
+[ ] F6. Export CSV (liste des journaux, stock) en plus du PDF d'inventaire
+[ ] F7. APK Flutter installable (livraison concrete) + README de lancement
+
+Famille d'articles + contenance (decision du 07/10 : pas de "modele" ni de hierarchie)
+Principe : une variante = un article a part entiere (son code-barres, son stock) ;
+la famille ne sert qu'a les regrouper. Tout est FACULTATIF : rien d'existant ne casse.
+[x] G1. Table t_famille (id, nom unique) + entite Famille + repository + liste/creation
+[x] G2. Article : famille_id (nullable), contenance_valeur (decimal, nullable),
+        unite_id (nullable) -> TABLE t_unite (id, nom_unite) au lieu d'un enum ;
+        unites par defaut g, kg, mL, cL, L inserees au demarrage (InitialiseurUnites)
+[x] G3. CreateArticleRequest / reponse article : ajouter ces champs, non obligatoires
+[ ] G4. (a faire) badgaga.sql : t_famille, t_unite + colonnes famille_id, contenance_valeur, unite_id, photo_url (ddl-auto=update les creerait, mais on garde
+        la base reproductible)
+[x] G5 (fait : modal avec contenance, bouton "Ajouter une variante" par ligne, famille creee a la
+        premiere variante, POST /articles/{id}/variantes, regle meme type de produit) ;
+        reste : filtre par famille + modifier un article existant (contenance des anciens articles)
+[ ] G5-ancien. React : formulaire article = famille (liste + creation a la volee) + valeur/unite ;
+        liste : afficher "1,5 L" a cote du nom ; action "Ajouter une variante"
+        (formulaire prepare avec famille et type de produit) ; filtre par famille
+[ ] G6. Flutter : rien d'obligatoire (champs facultatifs, JSON existant inchange)
+Ne pas faire : conversion automatique entre unites (L <-> cL), niveau "modele".
+Ne confondre : famille (regroupe) / contenance (contenu d'UNE piece) /
+conditionnement (pieces par carton = ArticleConditionnement, inchange).
+Pour le memoire (module Referentiels) : "une reference = une taille, identifiee par son
+code-barres ; la famille regroupe les tailles ; la contenance decrit chacune".
+
+-------------------------------------------------------
+P1 - FIN DES STATUTS
+-------------------------------------------------------
 [ ] Initialiseur au demarrage : inserer les statuts manquants depuis les enums
-    (journal, picking, ligne) -> une base neuve fonctionne sans script de donnees
-[ ] Fermer PUT /journaux-mouvements/{id}/statut (updateStatutJournal) :
-    aucun controle de transition. Flutter l'appelle-t-il ? Sinon le supprimer.
+[ ] Fermer PUT /journaux-mouvements/{id}/statut (aucun controle de transition)
 [ ] JournalMouvementService.update : ne plus accepter statutJournalMouvementId
-    dans la requete (modifier une reference ne doit pas changer le statut)
-[ ] Retirer la page admin de creation / suppression de statuts
-    (StatutJournalMouvementService), ou la passer en lecture seule
-[ ] Chercher tous les textes en dur : "PRELEVE", "CONFIRME", "SORTIE", etc.
-    (ex. findByNomStatut("..."), comparaisons avec des chaines)
-    et les remplacer par des constantes / enums
-[ ] Le picking ne passe jamais tout seul a EN_COURS / TERMINE (seul PUT /pickings/{id}
-    le fait) : decider si scan() doit le faire (l'historique reste a GENERE sinon)
-[ ] UserJournalMouvement (statut de participation) : a trancher
-    (conseil : le laisser tel quel, c'est un etat de session, pas un cycle de vie)
-[ ] Prelevement : pas d'historique (fait ponctuel, ne change jamais de statut)
-
-Menage lie aux statuts :
-[ ] Supprimer les anciens scripts rendus inutiles par badgaga.sql :
-    migration_statut_picking_vers_table.sql, migration_statut_ligne_picking_vers_table.sql,
-    migration_statut_journal_vers_statut_global.sql (obsolete : rejoue l'ancien chemin)
-[ ] Remplacer t_statut par t_statut_journal_mouvement dans les scripts de tables/
-    (create.sql, seeders.sql, donnees_test_*.sql, ...)
-[ ] Adapter simulation_mois_operations.sql : il insere encore t_picking et
-    t_ligne_picking avec l'ancienne colonne texte "statut"
-[ ] Apres validation, supprimer la table de secours t_statut_journal_mouvement_ancien
-    si elle existe : DROP TABLE t_statut_journal_mouvement_ancien;
+[ ] Page admin de statuts : lecture seule ou retiree
+[ ] Textes en dur "PRELEVE", "CONFIRME", "SORTIE" -> enums (t_statut_prelevement reste en texte)
+[ ] UserJournalMouvement : laisser tel quel (etat de session)
+[ ] Menage SQL : supprimer migration_statut_picking_vers_table.sql,
+    migration_statut_ligne_picking_vers_table.sql, historique_journal_statut_initial.sql,
+    migration_statut_journal_vers_statut_global.sql ; corriger simulation_mois_operations.sql
+    (colonnes statut texte + quantite_pieces_prelevee inexistante) ;
+    DROP t_statut_journal_mouvement_ancien ; supprimer la colonne quantitePrelevee
+    et l'insertPrelevement mort
 
 
 -------------------------------------------------------
-P1 - SECURITE RAPIDE (10 minutes)
+P1 - TESTS / CONCURRENCE / SECURITE
 -------------------------------------------------------
-[ ] Sortir le mot de passe MySQL (root) et JWT_SECRET de application.properties
-    -> variables d'environnement
-[ ] Changer le JWT_SECRET actuel (considere comme compromis)
-[ ] jwt.expiration : 400000 s = ~4,6 jours, alors que le commentaire dit 1 heure
-[ ] Ajouter .gitignore : target/, uploads/, fichiers de secrets
+[ ] Corriger InventaireServiceTest (NPE ComptageInventaire.user) ; couper le SQL des tests
+[ ] @Version sur Picking et LignePicking ; scan() protege contre 2 scans simultanes ; test scan()
+[ ] Secrets (MySQL, JWT_SECRET) en variables d'environnement, changer le secret
+[ ] jwt.expiration 400000 s (~4,6 jours) alors que le commentaire dit 1 h
+[ ] .gitignore : target/, uploads/, secrets
 
 
 -------------------------------------------------------
-P1 - CONCURRENCE
+P2 - PAGINATION / PIECES JOINTES / PARAMETRAGE
 -------------------------------------------------------
-[ ] Ajouter @Version sur LignePicking et Picking
-    (GlobalExceptionHandler gere deja l'optimistic locking, mais aucune
-    entite n'a de @Version : le handler ne se declenche jamais)
-[ ] Proteger scan() contre deux scans simultanes sur la meme ligne
-[ ] Ecrire un test sur scan()
+Pagination (Pageable + reponse contenu+total) : MouvementStock GET / et /entrees,
+JournalMouvement GET / et /detailJournal, Picking GET /, Notification GET /, Article GET /.
+Ne PAS paginer : racks, roles, types, statuts, societes, conditionnements, palettes, emplacements.
+
+PieceJointe : entite (journal_id, nom_original, nom_stocke, taille, date_ajout, user_id),
+1-N avec JournalMouvement, telechargement par id, retirer url_piece_jointe.
+
+t_parametrage_recommandation : poids_proximite 0,25 / capacite 0,30 / fiabilite 0,30 /
+regroupement 0,15 ; somme = 1 ; lu une fois dans proposerEmplacements ;
+utilise dans OptimisationService.calculerScoreFinal ; ecran admin.
 
 
 -------------------------------------------------------
-P1 - TESTS
+P2/P3 - CONCEPTION ET DIVERS
 -------------------------------------------------------
-[ ] Corriger InventaireServiceTest (NullPointer : ComptageInventaire sans user,
-    le service appelle getUser().getUsername()) -> mvnw test passe en entier
-[ ] Couper le SQL affiche pendant les tests (src/test/resources/application.properties)
-Lancer un test : .\mvnw test -Dtest=JournalStatutHistoriqueTest
-
-
--------------------------------------------------------
-P2 - PAGINATION
--------------------------------------------------------
-Backend (Pageable + format de reponse commun : contenu + total) :
-[ ] MouvementStockController GET / et /entrees
-[ ] JournalMouvementController GET / et /detailJournal
-[ ] PickingController GET /
-[ ] NotificationController GET /
-[ ] ArticleController GET /  (avec recherche)
-Ne PAS paginer : racks, roles, types, statuts, societes, conditionnements,
-palettes, emplacements, et les listes deja limitees par un parent.
-Ajouter un filtre (date, statut) en meme temps.
-Flutter : adapter chaque ecran au nouveau format + chargement de la page suivante.
-
-
--------------------------------------------------------
-P2 - PIECES JOINTES
--------------------------------------------------------
-Aujourd'hui : un simple texte url_piece_jointe dans JournalMouvement.
-[ ] Creer l'entite PieceJointe :
-    id, journal_mouvement_id, nom_original, nom_stocke, taille, date_ajout, user_id
-[ ] Relation JournalMouvement 1 -> N PieceJointe
-[ ] L'upload cree la ligne en base ; nettoyer le fichier si l'insertion echoue
-[ ] Telecharger par identifiant de piece, pas par nom de fichier
-[ ] Migrer / retirer url_piece_jointe
-
-
--------------------------------------------------------
-P2 - PARAMETRAGE DE LA SUGGESTION D'AFFECTATION
--------------------------------------------------------
-Table : t_parametrage_recommandation (une ligne, 4 colonnes, par insertion)
-[ ] Colonnes : poids_proximite, poids_capacite, poids_fiabilite,
-    poids_regroupement, date_creation, user_id
-[ ] Valeurs par defaut : 0,25 / 0,30 / 0,30 / 0,15
-[ ] Validation : chaque poids entre 0 et 1, somme = 1,00 (tolerance 0,001)
-[ ] Inserer une ligne par defaut au premier demarrage
-[ ] Lire le parametrage UNE fois au debut de proposerEmplacements
-[ ] Utiliser les poids dans calculerScoreFinal (OptimisationService, l.330-340)
-[ ] Controleur lecture / ecriture + ecran admin
-Hors perimetre (reste en code) : penalite anomalie, scores 60/100,
-poids rack/etage/position, regles de filtrage.
-
-
--------------------------------------------------------
-P2 - CONCEPTION DES ENTITES (a decider)
--------------------------------------------------------
-[ ] Commande : retirer les champs inutilises (quantite_reel, Etat, user, isChecked)
-    Renommer en LigneCommande (ou documenter : c'est une ligne du journal de sortie)
-[ ] Prelevement.lignePicking : rendre obligatoire une fois l'ancien chemin retire
-[ ] Ancien chemin CommandeService.UpdateCommandeAndDetailJournal : laisse tel quel
-    pour l'instant (decision du jour), a retirer plus tard
-[ ] Conditionnement de reference explicite (6 usages de .get(0) dans les services)
+[ ] Commande : retirer champs inutilises, renommer LigneCommande ; isChecked (getter JSON)
 [ ] Article.typeConditionnement double ArticleConditionnement.typeConditionnement
-[ ] Fusionner / clarifier TypeMouvementJournal et TypeMouvementStock ; sens en enum
-[ ] Initialiser les listes OneToMany (new ArrayList<>()) : Article.commandes,
-    Emplacement.prelevements, Role.users, User.commandes / prelevements / comptages
-[ ] Commande.isChecked : renommer (probleme de getter JSON), colonne en snake_case
-[ ] Verifier le stock par article ET par lot dans l'ancien chemin de prelevement
-    (compare au stock de tout l'emplacement)
-
-
--------------------------------------------------------
-P3 - AUTRES POINTS RELEVES
--------------------------------------------------------
-[ ] ddl-auto=update -> scripts versionnes (Flyway) ou validate en production
-    (rappel : update ne renomme ni ne supprime rien, d'ou badgaga.sql a la main)
-[ ] Verifier les droits du role OPERATEUR (SecurityConfig : presque tout en ADMIN)
-[ ] Verifier la protection de /user/** (regles hasRole commentees)
-[ ] Upload : limiter la taille (voir ligne PDF ci-dessus)
-[ ] CORS : limite a localhost, a elargir si une version web est servie ailleurs
-[ ] server.error.include-message=always et show-sql=true : a couper en production
-[ ] @Transactional(readOnly = true) sur les methodes de lecture (22 sans readOnly)
-[ ] Retirer System.out.println dans InventaireController (l.28)
-[ ] RapportInventaireService : ne plus attraper Exception (l.49)
-[ ] InsertAllCommande : recharger le journal hors de la boucle,
-    refuser deux lignes du meme article dans un journal
-[ ] Decouper les gros services (MouvementStockService, JournalMouvementService,
-    CommandeService) ; deplacer genererMeilleurParcours vers PickingService
-[ ] Ajouter @ManyToOne(fetch = LAZY) explicite (par defaut EAGER -> requetes N+1)
-[ ] Champs de tracabilite communs : date_creation, date_modification, cree_par
-[ ] nom_client (texte libre) : en faire une entite ou un lien vers Societe
-[ ] Plus de tests : generation du parcours, securite
+[ ] Fusionner / clarifier TypeMouvementJournal et TypeMouvementStock
+[ ] Listes OneToMany initialisees ; @ManyToOne LAZY explicite
+[ ] ddl-auto=update -> Flyway ; droits OPERATEUR ; /user/** ; CORS ; show-sql et include-message
+[ ] @Transactional(readOnly = true) sur les lectures ; System.out.println InventaireController
+[ ] RapportInventaireService : ne plus attraper Exception ; InsertAllCommande hors boucle
+[ ] Decouper les gros services ; champs de tracabilite ; nom_client en entite
 
 
 -------------------------------------------------------
 ORDRE CONSEILLE
 -------------------------------------------------------
-1. Verifier a la main le parcours picking apres badgaga.sql   -> 10 min
-2. Securite rapide (secrets, JWT)                             -> 10 min, tres visible
-3. @Version + test sur scan()                                 -> protege les statuts
-4. Fin des statuts : initialiseur, PUT /statut, page admin, textes en dur
-5. Pagination : MouvementStock et JournalMouvement
-6. Pieces jointes
-7. Parametrage de la recommandation
-8. Le reste (P3)
+0. P0 : verifications base (journal 5, CLOTURE)
+1. LE RESTE : R1 -> R2 -> R3 -> R4/R5 -> R7 -> R8 -> R9 -> R10
+2. A2 (findPicking) + A1 (reste) : petits correctifs, bugs graves
+3. Flutter : 2, 3, 1
+4. A3/D4, A5, A11
+5. Fin des statuts, tests, secrets
+6. Pagination, pieces jointes, parametrage

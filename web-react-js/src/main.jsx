@@ -106,6 +106,8 @@ createRoot(document.getElementById("root")).render(
           path="/new/journaux-mouvements/:journalId/affectation-stock"
           element={<NewAffectationStock />}
         />
+
+        <Route path="/ficheProduit/:id"/>
       </Routes>
     </BrowserRouter>
   </StrictMode>,

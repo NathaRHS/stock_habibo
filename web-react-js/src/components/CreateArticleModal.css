@@ -1,0 +1,256 @@
+/* Modal un peu plus large pour que les libelles du stepper restent lisibles. */
+.modal-dialog:has(.acm-form) {
+  width: min(560px, 100%);
+}
+
+/* Stepper */
+.stepper-article {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 22px;
+  padding: 0;
+  list-style: none;
+}
+
+.stepper-article-etape {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Trait entre deux etapes. */
+.stepper-article-etape:not(:last-child)::after {
+  flex: 1 1 auto;
+  min-width: 12px;
+  height: 2px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  content: "";
+}
+
+.stepper-article-etape--fait:not(:last-child)::after {
+  background: var(--color-primary, #2563eb);
+}
+
+.stepper-article-pastille {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  color: #94a3b8;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  place-items: center;
+}
+
+.stepper-article-etape--courante {
+  color: #0f172a;
+}
+
+.stepper-article-etape--courante .stepper-article-pastille {
+  color: #ffffff;
+  background: var(--color-primary, #2563eb);
+  border-color: var(--color-primary, #2563eb);
+}
+
+.stepper-article-etape--fait {
+  color: #475569;
+}
+
+.stepper-article-etape--fait .stepper-article-pastille {
+  color: var(--color-primary, #2563eb);
+  background: var(--color-primary-soft, #eff6ff);
+  border-color: var(--color-primary, #2563eb);
+}
+
+.stepper-article-libelle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Corps du modal */
+.acm-form {
+  display: grid;
+  gap: 4px;
+}
+
+.acm-champs {
+  display: grid;
+  gap: 16px;
+}
+
+.acm-grille {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.acm-champs label {
+  display: grid;
+  gap: 7px;
+  color: #44546a;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.acm-champs input,
+.acm-champs select {
+  box-sizing: border-box;
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  color: #26364b;
+  background: #fbfcfe;
+  border: 1px solid #dce4ed;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  outline: 0;
+}
+
+.acm-champs input:focus,
+.acm-champs select:focus {
+  border-color: var(--color-primary, #2563eb);
+  box-shadow: 0 0 0 3px var(--color-primary-soft, #eff6ff);
+}
+
+/* Photo facultative (etape 1) */
+.acm-photo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.acm-photo-apercu {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  color: #94a3b8;
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  font-size: 11px;
+  place-items: center;
+}
+
+.acm-photo-apercu img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.acm-photo-actions {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.acm-photo-actions small {
+  overflow: hidden;
+  color: #8b99aa;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acm-champs .acm-photo-choisir {
+  position: relative;
+  display: inline-flex;
+  width: fit-content;
+  padding: 7px 12px;
+  color: var(--color-primary, #2563eb);
+  background: #ffffff;
+  border: 1px solid var(--color-primary, #2563eb);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.acm-photo-choisir input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.acm-photo-retirer {
+  width: fit-content;
+  padding: 0;
+  color: #ba3c45;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+}
+
+.acm-rappel {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.acm-rappel strong {
+  color: #0f172a;
+}
+
+.acm-total {
+  margin: 0;
+  padding: 12px 14px;
+  color: #475569;
+  background: var(--color-primary-soft, #eff6ff);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.acm-total strong {
+  color: var(--color-primary, #2563eb);
+  font-size: 15px;
+}
+
+.acm-erreur {
+  margin: 0 0 14px;
+  padding: 11px 12px;
+  color: #ba3c45;
+  background: #fff3f3;
+  border: 1px solid #f3c5c7;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+/* Bouton « Nouvel article » de la liste */
+.article-list-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 520px) {
+  .acm-grille {
+    grid-template-columns: 1fr;
+  }
+
+  .stepper-article-libelle {
+    display: none;
+  }
+
+  .stepper-article-etape--courante .stepper-article-libelle {
+    display: block;
+  }
+}

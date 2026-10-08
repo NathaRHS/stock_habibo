@@ -48,6 +48,10 @@ public class SecurityConfig {
                         .requestMatchers("/error")
                         .permitAll()
 
+                        // Photos d'articles : lecture publique (balise <img> sans jeton)
+                        .requestMatchers(HttpMethod.GET, "/photos/**")
+                        .permitAll()
+
                         // Toute gestion et consultation des utilisateurs : ADMIN
                         // .requestMatchers("/user", "/user/**")
                         // .hasRole("ADMIN")
@@ -60,6 +64,9 @@ public class SecurityConfig {
                         .authenticated()
 
                         .requestMatchers(HttpMethod.POST, "/journaux-mouvements/*/scans")
+                        .authenticated()
+
+                        .requestMatchers(HttpMethod.POST, "/journaux-mouvements/*/inventaire/scans")
                         .authenticated()
 
                         .requestMatchers(

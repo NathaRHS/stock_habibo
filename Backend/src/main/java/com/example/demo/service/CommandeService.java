@@ -353,5 +353,116 @@ public class CommandeService {
                 return lignesCreees;
         }
 
+                @Transactional
+        public PrelevementResponse UpdateCommandeAndDetailJournal(AjoutCommandeRequest ajoutCommandeRequest) {
+
+                Emplacement emplacement = emplacementRepository.findById(ajoutCommandeRequest.EmplacementId())
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                                "Emplacement introuvable"));
+                Article article = articleRepository.findById(ajoutCommandeRequest.ArticleId())
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                                "Emplacement introuvable"));
+                List<Article> articlesPresents = mouvementStockRepository
+                                .findArticlesPresentsByEmplacementId(emplacement.getId());
+
+                StatutPrelevement statutPrelevement = statuPrelevementRepository.findByNomStatut(STATUT_PRELEVE)
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                                "Statut not found "));
+                boolean articleEstLa = false;
+
+                User user = userRepository.findByMatricule(ajoutCommandeRequest.matricule())
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                                "User not found !"));
+
+                Commande commande = commandeRepository.findById(ajoutCommandeRequest.CommandeId()).orElseThrow(
+                                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "commande introuvable"));
+
+                if (!commande.getArticle().getId().equals(article.getId())) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "Cet article ne correspond pas à la commande");
+                }
+
+                if (!commande.getJournalMouvement().getId()
+                                .equals(ajoutCommandeRequest.idJournal())) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "Cette commande n'appartient pas à ce journal");
+                }
+
+                List<Prelevement> allPrelevement = prelevementRepository.findAllByCommandeId(commande.getId());
+
+                // stock total scanne
+                Integer stockTotalScanne = 0;
+                for (Prelevement prelevement : allPrelevement) {
+                        stockTotalScanne += prelevement.getQuantitePiecesPrelevees()
+                                        / article.getArticleConditionnements().get(0).getQuantitePieceStandard();
+                }
+
+                long stockActuelScanMiampy = stockTotalScanne + ajoutCommandeRequest.quantiteConditionnement();
+                if (stockActuelScanMiampy > commande.getQuantiteDemandee()) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Excès !!! ");
+                }
+                Prelevement prelevement = new Prelevement();
+
+                for (Article articlePresent : articlesPresents) {
+                        if (articlePresent.getId().equals(article.getId())) {
+                                articleEstLa = true;
+                        }
+
+                }
+                ArticleConditionnement articleConditionnement = article.getArticleConditionnements().get(0);
+                Integer quantitePieceStandard = articleConditionnement.getQuantitePieceStandard();
+                if (!articleEstLa) {
+                        throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                        "l'article selectionne n'est pas sur l'emplacement");
+                }
+
+                long quantitePresent = mouvementStockRepository
+                                .calculerNombreConditionnementsPresents(emplacement.getId());
+
+                if (quantitePresent < ajoutCommandeRequest.quantiteConditionnement()) {
+
+                        throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                        "stock insuffisant sur l'emplacement" + emplacement.getNomEmplacement());
+                }
+
+                Integer quantitePiecesPrelevees = Math.multiplyExact(
+                                ajoutCommandeRequest.quantiteConditionnement(),
+                                quantitePieceStandard);
+                detailJournalRepository.ajouterOuIncrementer(
+                                ajoutCommandeRequest.idJournal(),
+                                article.getId(),
+                                quantitePiecesPrelevees,
+                                quantitePieceStandard,
+                                null,
+                                null);
+
+                // Prelevement prelevement =
+
+                // prelevementRepository.findById((long)id).orElseThrow(() -> new
+                // ResponseStatusException(HttpStatus.NOT_FOUND,"Prelevement inséré
+                // introuvable"));
+                prelevement.setCommande(commande);
+                prelevement.setEmplacement(emplacement);
+                prelevement.setStatutPrelevement(statutPrelevement);
+                prelevement.setUser(user);
+                prelevement.setQuantitePiecesPrelevee(quantitePiecesPrelevees);
+                prelevement.setDate(LocalDateTime.now());
+                prelevement.setDlc(ajoutCommandeRequest.dlc());
+                prelevement.setDlv(ajoutCommandeRequest.dlv());
+
+                Prelevement reponse = prelevementRepository.save(prelevement);
+
+                return new PrelevementResponse(reponse.getId(), ajoutCommandeRequest.CommandeId(), article.getId(),
+                                article.getNomArticle(), emplacement.getId(), emplacement.getNomEmplacement(),
+                                ajoutCommandeRequest.quantiteConditionnement(), quantitePiecesPrelevees,
+                                statutPrelevement.getNomStatut(), LocalDateTime.now(), ajoutCommandeRequest.dlc(),
+                                ajoutCommandeRequest.dlv());
+                // detailJournalRepository.ajouterOuIncrementer(ajoutCommandeRequest.idJournal(),ajoutCommandeRequest.ArticleId(),ajoutCommandeRequest.quantiteConditionnement(),)
+        }
+
+
+
 
 }
