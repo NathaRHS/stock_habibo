@@ -8,7 +8,8 @@ class ScanLigneResponse {
     required this.ligneTerminee,
   });
 
-  final int prelevementId;
+  // Null quand la ligne est fermee sans prelevement ("aucun produit ici").
+  final int? prelevementId;
   final int lignePickingId;
   final int quantiteScannee;
   final int quantitePreleveeAuTotal;
@@ -17,7 +18,7 @@ class ScanLigneResponse {
 
   factory ScanLigneResponse.fromJson(Map<String, dynamic> json) {
     return ScanLigneResponse(
-      prelevementId: (json['prelevementId'] as num).toInt(),
+      prelevementId: (json['prelevementId'] as num?)?.toInt(),
       lignePickingId: (json['lignePickingId'] as num).toInt(),
       quantiteScannee: (json['quantiteScannee'] as num).toInt(),
       quantitePreleveeAuTotal: (json['quantitePreleveeAuTotal'] as num).toInt(),

@@ -23,6 +23,10 @@ class _EcranScannerCodeBarresState extends State<EcranScannerCodeBarres> {
     ],
   );
 
+  // Taille du cadre bleu ; la zone de lecture a exactement la même.
+  static const double _largeurCadre = 310;
+  static const double _hauteurCadre = 150;
+
   bool _codeRetourne = false;
 
   Future<void> _traiterDetection(BarcodeCapture capture) async {
@@ -66,51 +70,63 @@ class _EcranScannerCodeBarresState extends State<EcranScannerCodeBarres> {
           ),
         ],
       ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          MobileScanner(
-            controller: _scannerController,
-            onDetect: _traiterDetection,
-            errorBuilder: (context, error) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  error.errorCode == MobileScannerErrorCode.permissionDenied
-                      ? 'Autorisez l’accès à la caméra pour scanner.'
-                      : 'La caméra ne peut pas être ouverte.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontSize: 17),
+      body: LayoutBuilder(
+        builder: (context, contraintes) {
+          // Même rectangle que le cadre dessiné : seul ce qu'il contient est lu.
+          final zoneDeScan = Rect.fromCenter(
+            center: Offset(contraintes.maxWidth / 2, contraintes.maxHeight / 2),
+            width: _largeurCadre,
+            height: _hauteurCadre,
+          );
+
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              MobileScanner(
+                controller: _scannerController,
+                scanWindow: zoneDeScan,
+                onDetect: _traiterDetection,
+                errorBuilder: (context, error) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      error.errorCode == MobileScannerErrorCode.permissionDenied
+                          ? 'Autorisez l’accès à la caméra pour scanner.'
+                          : 'La caméra ne peut pas être ouverte.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white, fontSize: 17),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          Center(
-            child: Container(
-              width: 310,
-              height: 150,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.lightBlueAccent, width: 3),
-                borderRadius: BorderRadius.circular(16),
+              Center(
+                child: Container(
+                  width: _largeurCadre,
+                  height: _hauteurCadre,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.lightBlueAccent, width: 3),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
               ),
-            ),
-          ),
-          const Positioned(
-            left: 24,
-            right: 24,
-            bottom: 48,
-            child: Text(
-              'Placez le code-barres dans le cadre',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                shadows: [Shadow(color: Colors.black, blurRadius: 6)],
+              const Positioned(
+                left: 24,
+                right: 24,
+                bottom: 48,
+                child: Text(
+                  'Placez le code-barres dans le cadre',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    shadows: [Shadow(color: Colors.black, blurRadius: 6)],
+                  ),
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_application/screens/ecran_liste_journaux.dart';
 import 'package:flutter_application/theme/habibo.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Clé sous laquelle l'adresse du serveur est mémorisée sur le téléphone.
+const _cleServeur = 'adresse_serveur';
 
 class EcranLogin extends StatefulWidget {
   const EcranLogin({super.key, required this.baseUrl});
@@ -26,16 +31,49 @@ class _EcranLoginState extends State<EcranLogin> {
   final _formKey = GlobalKey<FormState>();
   final _matriculeController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _serveurController = TextEditingController();
 
   String? _erreur;
   bool _connexionEnCours = false;
   bool _masquerMotDePasse = true;
 
   @override
+  void initState() {
+    super.initState();
+    _chargerServeur();
+  }
+
+  @override
   void dispose() {
     _matriculeController.dispose();
     _passwordController.dispose();
+    _serveurController.dispose();
     super.dispose();
+  }
+
+  /// Remet dans le champ la dernière adresse utilisée.
+  Future<void> _chargerServeur() async {
+    final preferences = await SharedPreferences.getInstance();
+    final adresse = preferences.getString(_cleServeur);
+    if (adresse != null && mounted) {
+      _serveurController.text = adresse;
+    }
+  }
+
+  /// "192.168.1.20" devient "http://192.168.1.20:8080".
+  /// Champ vide : adresse par défaut de l'application.
+  String _urlServeur() {
+    var saisie = _serveurController.text.trim();
+    while (saisie.endsWith('/')) {
+      saisie = saisie.substring(0, saisie.length - 1);
+    }
+    if (saisie.isEmpty) return widget.baseUrl;
+    if (!saisie.startsWith('http://') && !saisie.startsWith('https://')) {
+      saisie = 'http://$saisie';
+    }
+    // Pas de port saisi : celui du backend Spring.
+    final aUnPort = RegExp(r':\d+$').hasMatch(saisie);
+    return aUnPort ? saisie : '$saisie:8080';
   }
 
   Future<void> _seConnecter() async {
@@ -46,18 +84,22 @@ class _EcranLoginState extends State<EcranLogin> {
       _erreur = null;
     });
 
+    final baseUrl = _urlServeur();
+
     try {
-      final response = await http.post(
-        Uri.parse('${widget.baseUrl}/user/login'),
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'matricule': _matriculeController.text.trim(),
-          'password': _passwordController.text,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/user/login'),
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'matricule': _matriculeController.text.trim(),
+              'password': _passwordController.text,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('Matricule ou mot de passe incorrect.');
@@ -82,12 +124,16 @@ class _EcranLoginState extends State<EcranLogin> {
         );
       }
 
+      // L'adresse a répondu : on la mémorise pour le prochain lancement.
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString(_cleServeur, _serveurController.text.trim());
+
       if (!mounted) return;
 
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => EcranListeJournaux(
-            baseUrl: widget.baseUrl,
+            baseUrl: baseUrl,
             accessToken: token,
             role: role,
             userId: userId,
@@ -95,6 +141,20 @@ class _EcranLoginState extends State<EcranLogin> {
           ),
         ),
       );
+    } on TimeoutException {
+      if (!mounted) return;
+      setState(() {
+        _erreur =
+            'Le serveur ne répond pas ($baseUrl). Vérifiez l’adresse et que '
+            'le téléphone est sur le même Wi-Fi que le PC.';
+      });
+    } on http.ClientException {
+      if (!mounted) return;
+      setState(() {
+        _erreur =
+            'Serveur injoignable ($baseUrl). Vérifiez l’adresse, le Wi-Fi et '
+            'que le backend est lancé.';
+      });
     } catch (erreur) {
       if (!mounted) return;
 
@@ -249,6 +309,19 @@ class _EcranLoginState extends State<EcranLogin> {
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          _libelle('Serveur'),
+                          TextFormField(
+                            controller: _serveurController,
+                            enabled: !_connexionEnCours,
+                            keyboardType: TextInputType.url,
+                            textInputAction: TextInputAction.done,
+                            autocorrect: false,
+                            style: const TextStyle(fontSize: 15, color: _texte),
+                            decoration: _decorationChamp(
+                              hint: 'IP du PC, ex. 192.168.1.20',
                             ),
                           ),
                           const Spacer(flex: 2),
