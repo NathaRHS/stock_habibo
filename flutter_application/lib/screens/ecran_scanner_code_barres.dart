@@ -23,6 +23,10 @@ class _EcranScannerCodeBarresState extends State<EcranScannerCodeBarres> {
     ],
   );
 
+  // Taille du cadre bleu : un simple repère de visée, il ne limite pas la lecture.
+  static const double _largeurCadre = 310;
+  static const double _hauteurCadre = 150;
+
   bool _codeRetourne = false;
 
   Future<void> _traiterDetection(BarcodeCapture capture) async {
@@ -69,6 +73,9 @@ class _EcranScannerCodeBarresState extends State<EcranScannerCodeBarres> {
       body: Stack(
         fit: StackFit.expand,
         children: [
+          // Pas de scanWindow : il n'accélère rien (toute l'image est analysée)
+          // et rejette en silence un code dont un coin dépasse du cadre, ce qui
+          // obligeait à reculer. Le code est lu dès qu'il est net à l'image.
           MobileScanner(
             controller: _scannerController,
             onDetect: _traiterDetection,
@@ -87,8 +94,8 @@ class _EcranScannerCodeBarresState extends State<EcranScannerCodeBarres> {
           ),
           Center(
             child: Container(
-              width: 310,
-              height: 150,
+              width: _largeurCadre,
+              height: _hauteurCadre,
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.lightBlueAccent, width: 3),
                 borderRadius: BorderRadius.circular(16),
@@ -100,7 +107,7 @@ class _EcranScannerCodeBarresState extends State<EcranScannerCodeBarres> {
             right: 24,
             bottom: 48,
             child: Text(
-              'Placez le code-barres dans le cadre',
+              'Visez le code-barres',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white,

@@ -30,6 +30,7 @@ import NewAffectationStock from "./new-pages/AffectationStock/AffectationStock";
 import { User } from "lucide-react";
 import UserPage from "./pages/UserPage";
 import RackView from "./pages/Rackview";
+import AvecPanneauActivite from "./components/AvecPanneauActivite";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -38,8 +39,15 @@ createRoot(document.getElementById("root")).render(
         {/* <Route path="/animate" element={<Animate />} /> */}
         {/* <Route path="/crud" element={<CrudElement />} /> */}
         <Route path="/" element={<Login />} />
-        <Route path="/accueil" element={<Accueil />} />
         <Route path="/login" element={<Login />} />
+            <Route
+          path="/journaux-mouvements/:journalId/affectation-stock"
+          element={<NewAffectationStock />}
+        />
+
+        {/* Pages connectées : elles reçoivent toutes le panneau d'activité. */}
+        <Route element={<AvecPanneauActivite />}>
+        <Route path="/accueil" element={<Accueil />} />
         <Route path="/article" element={<ListeArticle />} />
         <Route
           path="/article/create"
@@ -87,10 +95,7 @@ createRoot(document.getElementById("root")).render(
 
         <Route path="/user/:id" element={<UserPage/>} />
 
-        <Route
-          path="/journaux-mouvements/:journalId/affectation-stock"
-          element={<NewAffectationStock />}
-        />
+    
         <Route
           path="/journaux-mouvements/:journalId/entree-stock/recapitulatif"
           element={<RecapitulatifEntreeStock />}
@@ -106,6 +111,9 @@ createRoot(document.getElementById("root")).render(
           path="/new/journaux-mouvements/:journalId/affectation-stock"
           element={<NewAffectationStock />}
         />
+
+        <Route path="/ficheProduit/:id"/>
+        </Route>
       </Routes>
     </BrowserRouter>
   </StrictMode>,

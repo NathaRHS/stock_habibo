@@ -3,15 +3,7 @@ package com.example.demo.dto.inventaire;
 public record ScanInventaireRequest(
         String codeBarres,
         Long emplacementId,
-        Long quantite
+        Long quantite,
+        Integer quantiteConditionnement
 ) {
 }
-
-
-/*
-
-        codeBarres:3664083000103
-        emplacementId:1
-        quantite:150
-
-*/

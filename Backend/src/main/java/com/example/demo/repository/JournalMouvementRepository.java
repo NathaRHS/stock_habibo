@@ -15,38 +15,54 @@ import com.example.demo.entity.JournalMouvement;
 
 @Repository
 public interface JournalMouvementRepository extends JpaRepository<JournalMouvement, Long> {
-    Optional<JournalMouvement> findByReference(String reference);
+     Optional<JournalMouvement> findByReference(String reference);
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select journal from JournalMouvement journal where journal.id = :id")
-    Optional<JournalMouvement> findByIdForUpdate(@Param("id") Long id);
+     @Lock(LockModeType.PESSIMISTIC_WRITE)
+     @Query("select journal from JournalMouvement journal where journal.id = :id")
+     Optional<JournalMouvement> findByIdForUpdate(@Param("id") Long id);
 
-    boolean existsByTypeMouvementJournalId(Long typeMouvementJournalId);
+     // Sert a numeroter les bons de reste : SOR-001-R1, SOR-001-R2...
+     long countByReferenceStartingWith(String prefixe);
 
-    boolean existsByStatutId(Long statutId);
+     // Le bon de reste cree a la validation d'une sortie (le plus recent).
+     Optional<JournalMouvement> findFirstByJournalOrigineIdOrderByIdDesc(Long journalOrigineId);
 
-    boolean existsByFournisseurId(Long fournisseurId);
+     boolean existsByTypeMouvementJournalId(Long typeMouvementJournalId);
+
+     boolean existsByStatutId(Long statutId);
+
+     boolean existsByFournisseurId(Long fournisseurId);
+
+     @Query(value = """
+                       SELECT journal.id,
+                      journal.reference,
+                      mienne.statut_participation AS ma_participation,
+                      COUNT(toutes.id)                                    AS nb_participants,
+                      SUM(toutes.statut_participation = 'EN_COURS')       AS nb_en_cours,
+                      SUM(toutes.statut_participation = 'TERMINE')        AS nb_termines
+               FROM t_user_journal_mouvement mienne
+               JOIN t_journal_mouvement journal
+                    ON journal.id = mienne.journal_mouvement_id
+               JOIN t_type_mouvement_journal type
+                    ON type.id = journal.type_mouvement_journal_id
+               JOIN t_user_journal_mouvement toutes
+                    ON toutes.journal_mouvement_id = journal.id
+               WHERE mienne.user_id = 4
+                 AND mienne.statut_participation <> 'TERMINE'
+                 AND type.nom_type_mouvement = 'ENTREE'
+               GROUP BY journal.id, journal.reference, mienne.statut_participation;
+
+                                       """, nativeQuery = true)
+     JournalMouvement findByParticipantsId(@Param("userId") Long userId);
 
     @Query(value = """
-        SELECT journal.id,
-       journal.reference,
-       mienne.statut_participation AS ma_participation,
-       COUNT(toutes.id)                                    AS nb_participants,
-       SUM(toutes.statut_participation = 'EN_COURS')       AS nb_en_cours,
-       SUM(toutes.statut_participation = 'TERMINE')        AS nb_termines
-FROM t_user_journal_mouvement mienne
-JOIN t_journal_mouvement journal
-     ON journal.id = mienne.journal_mouvement_id
-JOIN t_type_mouvement_journal type
-     ON type.id = journal.type_mouvement_journal_id
-JOIN t_user_journal_mouvement toutes
-     ON toutes.journal_mouvement_id = journal.id
-WHERE mienne.user_id = 4
-  AND mienne.statut_participation <> 'TERMINE'
-  AND type.nom_type_mouvement = 'ENTREE'
-GROUP BY journal.id, journal.reference, mienne.statut_participation;
+            SELECT COUNT(*)
+            FROM t_journal_mouvement journal
+            JOIN t_statut_journal_mouvement statutJournal ON statutJournal.id = journal.statut_id
+            JOIN t_type_mouvement_journal typeMouvement ON typeMouvement.id = journal.type_mouvement_journal_id
+            WHERE typeMouvement.nom_type_mouvement = 'INVENTAIRE' AND statutJournal.nom = 'EN COURS'
+            """, nativeQuery = true)
+    long compterInventairesEnCours();
 
-                        """, nativeQuery = true)
-    JournalMouvement findByParticipantsId(@Param ("userId")Long userId);
 
 }

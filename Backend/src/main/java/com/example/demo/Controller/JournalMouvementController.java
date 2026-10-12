@@ -2,7 +2,10 @@ package com.example.demo.Controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +24,9 @@ import com.example.demo.dto.journal.JournalMouvementResponse;
 import com.example.demo.dto.journal.ScanArticleRequest;
 import com.example.demo.dto.inventaire.ScanInventaireRequest;
 import com.example.demo.dto.journal.UpdateStatutJournalRequest;
+import com.example.demo.dto.journal.BonResteResponse;
+import com.example.demo.service.BonCommandePdfService;
+import com.example.demo.service.BonResteService;
 import com.example.demo.service.JournalMouvementService;
 import org.springframework.security.oauth2.jwt.Jwt;
 
@@ -28,9 +34,16 @@ import org.springframework.security.oauth2.jwt.Jwt;
 @RequestMapping("/journaux-mouvements")
 public class JournalMouvementController {
     private final JournalMouvementService service;
+    private final BonCommandePdfService bonCommandePdfService;
+    private final BonResteService bonResteService;
 
-    public JournalMouvementController(JournalMouvementService service) {
+    public JournalMouvementController(
+            JournalMouvementService service,
+            BonCommandePdfService bonCommandePdfService,
+            BonResteService bonResteService) {
         this.service = service;
+        this.bonCommandePdfService = bonCommandePdfService;
+        this.bonResteService = bonResteService;
     }
 
     @PostMapping
@@ -78,9 +91,29 @@ public class JournalMouvementController {
         return service.valider(id);
     }
 
-    @GetMapping("/{idParticipant}")
-    public JournalMouvementResponse getAllJournauxByParticipant(@PathVariable  Long participantId){
+    @GetMapping("/participants/{participantId}")
+    public JournalMouvementResponse getAllJournauxByParticipant(@PathVariable Long participantId) {
         return service.findAllByParticipantsId(participantId);
+    }
+
+    // Le bon de reste cree a la validation de cette sortie (204 s'il n'y en a pas).
+    @GetMapping("/{id}/bon-reste")
+    public ResponseEntity<BonResteResponse> bonReste(@PathVariable Long id) {
+        return bonResteService.trouverBonReste(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    // Bon de commande en PDF : produits et quantites du journal de sortie.
+    @GetMapping(value = "/{id}/bon.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> bonDeCommande(@PathVariable Long id) {
+        byte[] pdf = bonCommandePdfService.genererPdf(id);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=bon-commande-" + id + ".pdf")
+                .contentLength(pdf.length)
+                .body(pdf);
     }
 
     @PostMapping("/{id}/demander-modification")

@@ -20,6 +20,7 @@ import { getAccessToken } from "../../services/authService";
 import Sidebar from "../../components/Sidebar";
 import CreateJournalModal from "../../components/CreateJournalModal";
 import styles from "./ListeJournal.module.css";
+import PanneauActivite from "../../components/PanneauActivite";
 
 const PAGE = 10;
 
@@ -351,15 +352,26 @@ function LigneJournal({ journal }) {
   const document = nomFichier(journal.urlPieceJointe);
   const nbLignes = lignes(journal).length;
   const partenaire = journal.fournisseur || journal.nomClient;
-  const lienAction = sortie
-    ? {
-        to: `/createListeArticle/${journal.id}`,
-        label: "Créer la liste de commande",
-      }
-    : {
-        to: `/journaux-mouvements/${journal.id}`,
-        label: "Contrôler le journal",
-      };
+  // Une sortie a deux etapes : preparer la liste de commande, puis, apres le
+  // picking, confirmer la sortie (page /sortie/:id). Une fois cloturee, la page
+  // de confirmation sert de resume et donne acces au bon de reste.
+  const clotureeSortie = normaliser(journal.statut) === "CLOTURE";
+  const liensAction = sortie
+    ? clotureeSortie
+      ? [{ to: `/sortie/${journal.id}`, label: "Consulter la sortie" }]
+      : [
+          {
+            to: `/createListeArticle/${journal.id}`,
+            label: "Créer la liste de commande",
+          },
+          { to: `/sortie/${journal.id}`, label: "Confirmer la sortie" },
+        ]
+    : [
+        {
+          to: `/journaux-mouvements/${journal.id}`,
+          label: "Contrôler le journal",
+        },
+      ];
 
   return (
     <tr>
@@ -420,13 +432,13 @@ function LigneJournal({ journal }) {
         )}
       </td>
       <td className={styles.actionsCell}>
-        <MenuActions journal={journal} lienAction={lienAction} />
+        <MenuActions journal={journal} liensAction={liensAction} />
       </td>
     </tr>
   );
 }
 
-function MenuActions({ journal, lienAction }) {
+function MenuActions({ journal, liensAction }) {
   const [ouvert, setOuvert] = useState(false);
   const ref = useRef(null);
 
@@ -457,9 +469,11 @@ function MenuActions({ journal, lienAction }) {
       </button>
       {ouvert && (
         <div className={styles.menuList} role="menu">
-          <Link role="menuitem" to={lienAction.to}>
-            {lienAction.label}
-          </Link>
+          {liensAction.map((lien) => (
+            <Link key={lien.to} role="menuitem" to={lien.to}>
+              {lien.label}
+            </Link>
+          ))}
           <button
             onClick={() => {
               navigator.clipboard?.writeText(journal.reference ?? "");
@@ -472,6 +486,7 @@ function MenuActions({ journal, lienAction }) {
           </button>
         </div>
       )}
+
     </div>
   );
 }

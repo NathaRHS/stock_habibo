@@ -43,6 +43,7 @@ class _EcranScanSessionState extends State<EcranScanSession> {
   final _codeBarresController = TextEditingController();
   final _quantiteController = TextEditingController();
   final _quantiteFocusNode = FocusNode();
+  final _piecesController = TextEditingController();
   late final ScanService _scanService;
 
   DateTime? _dlv;
@@ -53,6 +54,9 @@ class _EcranScanSessionState extends State<EcranScanSession> {
   String? _erreurCodeBarres;
   String? _erreurDates;
   String? _erreurQuantite;
+  String? _erreurPieces;
+  // Réception : une boîte peut ne pas être pleine, on précise alors les pièces.
+  bool _boiteIncomplete = false;
   DetailJournal? _dernierDetail;
 
   // Produits du journal (réception uniquement).
@@ -78,6 +82,7 @@ class _EcranScanSessionState extends State<EcranScanSession> {
     _codeBarresController.dispose();
     _quantiteController.dispose();
     _quantiteFocusNode.dispose();
+    _piecesController.dispose();
     super.dispose();
   }
 
@@ -149,6 +154,10 @@ class _EcranScanSessionState extends State<EcranScanSession> {
 
   bool _valider() {
     final quantite = int.tryParse(_quantiteController.text.trim());
+    final pieces = int.tryParse(_piecesController.text.trim());
+    final erreurPieces = _boiteIncomplete && (pieces == null || pieces <= 0)
+        ? 'Indiquez le nombre de pièces de la boîte incomplète.'
+        : null;
     String? erreurDates;
     if (!_estInventaire) {
       if (_dlv == null || _dlc == null) {
@@ -166,11 +175,13 @@ class _EcranScanSessionState extends State<EcranScanSession> {
       _erreurQuantite = quantite == null || quantite <= 0
           ? 'Saisissez une quantité strictement positive.'
           : null;
+      _erreurPieces = erreurPieces;
     });
 
     return _erreurCodeBarres == null &&
         _erreurDates == null &&
-        _erreurQuantite == null;
+        _erreurQuantite == null &&
+        _erreurPieces == null;
   }
 
   Future<void> _ajouterProduit() async {
@@ -191,7 +202,10 @@ class _EcranScanSessionState extends State<EcranScanSession> {
           journalId: widget.journalId,
           emplacementId: widget.emplacementId!,
           codeBarres: _codeBarresController.text.trim(),
-          quantite: int.parse(_quantiteController.text.trim()),
+          quantiteConditionnement: int.parse(_quantiteController.text.trim()),
+          quantitePieces: _boiteIncomplete
+              ? int.parse(_piecesController.text.trim())
+              : null,
         );
 
         if (!mounted) return;
@@ -202,7 +216,10 @@ class _EcranScanSessionState extends State<EcranScanSession> {
       final detail = await _scanService.enregistrerScan(
         journalId: widget.journalId,
         codeBarres: _codeBarresController.text.trim(),
-        quantite: int.parse(_quantiteController.text.trim()),
+        quantiteConditionnement: int.parse(_quantiteController.text.trim()),
+        quantitePieces: _boiteIncomplete
+            ? int.parse(_piecesController.text.trim())
+            : null,
         dlc: _formaterIso(_dlc!),
         dlv: _formaterIso(_dlv!),
       );
@@ -217,6 +234,9 @@ class _EcranScanSessionState extends State<EcranScanSession> {
         ];
         _codeBarresController.clear();
         _quantiteController.clear();
+        _piecesController.clear();
+        _boiteIncomplete = false;
+        _erreurPieces = null;
         _dlc = null;
         _dlv = null;
       });
@@ -378,11 +398,72 @@ class _EcranScanSessionState extends State<EcranScanSession> {
                         const SizedBox(height: 20),
                         _libelle(
                           _estInventaire
-                              ? 'Quantité comptée'
-                              : 'Quantité reçue',
+                              ? 'Conditionnements comptés'
+                              : 'Conditionnements reçus',
                         ),
                         _selecteurQuantite(),
                         _texteErreur(_erreurQuantite),
+                        ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Boîte incomplète',
+                                  style: TextStyle(
+                                    color: Habibo.texte,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Switch(
+                                value: _boiteIncomplete,
+                                activeTrackColor: Habibo.bleu,
+                                onChanged: _enregistrementEnCours
+                                    ? null
+                                    : (valeur) => setState(() {
+                                        _boiteIncomplete = valeur;
+                                        _erreurPieces = null;
+                                        if (!valeur) _piecesController.clear();
+                                      }),
+                              ),
+                            ],
+                          ),
+                          if (_boiteIncomplete) ...[
+                            const SizedBox(height: 8),
+                            _libelle('Pièces réelles (total reçu)'),
+                            TextField(
+                              controller: _piecesController,
+                              enabled: !_enregistrementEnCours,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              onChanged: (_) =>
+                                  setState(() => _erreurPieces = null),
+                              style: const TextStyle(
+                                color: Habibo.texte,
+                                fontSize: 16,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Ex. 25',
+                                filled: true,
+                                fillColor: Habibo.surface,
+                                enabledBorder: _bordure(
+                                  _erreurPieces != null
+                                      ? Habibo.rouge
+                                      : Habibo.bordure,
+                                ),
+                                focusedBorder: _bordure(
+                                  Habibo.bleu,
+                                  epaisseur: 1.5,
+                                ),
+                              ),
+                            ),
+                            _texteErreur(_erreurPieces),
+                          ],
+                        ],
                         if (_erreur != null) ...[
                           const SizedBox(height: 16),
                           _message(

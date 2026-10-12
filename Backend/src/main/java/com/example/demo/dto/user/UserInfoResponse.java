@@ -5,6 +5,7 @@ import java.util.List;
 public record UserInfoResponse(String nom,
         String matricule,
         Long RoleId,
-        String nomRole,List<UserNombreOperationDto> operations) {
+        String nomRole,List<UserNombreOperationDto> operations,
+        String imageUser) {
 
 }

@@ -34,6 +34,18 @@ public class UploadController {
         return "uploads/" + nomFichier;
     }
 
+    // Lecture publique des PHOTOS d'articles (une balise <img> ne peut pas envoyer de jeton).
+    // Seuls les fichiers de photo sont servis ici ; les PDF restent proteges.
+    @GetMapping("/photos/{nomPhoto:.+}")
+    public ResponseEntity<Resource> consulterPhoto(@PathVariable String nomPhoto) {
+        Resource photo = fileStorageService.chargerPhoto(nomPhoto);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(fileStorageService.typeContenuPhoto(nomPhoto)))
+                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=31536000, immutable")
+                .header("X-Content-Type-Options", "nosniff")
+                .body(photo);
+    }
+
     @GetMapping("/uploads/{nomFichier:.+}")
     public ResponseEntity<Resource> consulter(@PathVariable String nomFichier) {
         Resource fichier = fileStorageService.chargerFichier(nomFichier);

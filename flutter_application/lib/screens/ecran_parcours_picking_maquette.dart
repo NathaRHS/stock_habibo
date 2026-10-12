@@ -73,7 +73,7 @@ class _EcranParcoursPickingMaquetteState
       setState(() {
         _etapes = lignes;
         final premiereNonTerminee = lignes.indexWhere(
-          (ligne) => ligne.statut != 'PRELEVEE',
+          (ligne) => !_estTerminee(ligne.statut),
         );
         _etapeSelectionnee = premiereNonTerminee >= 0 ? premiereNonTerminee : 0;
       });
@@ -123,7 +123,7 @@ class _EcranParcoursPickingMaquetteState
       if (resultat?.ligneTerminee == true) {
         _etapes[_etapeSelectionnee] = etape.copierAvec(statut: 'PRELEVEE');
         final prochaine = _etapes.indexWhere(
-          (ligne) => ligne.statut != 'PRELEVEE',
+          (ligne) => !_estTerminee(ligne.statut),
         );
         if (prochaine >= 0) _etapeSelectionnee = prochaine;
       }
@@ -138,6 +138,74 @@ class _EcranParcoursPickingMaquetteState
           ),
         ),
       );
+    }
+  }
+
+  /// Une ligne n'a plus rien a faire quand elle est prelevee, impossible ou
+  /// annulee. Seules RESERVEE et EN_COURS attendent encore l'operateur.
+  bool _estTerminee(String statut) =>
+      statut == 'PRELEVEE' || statut == 'IMPOSSIBLE' || statut == 'ANNULEE';
+
+  /// "Aucun produit ici" : l'operateur constate qu'il n'y a rien (ou plus rien)
+  /// a cet emplacement. Aucun stock n'est modifie : la ligne est fermee et le
+  /// manque sera repris dans un nouveau bon a la validation de la sortie.
+  Future<void> _declarerAucunProduit() async {
+    final etape = _etapes[_etapeSelectionnee];
+
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Aucun produit à ${etape.nomEmplacement} ?'),
+        content: const Text(
+          'Aucune quantité ne sera retirée du stock. Ce qui manque sera repris '
+          'dans un nouveau bon quand l’administrateur validera la sortie.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Aucun produit'),
+          ),
+        ],
+      ),
+    );
+    if (confirme != true || !mounted) return;
+
+    setState(() => _scanEnCours = true);
+    try {
+      final resultat = await _pickingService.declarerImpossible(
+        lignePickingId: etape.id,
+      );
+      if (!mounted) return;
+
+      setState(() {
+        // Une partie deja prelevee : la ligne est terminee avec ce qui a ete pris.
+        _etapes[_etapeSelectionnee] = etape.copierAvec(
+          statut: resultat.quantitePreleveeAuTotal > 0
+              ? 'PRELEVEE'
+              : 'IMPOSSIBLE',
+        );
+        final prochaine = _etapes.indexWhere(
+          (ligne) => !_estTerminee(ligne.statut),
+        );
+        if (prochaine >= 0) _etapeSelectionnee = prochaine;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ligne fermée : aucun produit.')),
+      );
+    } catch (erreur) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(erreur.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _scanEnCours = false);
     }
   }
 
@@ -167,7 +235,41 @@ class _EcranParcoursPickingMaquetteState
       );
     }
     if (_etapes.isEmpty) {
-      return const Scaffold(body: Center(child: Text('Parcours vide.')));
+      // Aucun stock disponible : le serveur n'a cree aucun picking.
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.inventory_2_outlined,
+                  size: 48,
+                  color: Color(0xFF909090),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Rien à prélever',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Aucun stock n’est disponible pour ces commandes. '
+                  'L’administrateur validera la sortie : le manque sera repris '
+                  'dans un nouveau bon.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  child: const Text('Retour'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
     final etape = _etapes[_etapeSelectionnee];
 
@@ -441,7 +543,7 @@ class _EcranParcoursPickingMaquetteState
               width: double.infinity,
               height: 54,
               child: FilledButton(
-                onPressed: _scanEnCours || etape.statut == 'PRELEVEE'
+                onPressed: _scanEnCours || _estTerminee(etape.statut)
                     ? null
                     : _scannerEtape,
                 style: FilledButton.styleFrom(
@@ -456,18 +558,41 @@ class _EcranParcoursPickingMaquetteState
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      etape.statut == 'PRELEVEE' ? 'Prélevé' : 'Scanner',
+                      switch (etape.statut) {
+                        'PRELEVEE' => 'Prélevé',
+                        'IMPOSSIBLE' => 'Aucun produit',
+                        'ANNULEE' => 'Annulée',
+                        _ => 'Scanner',
+                      },
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(width: 9),
-                    const Text('+', style: TextStyle(fontSize: 22)),
+                    if (!_estTerminee(etape.statut))
+                      const Text('+', style: TextStyle(fontSize: 22)),
                   ],
                 ),
               ),
             ),
+            // Seulement tant que la ligne attend l'operateur.
+            if (!_estTerminee(etape.statut)) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: _scanEnCours ? null : _declarerAucunProduit,
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF6B6B6B),
+                  ),
+                  child: const Text(
+                    'Aucun produit ici',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -510,7 +635,7 @@ class _EcranParcoursPickingMaquetteState
                 itemCount: _etapes.length,
                 itemBuilder: (context, index) {
                   final etape = _etapes[index];
-                  final terminee = etape.statut == 'PRELEVEE';
+                  final terminee = _estTerminee(etape.statut);
                   return SizedBox(
                     height: 43,
                     child: Row(

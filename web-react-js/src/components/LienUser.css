@@ -17,6 +17,10 @@
   outline-offset: 3px;
 }
 
+.lien-user--photo {
+  gap: 9px;
+}
+
 .lien-user--indisponible {
   color: var(--color-text-muted);
   cursor: default;

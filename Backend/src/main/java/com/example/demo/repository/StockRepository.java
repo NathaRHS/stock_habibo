@@ -22,6 +22,8 @@ public interface StockRepository extends Repository<Article, Long> {
                         """, nativeQuery = true)
         List<StockParEmplacementProjection> findAllStocksParEmplacement();
 
+        
+
         @Query(value = """
                         SELECT
                             article_id AS articleId,

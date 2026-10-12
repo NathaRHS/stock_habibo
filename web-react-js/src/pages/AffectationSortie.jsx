@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, CheckSquare, ChevronRight, FileUp, Info, Receipt, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckSquare, ChevronRight, FileText, FileUp, Info, Receipt, Search } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import { getAccessToken } from "../services/authService";
 import "./css/AffectationSortie.css";
@@ -54,7 +54,74 @@ function AffectationSortie() {
   const [notice, setNotice] = useState("");
   const [statutJournal, setStatutJournal] = useState("");
   const [validationEnCours, setValidationEnCours] = useState(false);
+  // Vrai quand aucun picking n'existe pour cette sortie.
+  const [sansPicking, setSansPicking] = useState(false);
+  // Le bon de reste cree a la validation : un seul bon pour tous les manques.
+  const [bonReste, setBonReste] = useState(null);
+  const [impressionEnCours, setImpressionEnCours] = useState(false);
   const cloture = statutJournal === "CLOTURE";
+
+  // Cherche le bon de reste de cette sortie (204 s'il n'y en a pas).
+  const chargerBonReste = useCallback(
+    async (signal) => {
+      const response = await fetch(
+        `${springUrl}/journaux-mouvements/${id}/bon-reste`,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          signal,
+        },
+      );
+
+      if (response.status === 200) {
+        setBonReste(await response.json());
+      } else {
+        setBonReste(null);
+      }
+    },
+    [id, springUrl, token],
+  );
+
+  // Ouvre le PDF du bon dans un nouvel onglet. Le jeton doit etre envoye : un
+  // simple lien ne suffit donc pas, on recupere le fichier puis on l'affiche.
+  const imprimerBon = async () => {
+    if (!bonReste || impressionEnCours) return;
+
+    // L'onglet est ouvert tout de suite, sur le clic, pour ne pas etre bloque.
+    const fenetre = window.open("", "_blank");
+
+    try {
+      setImpressionEnCours(true);
+      const response = await fetch(
+        `${springUrl}/journaux-mouvements/${bonReste.id}/bon.pdf`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          await lireMessageErreur(
+            response,
+            `Impossible de générer le bon (${response.status}).`,
+          ),
+        );
+      }
+
+      const blob = await response.blob();
+      const adresse = URL.createObjectURL(blob);
+      if (fenetre) {
+        fenetre.location.href = adresse;
+      } else {
+        window.location.href = adresse;
+      }
+    } catch (erreur) {
+      fenetre?.close();
+      setError(erreur.message);
+    } finally {
+      setImpressionEnCours(false);
+    }
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -79,6 +146,11 @@ function AffectationSortie() {
         if (journalResponse.ok) {
           const journal = await journalResponse.json();
           setStatutJournal(journal.statut ?? "");
+
+          // Sortie deja cloturee : on retrouve son bon de reste pour le reimprimer.
+          if (journal.statut === "CLOTURE") {
+            await chargerBonReste(controller.signal);
+          }
         }
 
         const response = await fetch(
@@ -92,6 +164,15 @@ function AffectationSortie() {
           },
         );
 
+        // 404 : aucun picking pour cette sortie. Ce n'est pas une erreur : soit
+        // le parcours n'a pas encore ete genere (cas d'un bon de reste neuf),
+        // soit rien n'etait disponible au moment de le generer.
+        if (response.status === 404) {
+          setLignes([]);
+          setSansPicking(true);
+          return;
+        }
+
         if (!response.ok) {
           throw new Error(
             await lireMessageErreur(
@@ -101,6 +182,7 @@ function AffectationSortie() {
           );
         }
 
+        setSansPicking(false);
         const data = await response.json();
         setLignes(Array.isArray(data) ? data : []);
       } catch (cause) {
@@ -114,7 +196,7 @@ function AffectationSortie() {
 
     loadPicking();
     return () => controller.abort();
-  }, [id, springUrl, token]);
+  }, [id, springUrl, token, chargerBonReste]);
 
   const filteredLines = useMemo(() => {
     const value = normalize(search);
@@ -151,9 +233,9 @@ function AffectationSortie() {
     );
 
     if (!response.ok) {
-      const message = await response.text();
-
-      throw new Error(message || "La validation du journal a échoué");
+      throw new Error(
+        await lireMessageErreur(response, "La validation du journal a échoué"),
+      );
     }
 
     const mouvementsCrees = await response.json();
@@ -168,6 +250,18 @@ function AffectationSortie() {
   const validerSortie = async () => {
     if (cloture || validationEnCours) return;
 
+    // Sans picking, la validation reprend toute la commande dans un nouveau bon :
+    // on demande confirmation pour ne pas le faire par erreur.
+    if (
+      sansPicking &&
+      !window.confirm(
+        "Aucun picking n'a été généré pour cette sortie. Valider reprendra " +
+          "toute la commande dans un nouveau bon de reste. Continuer ?",
+      )
+    ) {
+      return;
+    }
+
     try {
       setValidationEnCours(true);
       setError("");
@@ -177,6 +271,9 @@ function AffectationSortie() {
       setNotice(
         `Sortie clôturée : ${mouvementsCrees.length} mouvement(s) de stock créé(s).`,
       );
+
+      // S'il reste des produits a servir, le bon de reste vient d'etre cree.
+      await chargerBonReste();
     } catch (erreur) {
       setError(erreur.message);
     } finally {
@@ -234,6 +331,32 @@ function AffectationSortie() {
           {notice && (
             <div className="confirmation-notice" role="status">
               {notice}
+            </div>
+          )}
+          {sansPicking && !cloture && !error && (
+            <div className="confirmation-notice" role="status">
+              Aucun picking n’a encore été généré pour cette sortie : le
+              parcours se génère depuis l’application mobile. Si le stock est
+              vide, il ne sera pas créé.
+            </div>
+          )}
+          {bonReste && (
+            <div className="confirmation-bon" role="status">
+              <FileText size={20} />
+              <div>
+                <strong>Bon de reste {bonReste.reference}</strong>
+                <small>
+                  {bonReste.nombreProduits} produit(s) à servir lorsque le
+                  stock sera disponible.
+                </small>
+              </div>
+              <button
+                disabled={impressionEnCours}
+                onClick={imprimerBon}
+                type="button"
+              >
+                {impressionEnCours ? "Génération…" : "Imprimer le bon"}
+              </button>
             </div>
           )}
 

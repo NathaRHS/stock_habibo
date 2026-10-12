@@ -76,6 +76,23 @@ class PickingService {
     return ScanLigneResponse.fromJson(donnees);
   }
 
+  /// "Aucun produit ici" : la ligne est fermee sans mouvement de stock. Le manque
+  /// sera repris dans un bon de reste quand l'administrateur validera la sortie.
+  Future<ScanLigneResponse> declarerImpossible({
+    required int lignePickingId,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/lignes-picking/$lignePickingId/impossible'),
+      headers: _headers,
+    );
+
+    final donnees = _decoderReponse(response);
+    if (donnees is! Map<String, dynamic>) {
+      throw const FormatException('Réponse inattendue du serveur.');
+    }
+    return ScanLigneResponse.fromJson(donnees);
+  }
+
   dynamic _decoderReponse(http.Response response) {
     dynamic donnees;
     if (response.bodyBytes.isNotEmpty) {
@@ -89,8 +106,13 @@ class PickingService {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       String message = 'Erreur serveur (${response.statusCode})';
       if (donnees is Map<String, dynamic>) {
-        message = (donnees['message'] ?? donnees['error'] ?? message)
-            .toString();
+        // Le backend repond en ProblemDetail : le motif est dans "detail".
+        message =
+            (donnees['detail'] ??
+                    donnees['message'] ??
+                    donnees['error'] ??
+                    message)
+                .toString();
       }
       throw Exception(message);
     }

@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /*
@@ -114,6 +115,8 @@ import com.example.demo.entity.PaletteConditionnement;
 import com.example.demo.entity.Picking;
 import com.example.demo.entity.Prelevement;
 import com.example.demo.entity.StatutJournalMouvementCode;
+import com.example.demo.entity.StatutLignePickingCode;
+import com.example.demo.entity.StatutPickingCode;
 import com.example.demo.entity.TypeMouvementStock;
 import com.example.demo.entity.User;
 import com.example.demo.repository.DetailJournalRepository;
@@ -140,6 +143,8 @@ public class MouvementStockService {
     private final PickingRepository pickingRepository;
     private final UserRepository userRepository;
     private final PrelevementRepository prelevementRepository;
+    private final LignePickingStatutService lignePickingStatutService;
+    private final BonResteService bonResteService;
 
     private final TypeMouvementStockRepository typeMouvementStockRepository;
 
@@ -155,7 +160,11 @@ public class MouvementStockService {
             PaletteConditionnementRepository palelConditionnementRepository,
             UserRepository userRepository,
             JournalStatutService journalStatutService,
-            TypeMouvementStockRepository typeMouvementStockRepository) {
+            TypeMouvementStockRepository typeMouvementStockRepository,
+            LignePickingStatutService lignePickingStatutService,
+            BonResteService bonResteService) {
+        this.lignePickingStatutService = lignePickingStatutService;
+        this.bonResteService = bonResteService;
         this.journalMouvementRepository = journalMouvementRepository;
         this.palelConditionnementRepository = palelConditionnementRepository;
         this.detailJournalRepository = detailJournalRepository;
@@ -487,7 +496,10 @@ public class MouvementStockService {
                 mouvementStock.getNombreConditionnements(),
                 mouvementStock.getQuantitePiecesReelle(),
                 mouvementStock.getDateMouvement(),
-                mouvementStock.isEnReserve());
+                mouvementStock.isEnReserve(),
+                mouvementStock.getTypeMouvement() == null
+                        ? null
+                        : mouvementStock.getTypeMouvement().getNomTypeMouvement());
     }
 
     @Transactional
@@ -511,56 +523,88 @@ public class MouvementStockService {
                     HttpStatus.CONFLICT,
                     "Cette sortie est deja cloturee");
         }
-        Picking picking = pickingRepository.findPicking(journalId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Picking introuvable"));
+        // Le picking actif le plus recent du journal. Il peut ne pas exister : si
+        // rien n'etait disponible a la generation, aucun picking n'a ete cree et
+        // toute la commande est un reste (aucun mouvement de stock a ecrire).
+        Optional<Picking> pickingTrouve = pickingRepository.findFirstByJournalMouvementIdAndStatutInOrderByIdDesc(
+                journalId,
+                List.of(StatutPickingCode.GENERE, StatutPickingCode.EN_COURS, StatutPickingCode.TERMINE));
 
-        TypeMouvementStock typeMouvementSortie = typeMouvementStockRepository.findByNomTypeMouvement("SORTIE")
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "statut sortie introuvabke"));
-        for (LignePicking lignePicking : picking.getLignes()) {
-            List<Prelevement> prelevements = prelevementRepository.findAllByLignePickingId(lignePicking.getId());
+        if (pickingTrouve.isPresent()) {
+            Picking picking = pickingTrouve.get();
 
-            for (Prelevement prelevement : prelevements) {
-
-                Integer quantitePieces = prelevement.getQuantitePiecesPrelevees();
-
-                Integer quantitePieceStandard = lignePicking
-                        .getArticleConditionnement()
-                        .getQuantitePieceStandard();
-
-                if (quantitePieces % quantitePieceStandard != 0) {
+            // Une ligne encore RESERVEE n'a pas ete traitee : l'operateur doit soit
+            // la prelever, soit indiquer qu'il n'y a aucun produit ("0"). Sinon on
+            // fermerait par erreur des lignes que personne n'a regardees.
+            for (LignePicking lignePicking : picking.getLignes()) {
+                if (lignePicking.getStatutCode() == StatutLignePickingCode.RESERVEE) {
                     throw new ResponseStatusException(
-                            HttpStatus.BAD_REQUEST,
-                            "La quantité prélevée de la ligne "
-                                    + lignePicking.getId()
-                                    + " ne correspond pas à un nombre entier "
-                                    + "de conditionnements");
+                            HttpStatus.CONFLICT,
+                            "La ligne " + lignePicking.getId()
+                                    + " n'a pas ete traitee : prelevez-la ou indiquez qu'il n'y a aucun produit");
                 }
+            }
 
-                Integer nombreConditionnements = quantitePieces / quantitePieceStandard;
+            TypeMouvementStock typeMouvementSortie = typeMouvementStockRepository.findByNomTypeMouvement("SORTIE")
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Le type de mouvement SORTIE n'est pas configure"));
 
-                MouvementStock mouvement = new MouvementStock(
-                        typeMouvementSortie,
-                        prelevement.getEmplacement(),
-                        picking.getUser(),
-                        nombreConditionnements,
-                        lignePicking.getArticleConditionnement(),
-                        quantitePieces,
-                        LocalDateTime.now(),
-                        "Sortie du journal " + journal.getReference(),
-                        lignePicking.getDetailJournalSource(),
-                        false);
+            for (LignePicking lignePicking : picking.getLignes()) {
+                // Seuls les prelevements reels produisent des mouvements : une ligne
+                // IMPOSSIBLE n'en a aucun, et on n'ecrit jamais de mouvement a 0.
+                List<Prelevement> prelevements = prelevementRepository.findAllByLignePickingId(lignePicking.getId());
 
-                mouvements.add(mouvement);
+                for (Prelevement prelevement : prelevements) {
+
+                    Integer quantitePieces = prelevement.getQuantitePiecesPrelevees();
+
+                    Integer quantitePieceStandard = lignePicking
+                            .getArticleConditionnement()
+                            .getQuantitePieceStandard();
+
+                    if (quantitePieces % quantitePieceStandard != 0) {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "La quantité prélevée de la ligne "
+                                        + lignePicking.getId()
+                                        + " ne correspond pas à un nombre entier "
+                                        + "de conditionnements");
+                    }
+
+                    Integer nombreConditionnements = quantitePieces / quantitePieceStandard;
+
+                    MouvementStock mouvement = new MouvementStock(
+                            typeMouvementSortie,
+                            prelevement.getEmplacement(),
+                            picking.getUser(),
+                            nombreConditionnements,
+                            lignePicking.getArticleConditionnement(),
+                            quantitePieces,
+                            LocalDateTime.now(),
+                            "Sortie du journal " + journal.getReference(),
+                            lignePicking.getDetailJournalSource(),
+                            false);
+
+                    mouvements.add(mouvement);
+                }
+            }
+
+            // Une ligne partiellement prelevee est terminee avec ce qui a ete pris :
+            // elle ne doit plus compter comme reservation (le manque va dans le bon).
+            for (LignePicking lignePicking : picking.getLignes()) {
+                if (lignePicking.getStatutCode() == StatutLignePickingCode.EN_COURS) {
+                    lignePickingStatutService.changerStatut(lignePicking, StatutLignePickingCode.PRELEVEE);
+                }
             }
         }
 
-        if (mouvements.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Aucun mouvement de aaasortie à enregistrer");
-        }
+        List<MouvementStock> mouvementsEnregistres = mouvements.isEmpty()
+                ? new ArrayList<>()
+                : mouvementStockRepository.saveAll(mouvements);
 
-        List<MouvementStock> mouvementsEnregistres = mouvementStockRepository.saveAll(mouvements);
+        // Le manque (demande - prelevements reels) devient un nouveau bon de sortie,
+        // comme si le client avait redemande. Aucun bon si tout est servi.
+        bonResteService.creerBonReste(journal);
 
         // La validation de la sortie est l'etape finale : le journal est cloture.
         journalStatutService.changerStatut(journal, StatutJournalMouvementCode.CLOTURE);

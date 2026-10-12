@@ -144,6 +144,56 @@
   font-weight: 700;
 }
 
+/* Photo de profil : le bouton appareil photo se pose sur le coin du cercle. */
+.user-profile-photo {
+  position: relative;
+  flex: 0 0 64px;
+  width: 64px;
+  height: 64px;
+}
+
+.user-profile-avatar {
+  overflow: hidden;
+}
+
+.user-profile-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-profile-photo-bouton {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--color-primary, #01498e);
+  color: #fff;
+  cursor: pointer;
+  place-items: center;
+}
+
+.user-profile-photo-bouton:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.user-profile-photo-etat {
+  margin: 12px 0 0;
+  color: var(--up-text-2);
+  font-size: 12px;
+}
+
+.user-profile-photo-etat--erreur {
+  color: #b3261e;
+}
+
 .user-profile-identity {
   min-width: 0;
 }

@@ -92,9 +92,19 @@ public class JournalMouvementService {
                 statut);
 
         // remplacerDetails(journal, request.details());
+        if (!journal.getTypeMouvementJournal().getNomTypeMouvement().equals("INVENTAIRE")
+                && journalRepository.compterInventairesEnCours() > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Un inventaire est en cours : impossible de créer une entrée ou une sortie");
+        }
+
         JournalMouvement journalSauvegarde = journalRepository.save(journal);
         journalStatutService.enregistrerStatutInitial(journalSauvegarde);
         return versResponse(journalSauvegarde);
+    }
+
+    public boolean checkInventaireEnCours() {
+        return journalRepository.compterInventairesEnCours() > 0;
     }
 
     @Transactional(readOnly = true)
@@ -323,21 +333,21 @@ public class JournalMouvementService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "La DLV ne peut pas etre posterieure a la DLC");
         }
-        boolean quantiteReelleRenseignee = request.quantite() != null;
-        boolean quantiteConditionnementRenseignee = request.quantiteConditionnement() != null;
+        Integer conditionnementsSaisis = request.quantiteConditionnement();
+        Integer piecesSaisies = request.quantite();
 
-        if (quantiteReelleRenseignee == quantiteConditionnementRenseignee) {
+        if (conditionnementsSaisis == null && piecesSaisies == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Renseignez soit la quantité réelle, soit la quantité de conditionnement");
+                    "Renseignez la quantité de conditionnement, la quantité réelle, ou les deux");
         }
-        if (quantiteReelleRenseignee && request.quantite() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "La quantité réelle doit être strictement positive");
-        }
-        if (quantiteConditionnementRenseignee && request.quantiteConditionnement() <= 0) {
+        if (conditionnementsSaisis != null && conditionnementsSaisis <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "La quantité de conditionnement doit être strictement positive");
+        }
+        if (piecesSaisies != null && piecesSaisies <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La quantité réelle doit être strictement positive");
         }
         Article article = articleRepository.findByCodeBar(request.codeBarres()).orElse(null);
 
@@ -352,7 +362,7 @@ public class JournalMouvementService {
             article = articleConditionnement.getArticle();
         }
 
-        if (quantiteConditionnementRenseignee && articleConditionnement == null) {
+        if (conditionnementsSaisis != null && articleConditionnement == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "La quantité de conditionnement nécessite un code-barres de conditionnement");
         }
@@ -360,9 +370,28 @@ public class JournalMouvementService {
         articleConditionnement = resoudreConditionnementStandard(articleConditionnement, article);
         int quantitePieceStandard = articleConditionnement.getQuantitePieceStandard();
 
-        int quantiteReelle = quantiteConditionnementRenseignee
-                ? convertirEnQuantitePiece(request.quantiteConditionnement(), quantitePieceStandard)
-                : request.quantite();
+        // Conditionnements et pieces reelles : une boite peut etre incomplete.
+        int conditionnements;
+        int pieces;
+        if (conditionnementsSaisis != null && piecesSaisies != null) {
+            int maximum = convertirEnQuantitePiece(conditionnementsSaisis, quantitePieceStandard);
+            int minimum = maximum - quantitePieceStandard;
+            if (piecesSaisies <= minimum || piecesSaisies > maximum) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        conditionnementsSaisis + " conditionnement(s) de " + quantitePieceStandard
+                                + " pièces : le nombre de pièces doit être entre "
+                                + (minimum + 1) + " et " + maximum
+                                + " (au plus une boîte incomplète)");
+            }
+            conditionnements = conditionnementsSaisis;
+            pieces = piecesSaisies;
+        } else if (conditionnementsSaisis != null) {
+            conditionnements = conditionnementsSaisis;
+            pieces = convertirEnQuantitePiece(conditionnementsSaisis, quantitePieceStandard);
+        } else {
+            pieces = piecesSaisies;
+            conditionnements = (pieces + quantitePieceStandard - 1) / quantitePieceStandard;
+        }
 
         userJournalMouvementService.ajouterParticipant(journalId, matricule);
 
@@ -375,11 +404,11 @@ public class JournalMouvementService {
                     "Cet article existe deja dans la reception avec une autre DLC ou DLV");
         }
 
-        detailJournalRepository.ajouterOuIncrementer(
+        detailJournalRepository.ajouterOuIncrementerPrecis(
                 journalId,
                 article.getId(),
-                quantiteReelle,
-                quantitePieceStandard,
+                pieces,
+                conditionnements,
                 request.dlc(),
                 request.dlv());
 
@@ -408,9 +437,21 @@ public class JournalMouvementService {
         if (request.emplacementId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'emplacement est obligatoire");
         }
-        if (request.quantite() == null || request.quantite() <= 0) {
+        Integer conditionnementsSaisis = request.quantiteConditionnement();
+
+        if (conditionnementsSaisis == null
+                && (request.quantite() == null || request.quantite() <= 0)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "La quantite doit etre strictement positive");
+        }
+        if (conditionnementsSaisis != null && conditionnementsSaisis <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La quantité de conditionnement doit être strictement positive");
+        }
+        if (conditionnementsSaisis != null && request.quantite() != null
+                && request.quantite() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La quantité réelle doit être strictement positive");
         }
 
         JournalMouvement journal = journalRepository.findById(journalId)
@@ -442,20 +483,51 @@ public class JournalMouvementService {
             article = conditionnementScanne.getArticle();
         }
 
+        if (conditionnementsSaisis != null && conditionnementScanne == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La quantité de conditionnement nécessite un code-barres de conditionnement");
+        }
+
         // Le conditionnement standard permet de convertir le comptage en pieces.
         ArticleConditionnement conditionnementStandard = resoudreConditionnementStandard(conditionnementScanne,
                 article);
         int quantitePieceStandard = conditionnementStandard.getQuantitePieceStandard();
 
-        int quantiteSaisie;
-        try {
-            quantiteSaisie = Math.toIntExact(request.quantite());
-        } catch (ArithmeticException exception) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La quantite saisie est trop grande");
+        int conditionnements;
+        int quantiteReelle;
+        if (conditionnementsSaisis != null) {
+            conditionnements = conditionnementsSaisis;
+            int maximum = convertirEnQuantitePiece(conditionnementsSaisis, quantitePieceStandard);
+            if (request.quantite() != null) {
+                if (request.quantite() > Integer.MAX_VALUE) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "La quantite saisie est trop grande");
+                }
+                int pieces = request.quantite().intValue();
+                int minimum = maximum - quantitePieceStandard;
+                if (pieces <= minimum || pieces > maximum) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            conditionnementsSaisis + " conditionnement(s) de " + quantitePieceStandard
+                                    + " pièces : le nombre de pièces doit être entre "
+                                    + (minimum + 1) + " et " + maximum
+                                    + " (au plus une boîte incomplète)");
+                }
+                quantiteReelle = pieces;
+            } else {
+                quantiteReelle = maximum;
+            }
+        } else {
+            // Ancien comportement : le sens de `quantite` depend du code scanne.
+            if (request.quantite() > Integer.MAX_VALUE) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "La quantite saisie est trop grande");
+            }
+            int quantiteSaisie = request.quantite().intValue();
+            quantiteReelle = conditionnementScanne == null
+                    ? quantiteSaisie
+                    : convertirEnQuantitePiece(quantiteSaisie, quantitePieceStandard);
+            conditionnements = (quantiteReelle + quantitePieceStandard - 1) / quantitePieceStandard;
         }
-        int quantiteReelle = conditionnementScanne == null
-                ? quantiteSaisie
-                : convertirEnQuantitePiece(quantiteSaisie, quantitePieceStandard);
 
         userJournalMouvementService.ajouterParticipant(journalId, matricule);
 
@@ -463,11 +535,11 @@ public class JournalMouvementService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "le participant est introuvable"));
 
         // DetailJournal conserve le total compte pour l'article dans la session.
-        detailJournalRepository.ajouterOuIncrementer(
+        detailJournalRepository.ajouterOuIncrementerPrecis(
                 journalId,
                 article.getId(),
                 quantiteReelle,
-                quantitePieceStandard,
+                conditionnements,
                 null,
                 null);
 

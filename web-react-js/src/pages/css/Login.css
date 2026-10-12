@@ -1,97 +1,226 @@
+/*
+ * Page de connexion : formulaire à gauche, photographie à droite, puis le pied
+ * de page. Police : Helvetica Now Display (voir Footer.css), avec repli.
+ */
+
+.login-ecran {
+  --login-bleu: #004a91;
+  --login-texte: #1a1a1a;
+  --login-gris: #7d7d7d;
+
+  min-height: 100vh;
+  background: #fff;
+  color: var(--login-texte);
+  font-family: "Helvetica Now Display", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Écran partagé en deux ---------- */
+
 .login-page {
   display: grid;
+  grid-template-columns: 52fr 48fr;
   min-height: 100vh;
-  padding: 24px;
-  background:
-    linear-gradient(135deg, rgb(1 73 142 / 7%), transparent 45%),
-    var(--color-background);
-  place-items: center;
 }
 
-.login-card {
-  width: min(420px, 100%);
-  padding: 38px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  box-shadow: 0 18px 45px rgb(65 83 100 / 10%);
+/* ---------- Colonne du formulaire ---------- */
+
+.login-formulaire {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 64px 40px 48px 37px;
+  background: #fff;
 }
 
-.login-brand {
-  display: grid;
+.login-retour {
   width: 44px;
-  height: 44px;
-  margin-bottom: 24px;
-  color: #fff;
-  background: var(--color-primary);
-  border-radius: 10px;
-  place-items: center;
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.login-card h1 {
-  color: var(--color-text);
-  font-size: 28px;
-  font-weight: 500;
-}
-
-.login-subtitle {
-  margin: 8px 0 28px;
-  color: var(--color-text-secondary);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.login-card label {
-  display: block;
-  margin: 18px 0 7px;
-  color: var(--color-secondary);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.login-card input {
-  width: 100%;
-  height: 44px;
-  padding: 0 13px;
-  color: var(--color-text);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 7px;
-  outline: 0;
-}
-
-.login-card input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgb(1 73 142 / 12%);
-}
-
-.login-card > button {
-  width: 100%;
-  min-height: 44px;
-  margin-top: 26px;
-  color: #fff;
-  background: var(--color-primary);
+  margin: 0 0 40px 0;
+  padding: 0;
   border: 0;
-  border-radius: 7px;
+  background: none;
+  color: var(--login-texte);
   cursor: pointer;
+}
+
+.login-retour svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.login-formulaire h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.login-sous-titre {
+  max-width: 250px;
+  margin: 10px 0 0 0;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.login-champs {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 262px;
+  margin-top: 48px;
+}
+
+/* L'étiquette reste accessible aux lecteurs d'écran, sans s'afficher : le
+   texte indicatif du champ joue ce rôle à l'écran. */
+.login-etiquette {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.login-champs input {
+  width: 100%;
+  margin: 0 0 30px 0;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 1px solid #5a5a5a;
+  border-radius: 0;
+  background: transparent;
+  color: var(--login-texte);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+}
+
+.login-champs input::placeholder {
+  color: var(--login-gris);
   font-weight: 500;
 }
 
-.login-card > button:hover:not(:disabled) { background: var(--color-primary-hover); }
-.login-card > button:disabled { cursor: wait; opacity: 0.65; }
+.login-champs input:focus {
+  border-bottom: 2px solid var(--login-bleu);
+  padding-bottom: 7px;
+}
 
 .login-error {
-  margin-top: 14px;
-  padding: 10px 12px;
-  color: var(--color-danger);
-  background: var(--color-danger-soft);
-  border-radius: 6px;
-  font-size: 13px;
+  margin: -8px 0 16px 0;
+  color: #b3261e;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.4;
 }
 
-@media (max-width: 480px) {
-  .login-page { padding: 0; background: var(--color-surface); }
-  .login-card { padding: 28px 22px; border: 0; border-radius: 0; box-shadow: none; }
+.login-bouton {
+  width: calc(100% + 8px);
+  margin-left: -4px;
+  margin-top: 6px;
+  height: 43px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--login-bleu);
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.login-bouton:hover:not(:disabled) {
+  background: #003d79;
+}
+
+.login-bouton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.login-aide {
+  max-width: 360px;
+  margin: 46px 0 0 0;
+  font-size: 11px;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.login-aide a {
+  color: var(--login-bleu);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.login-aide a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Colonne de la photographie ---------- */
+
+.login-visuel {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  background-position: center;
+  background-size: cover;
+}
+
+/* Voile sombre : assure la lecture du texte posé sur la photographie. */
+.login-visuel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgb(0 18 40 / 22%) 0%,
+    rgb(0 18 40 / 38%) 55%,
+    rgb(0 18 40 / 62%) 100%
+  );
+}
+
+.login-visuel-texte {
+  position: relative;
+  padding: 0 28px 44px 24px;
+  color: #fff;
+  text-align: right;
+}
+
+.login-visuel-titre {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.login-visuel-detail {
+  max-width: 260px;
+  margin: 8px 0 0 auto;
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.4;
+}
+
+/* ---------- Petits écrans : le formulaire seul ---------- */
+
+@media (max-width: 800px) {
+  .login-page {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .login-formulaire {
+    padding: 40px 24px 56px;
+  }
+
+  .login-visuel {
+    display: none;
+  }
 }

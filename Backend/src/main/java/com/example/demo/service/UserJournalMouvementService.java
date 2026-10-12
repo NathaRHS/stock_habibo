@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -10,12 +11,17 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.dto.journal.ParticipantJournalResponse;
 import com.example.demo.entity.JournalMouvement;
+import com.example.demo.entity.NotificationCategorie;
+import com.example.demo.entity.NotificationPriorite;
+import com.example.demo.entity.NotificationType;
+import com.example.demo.entity.Role;
 import com.example.demo.entity.StatutJournalMouvement;
 import com.example.demo.entity.StatutJournalMouvementCode;
 import com.example.demo.entity.StatutParticipation;
 import com.example.demo.entity.User;
 import com.example.demo.entity.UserJournalMouvement;
 import com.example.demo.repository.JournalMouvementRepository;
+import com.example.demo.repository.RoleRepository;
 import com.example.demo.repository.UserJournalMouvementRepository;
 import com.example.demo.repository.UserRepository;
 
@@ -26,16 +32,21 @@ public class UserJournalMouvementService {
     private final JournalMouvementRepository journalRepository;
     private final UserRepository userRepository;
     private final JournalStatutService journalStatutService;
+    private final NotificationService notificationService;
+    private final RoleRepository roleRepository;
 
     public UserJournalMouvementService(
             UserJournalMouvementRepository participationRepository,
             JournalMouvementRepository journalRepository,
+            RoleRepository roleRepository,
             UserRepository userRepository,
-            JournalStatutService journalStatutService) {
+            JournalStatutService journalStatutService, NotificationService notificationService) {
         this.participationRepository = participationRepository;
+        this.notificationService = notificationService;
         this.journalRepository = journalRepository;
         this.userRepository = userRepository;
         this.journalStatutService = journalStatutService;
+        this.roleRepository = roleRepository;
     }
 
     public ParticipantJournalResponse ajouterParticipant(Long journalId, String matricule) {
@@ -86,6 +97,15 @@ public class UserJournalMouvementService {
 
         if (!participantActifRestant) {
             journalStatutService.changerStatut(journal, StatutJournalMouvementCode.EN_ATTENTE, user);
+
+            // Un administrateur peut ne pas être le seul : une notification chacun.
+            for (User admin : userRepository.findAllByRoleName("ADMIN")) {
+                notificationService.creer(
+                        NotificationCategorie.ENTREE,
+                        NotificationType.ENTREE_A_AFFECTER,
+                        NotificationPriorite.ATTENTION,
+                        admin, journal, null, null);
+            }
         }
 
         return versResponse(participation);
@@ -145,6 +165,7 @@ public class UserJournalMouvementService {
                 user.getMatricule(),
                 participation.getStatutParticipation(),
                 participation.getDateDebut(),
-                participation.getDateFin());
+                participation.getDateFin(),
+                user.getImageUser());
     }
 }

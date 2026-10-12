@@ -32,7 +32,8 @@ class ScanService {
   Future<DetailJournal> enregistrerScan({
     required int journalId,
     required String codeBarres,
-    required int quantite,
+    required int quantiteConditionnement,
+    int? quantitePieces, // renseigné seulement si la boîte est incomplète
     required String dlc,
     required String dlv,
   }) async {
@@ -46,7 +47,8 @@ class ScanService {
       },
       body: jsonEncode({
         'codeBarres': codeBarres,
-        'quantite': quantite,
+        'quantiteConditionnement': quantiteConditionnement,
+        'quantite': ?quantitePieces,
         'dlc': dlc,
         'dlv': dlv,
       }),
@@ -90,7 +92,9 @@ class ScanService {
 
     final details = donnees['details'] as List? ?? const [];
     return details
-        .map((element) => DetailJournal.fromJson(element as Map<String, dynamic>))
+        .map(
+          (element) => DetailJournal.fromJson(element as Map<String, dynamic>),
+        )
         .toList();
   }
 
@@ -170,7 +174,8 @@ class ScanService {
     required int journalId,
     required int emplacementId,
     required String codeBarres,
-    required int quantite,
+    required int quantiteConditionnement,
+    int? quantitePieces, // renseigné seulement si la boîte est incomplète
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/journaux-mouvements/$journalId/inventaire/scans'),
@@ -182,7 +187,8 @@ class ScanService {
       body: jsonEncode({
         'codeBarres': codeBarres,
         'emplacementId': emplacementId,
-        'quantite': quantite,
+        'quantiteConditionnement': quantiteConditionnement,
+        'quantite': ?quantitePieces,
       }),
     );
 

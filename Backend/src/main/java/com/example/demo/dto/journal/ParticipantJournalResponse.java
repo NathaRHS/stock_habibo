@@ -1,4 +1,4 @@
-package com.example.demo.dto.journal;
+        package com.example.demo.dto.journal;
 
 import java.time.LocalDateTime;
 
@@ -11,5 +11,6 @@ public record ParticipantJournalResponse(
         String matricule,
         StatutParticipation statut,
         LocalDateTime dateDebut,
-        LocalDateTime dateFin) {
+        LocalDateTime dateFin,
+        String imageUser) {
 }

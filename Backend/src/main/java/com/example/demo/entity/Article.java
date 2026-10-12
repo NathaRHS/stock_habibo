@@ -1,5 +1,6 @@
 package com.example.demo.entity;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +36,53 @@ public class Article {
 
     @OneToMany(mappedBy = "article")
     private List<Commande> commandes;
+
+    @Column(name = "photo_url")
+    private String photoUrl;
+
+    @ManyToOne
+    @JoinColumn(name = "famille_id", nullable = true)
+    private Famille famille;
+
+    // Contenance d'UNE piece : valeur + unite (ex. 30 cL, 1 L, 350 g). Facultatif.
+    @Column(name = "contenance_valeur", precision = 10, scale = 3)
+    private BigDecimal contenanceValeur;
+
+    @ManyToOne
+    @JoinColumn(name = "unite_id", nullable = true)
+    private Unite unite;
+
+    public Famille getFamille() {
+        return famille;
+    }
+
+    public void setFamille(Famille famille) {
+        this.famille = famille;
+    }
+
+    public BigDecimal getContenanceValeur() {
+        return contenanceValeur;
+    }
+
+    public void setContenanceValeur(BigDecimal contenanceValeur) {
+        this.contenanceValeur = contenanceValeur;
+    }
+
+    public Unite getUnite() {
+        return unite;
+    }
+
+    public void setUnite(Unite unite) {
+        this.unite = unite;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
+    }
 
     public Article() {
     }

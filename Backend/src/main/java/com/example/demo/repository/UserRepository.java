@@ -36,4 +36,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
                 t_user.id,
                 t_user.matricule;   """, nativeQuery = true)
     List<UserParticipationProjection> getNombreParticipations(@Param("id") Long id);
+
+
+    User[] findAllByRoleName(String string);
 }

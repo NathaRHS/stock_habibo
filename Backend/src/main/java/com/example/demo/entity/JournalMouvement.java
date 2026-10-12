@@ -40,6 +40,11 @@ public class JournalMouvement {
     @JoinColumn(name = "type_mouvement_journal_id", nullable = false)
     private TypeMouvementJournal typeMouvementJournal;
 
+    // Pour un bon de reste : la sortie dont il reprend le manque (sinon null).
+    @ManyToOne
+    @JoinColumn(name = "journal_origine_id")
+    private JournalMouvement journalOrigine;
+
     public JournalMouvement() {
     }
 
@@ -130,6 +135,14 @@ public class JournalMouvement {
 
     public void setTypeMouvementJournal(TypeMouvementJournal typeMouvementJournal) {
         this.typeMouvementJournal = typeMouvementJournal;
+    }
+
+    public JournalMouvement getJournalOrigine() {
+        return journalOrigine;
+    }
+
+    public void setJournalOrigine(JournalMouvement journalOrigine) {
+        this.journalOrigine = journalOrigine;
     }
 
     public List<Commande> getCommandes() {

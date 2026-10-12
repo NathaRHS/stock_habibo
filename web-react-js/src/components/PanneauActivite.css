@@ -1,0 +1,158 @@
+/*
+ * Panneau latéral droit : notifications, activités, administrateurs.
+ * Un seul accent (le bleu Habibo), beaucoup d'espace, texte discret.
+ */
+
+.panneau-activite {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  width: 260px;
+  min-height: 100%;
+  padding: 24px 20px;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: "Helvetica Now Display", Helvetica, Arial, sans-serif;
+}
+
+.panneau-activite h2 {
+  margin: 0 0 18px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.panneau-activite ul,
+.panneau-activite ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panneau-vide {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+/* ---------- Lignes communes ---------- */
+
+.panneau-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.panneau-liste li,
+.panneau-chronologie li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.panneau-liste button {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.panneau-texte {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.panneau-texte strong {
+  overflow: hidden;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panneau-texte small {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+/* Une notification non lue est signalée par un petit repère bleu. */
+.panneau-liste button.non-lue .panneau-texte strong {
+  font-weight: 500;
+}
+
+.panneau-liste button.non-lue .panneau-texte strong::after {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  vertical-align: middle;
+  content: "";
+}
+
+/* ---------- Pastilles ---------- */
+
+.panneau-icone,
+.panneau-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 10px;
+  font-weight: 700;
+  place-items: center;
+}
+
+/* ---------- Chronologie : un fil relie les pastilles ---------- */
+
+.panneau-chronologie {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.panneau-chronologie li {
+  position: relative;
+}
+
+.panneau-chronologie li:not(:last-child)::after {
+  position: absolute;
+  top: 30px;
+  bottom: -16px;
+  left: 13px;
+  width: 1px;
+  background: var(--color-border);
+  content: "";
+}
+
+.panneau-admins {
+  gap: 20px;
+}
+
+.panneau-admins .panneau-texte {
+  align-self: center;
+}
+
+@media (max-width: 900px) {
+  .panneau-activite {
+    width: 100%;
+    border-left: 0;
+    border-top: 1px solid var(--color-border);
+  }
+}
