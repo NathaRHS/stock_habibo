@@ -50,4 +50,14 @@ public interface PickingRepository extends JpaRepository<Picking, Long> {
                         LIMIT 1;
                         """, nativeQuery = true)
         Optional<Picking> findPicking(@Param("journalId") Long journalId);
+
+        @Query(value = """
+                        SELECT COUNT(*)
+                        FROM t_ligne_picking ligne
+                        JOIN t_statut_ligne_picking statut ON statut.id = ligne.statut_id
+                        WHERE ligne.picking_id = :pickingId
+                          AND statut.nom IN ('RESERVEE', 'EN_COURS');
+
+                                                """,nativeQuery = true)
+        int checkLigneEnCours(@Param("pickingId") Long PickingId);
 }

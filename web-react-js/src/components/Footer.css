@@ -1,0 +1,205 @@
+/*
+ * Pied de page Habibo.
+ *
+ * Police : Helvetica Now Display, déclarée dans src/index.css (Light, Regular,
+ * Medium, Bold).
+ */
+
+.footer {
+  --footer-fond: #004a91;
+  --footer-texte: #ffffff;
+  --footer-marge-gauche: 7.5%;
+  --footer-marge-droite: 6.4%;
+
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--footer-fond);
+  color: var(--footer-texte);
+  font-family: "Helvetica Now Display", Helvetica, Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.footer a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.footer ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ---------- Partie haute ---------- */
+
+.footer-haut {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 48px;
+  padding: 56px var(--footer-marge-droite) 0 var(--footer-marge-gauche);
+}
+
+.footer-gauche {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.footer-titre {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.footer-navigation {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.footer-legal {
+  margin-top: 28px;
+}
+
+.footer-legal li + li {
+  margin-top: 18px;
+}
+
+.footer-legal a {
+  display: inline-block;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--footer-texte);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.footer-reseaux {
+  display: flex;
+  gap: 8px;
+  margin-top: 30px;
+}
+
+.footer-reseaux a {
+  display: block;
+  width: 26px;
+  height: 26px;
+  color: var(--footer-texte);
+}
+
+.footer-reseaux svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.footer-evide {
+  fill: var(--footer-fond);
+}
+
+/* ---------- Colonne de droite ---------- */
+
+.footer-droite {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.footer-copyright {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: right;
+}
+
+.footer-contacts {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  column-gap: 36px;
+  row-gap: 22px;
+  margin-top: 22px;
+}
+
+.footer-contacts li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  text-align: right;
+}
+
+.footer-contacts strong {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.footer-contacts span {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
+  opacity: 0.9;
+}
+
+/* ---------- Grand logotype, coupé par le bas ---------- */
+
+.footer-marque {
+  /* La taille suit la largeur de l'écran : le mot occupe presque toute la ligne. */
+  --footer-taille-marque: 29vw;
+
+  height: calc(var(--footer-taille-marque) * 0.62);
+  margin-top: 48px;
+  padding: 0 2.6% 0 4.6%;
+  overflow: hidden;
+  font-size: var(--footer-taille-marque);
+  font-weight: 700;
+  line-height: 0.8;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* ---------- Petits écrans ---------- */
+
+@media (max-width: 760px) {
+  .footer {
+    --footer-marge-gauche: 24px;
+    --footer-marge-droite: 24px;
+  }
+
+  .footer-haut {
+    flex-direction: column;
+    gap: 40px;
+    padding-top: 40px;
+  }
+
+  .footer-droite {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .footer-copyright {
+    text-align: left;
+  }
+
+  .footer-contacts {
+    width: 100%;
+    column-gap: 20px;
+  }
+
+  .footer-contacts li {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .footer-marque {
+    --footer-taille-marque: 30vw;
+  }
+}

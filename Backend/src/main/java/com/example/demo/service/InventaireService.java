@@ -92,7 +92,8 @@ public class InventaireService {
                                         article.getNomArticle(),
                                         quantiteTheorique,
                                         quantiteComptee,
-                                        ecart, comptage.getUser().getUsername(),comptage.getUser().getId());
+                                        ecart, comptage.getUser().getUsername(), comptage.getUser().getId(),
+                                        comptage.getUser().getImageUser());
 
                         lignes.add(ligne);
                 }

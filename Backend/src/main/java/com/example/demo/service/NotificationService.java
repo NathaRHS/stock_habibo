@@ -59,10 +59,10 @@ public class NotificationService {
             case ENTREE_A_AFFECTER -> {
                 titre = "Affectation d'entree requise";
                 message = referenceJournal == null
-                        ? "Une entree attend une affectation."
-                        : "Le journal " + referenceJournal + " attend une affectation.";
+                        ? "Une entree attend une validation."
+                        : "Le journal " + referenceJournal + " attend une validation.";
                 if (journal != null) {
-                    urlCible = "/journaux-mouvements/" + journal.getId() + "/affectation-stock";
+                    urlCible = "/journaux-mouvements/" + journal.getId();
                 }
             }
             case ENTREE_ANOMALIE -> {

@@ -75,6 +75,13 @@ class MouvementStockServiceTest {
     @Mock
     private TypeMouvementStockRepository typeMouvementStockRepository;
 
+    // Utilises seulement par validerSortie, que ce test ne couvre pas.
+    @Mock
+    private LignePickingStatutService lignePickingStatutService;
+
+    @Mock
+    private BonResteService bonResteService;
+
     private MouvementStockService mouvementStockService;
 
     @BeforeEach
@@ -89,7 +96,9 @@ class MouvementStockServiceTest {
                 paletteConditionnementRepository,
                 userRepository,
                 journalStatutService,
-                typeMouvementStockRepository);
+                typeMouvementStockRepository,
+                lignePickingStatutService,
+                bonResteService);
     }
 
     @Test

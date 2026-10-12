@@ -22,11 +22,16 @@ import com.example.demo.entity.DetailJournal;
 import com.example.demo.entity.Emplacement;
 import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.LignePicking;
+import com.example.demo.entity.NotificationCategorie;
+import com.example.demo.entity.NotificationPriorite;
+import com.example.demo.entity.NotificationType;
 import com.example.demo.entity.Picking;
 import com.example.demo.entity.Prelevement;
+import com.example.demo.entity.StatutJournalMouvementCode;
 import com.example.demo.entity.StatutLignePickingCode;
 import com.example.demo.entity.StatutPickingCode;
 import com.example.demo.entity.StatutPrelevement;
+import com.example.demo.entity.User;
 import com.example.demo.repository.ArticleConditionnementRepository;
 import com.example.demo.repository.CommandeRepository;
 import com.example.demo.repository.DetailJournalRepository;
@@ -38,6 +43,7 @@ import com.example.demo.repository.PickingRepository;
 import com.example.demo.repository.PrelevementRepository;
 import com.example.demo.repository.StatutPrelevementRepository;
 import com.example.demo.repository.StockRepository;
+import com.example.demo.repository.UserRepository;
 
 @Service
 public class LignePickingService {
@@ -54,6 +60,9 @@ public class LignePickingService {
         private final JournalMouvementRepository journalMouvementRepository;
         private final PrelevementRepository prelevementRepository;
         private final LignePickingStatutService lignePickingStatutService;
+        private final JournalStatutService journalStatutService;
+        private final NotificationService notificationService;
+        private final UserRepository userRepository;
 
         public LignePickingService(
                         LignePickingRepository lignePickingRepository,
@@ -62,15 +71,20 @@ public class LignePickingService {
                         PrelevementRepository prelevementRepository,
                         CommandeRepository commandeRepository,
                         EmplacementRepository emplacementRepository,
+                        JournalStatutService journalStatutService,
                         DetailJournalRepository detailJournalRepository,
+                        UserRepository userRepository,
                         ArticleConditionnementRepository articleConditionnementRepository,
                         MouvementStockRepository mouvementStockRepository,
                         StatutPrelevementRepository statutPrelevementRepository,
+                        NotificationService notificationService,
                         StockRepository stockRepository,
                         LignePickingStatutService lignePickingStatutService) {
                 this.lignePickingRepository = lignePickingRepository;
                 this.pickingRepository = pickingRepository;
+                this.userRepository = userRepository;
                 this.commandeRepository = commandeRepository;
+                this.notificationService = notificationService;
                 this.emplacementRepository = emplacementRepository;
                 this.detailJournalRepository = detailJournalRepository;
                 this.articleConditionnementRepository = articleConditionnementRepository;
@@ -80,6 +94,7 @@ public class LignePickingService {
                 this.prelevementRepository = prelevementRepository;
                 this.journalMouvementRepository = journalMouvementRepository;
                 this.lignePickingStatutService = lignePickingStatutService;
+                this.journalStatutService = journalStatutService;
         }
 
         @Transactional
@@ -405,6 +420,20 @@ public class LignePickingService {
 
                 if (ligneTerminee) {
                         lignePickingStatutService.changerStatut(lignePicking, StatutLignePickingCode.PRELEVEE);
+                        boolean response = verifierLigne(lignePicking.getPicking());
+                        if (!response) {
+                                journalStatutService.changerStatut(lignePicking.getPicking().getJournalMouvement(),
+                                                StatutJournalMouvementCode.EN_ATTENTE);
+                                for (User admin : userRepository.findAllByRoleName("ADMIN")) {
+                                        notificationService.creer(
+                                                        NotificationCategorie.SORTIE,
+                                                        NotificationType.SORTIE_A_CONFIRMER,
+                                                        NotificationPriorite.URGENTE,
+                                                        admin, lignePicking.getPicking().getJournalMouvement(), null,
+                                                        null);
+                                }
+
+                        }
                 } else {
                         lignePickingStatutService.changerStatut(lignePicking, StatutLignePickingCode.EN_COURS);
                 }
@@ -421,6 +450,11 @@ public class LignePickingService {
                                 quantitePiecesRestante / quantitePieceStandard,
                                 ligneTerminee);
 
+        }
+
+        private boolean verifierLigne(Picking picking) {
+                int ligneEnCours = pickingRepository.checkLigneEnCours(picking.getId());
+                return ligneEnCours > 0;
         }
 
         @Transactional
@@ -475,4 +509,66 @@ public class LignePickingService {
                 return lignePickingResponses;
 
         }
+
+        // Pieces deja reservees (lignes RESERVEE ou EN_COURS) pour un article
+        // dans un emplacement : a retirer du stock avant de proposer ou reserver.
+        @Transactional(readOnly = true)
+        public int piecesReservees(Long emplacementId, Long articleId) {
+                int total = 0;
+                for (LignePicking ligne : lignePickingRepository
+                                .findAllByEmplacementIdAndCommandeArticleId(emplacementId, articleId)) {
+                        if (ligne.getStatutCode() == StatutLignePickingCode.RESERVEE
+                                        || ligne.getStatutCode() == StatutLignePickingCode.EN_COURS) {
+                                total += ligne.getQuantitePiecesAPrelever();
+                        }
+                }
+                return total;
+        }
+
+        /**
+         * L'operateur constate qu'il n'y a plus (ou pas) de produit a cet emplacement.
+         * Aucun mouvement de stock n'est cree : la ligne est simplement fermee, et le
+         * manque sera repris dans un bon de reste a la validation de la sortie.
+         *
+         * - rien n'a ete preleve : la ligne devient IMPOSSIBLE ;
+         * - une partie a deja ete prelevee : la ligne est terminee avec ce qui a ete
+         * pris (PRELEVEE), le reste de la quantite est le manque.
+         */
+        @Transactional
+        public ScanLigneResponse declarerImpossible(Long lignePickingId) {
+                LignePicking lignePicking = lignePickingRepository.findById(lignePickingId)
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                                "ligne introuvable"));
+
+                if (lignePicking.getStatutCode() != StatutLignePickingCode.RESERVEE
+                                && lignePicking.getStatutCode() != StatutLignePickingCode.EN_COURS) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "Cette ligne n'est plus disponible pour le prelevement");
+                }
+
+                int piecesPrelevees = 0;
+                for (Prelevement prelevement : prelevementRepository
+                                .findAllByLignePickingId(lignePicking.getId())) {
+                        piecesPrelevees += prelevement.getQuantitePiecesPrelevees();
+                }
+
+                lignePickingStatutService.changerStatut(
+                                lignePicking,
+                                piecesPrelevees > 0
+                                                ? StatutLignePickingCode.PRELEVEE
+                                                : StatutLignePickingCode.IMPOSSIBLE);
+
+                int piecesParConditionnement = lignePicking.getArticleConditionnement().getQuantitePieceStandard();
+                int piecesRestantes = lignePicking.getQuantitePiecesAPrelever() - piecesPrelevees;
+
+                return new ScanLigneResponse(
+                                null,
+                                lignePicking.getId(),
+                                0,
+                                piecesPrelevees / piecesParConditionnement,
+                                piecesRestantes / piecesParConditionnement,
+                                true);
+        }
+
 }

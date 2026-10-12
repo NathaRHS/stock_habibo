@@ -60,6 +60,7 @@ function Inventaire() {
           ecart: ligne.ecart ?? 0,
           user: ligne.user ?? "",
           userId: ligne.userId ?? "",
+          imageUser: ligne.imageUser ?? null,
         }));
         setInventaire({ ...dataInventaire, details: lignes });
         setRacks(dataRacks);
@@ -422,7 +423,12 @@ function Inventaire() {
                       {ligne.ecart}
                     </td>
                     <td>
-                      <LienUser userId={ligne.userId} nom={ligne.user} />
+                      <LienUser
+                        avecPhoto
+                        nom={ligne.user}
+                        photoUrl={ligne.imageUser}
+                        userId={ligne.userId}
+                      />
                     </td>
                     <td>
                       <button

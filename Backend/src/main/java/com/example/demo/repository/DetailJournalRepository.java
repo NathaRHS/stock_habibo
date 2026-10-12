@@ -53,4 +53,39 @@ public interface DetailJournalRepository extends JpaRepository<DetailJournal, Lo
             @Param("quantitePieceStandard") Integer quantitePieceStandard,
             @Param("dlc") LocalDate dlc,
             @Param("dlv") LocalDate dlv);
+
+
+                // Ajoute une reception en gardant le nombre de conditionnements tel quel :
+    // deux boites incompletes restent deux boites (pas de CEIL sur la somme).
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = """
+            INSERT INTO t_detail_journal (
+                journal_mouvement_id,
+                article_id,
+                quantite,
+                quantite_conditionnement,
+                dlc,
+                dlv
+            )
+            VALUES (
+                :journalId,
+                :articleId,
+                :quantite,
+                :quantiteConditionnement,
+                :dlc,
+                :dlv
+            )
+            ON DUPLICATE KEY UPDATE
+                quantite = quantite + VALUES(quantite),
+                quantite_conditionnement =
+                    quantite_conditionnement + VALUES(quantite_conditionnement)
+            """, nativeQuery = true)
+    int ajouterOuIncrementerPrecis(
+            @Param("journalId") Long journalId,
+            @Param("articleId") Long articleId,
+            @Param("quantite") Integer quantite,
+            @Param("quantiteConditionnement") Integer quantiteConditionnement,
+            @Param("dlc") LocalDate dlc,
+            @Param("dlv") LocalDate dlv);
+
 }

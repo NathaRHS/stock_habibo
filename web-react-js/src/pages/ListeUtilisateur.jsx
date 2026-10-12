@@ -86,7 +86,12 @@ function ListeUtilisateur() {
               title="Utilisateurs"
               renderCell={(utilisateur, colonne) =>
                 colonne === "username" ? (
-                  <LienUser userId={utilisateur.id} nom={utilisateur.username} />
+                  <LienUser
+                    avecPhoto
+                    nom={utilisateur.username}
+                    photoUrl={utilisateur.imageUser}
+                    userId={utilisateur.id}
+                  />
                 ) : undefined
               }
             />

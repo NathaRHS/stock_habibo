@@ -5,6 +5,8 @@ public record UserResponse(
         String username,
         String matricule,
         String email,
-        String role
+        String role,
+        // Photo de profil (« photos/<nom>.jpg »), vide si aucune.
+        String imageUser
 ) {
 }

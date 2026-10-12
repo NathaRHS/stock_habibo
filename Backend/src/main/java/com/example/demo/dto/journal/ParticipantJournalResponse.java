@@ -11,5 +11,6 @@ public record ParticipantJournalResponse(
         String matricule,
         StatutParticipation statut,
         LocalDateTime dateDebut,
-        LocalDateTime dateFin) {
+        LocalDateTime dateFin,
+        String imageUser) {
 }

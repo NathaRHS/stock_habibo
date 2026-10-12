@@ -2,12 +2,18 @@ package com.example.demo.Controller;
 
 import java.util.List;
 
+import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.dto.user.UserInfoResponse;
 import com.example.demo.dto.utilisateur.CreateUserRequest;
@@ -35,6 +41,18 @@ public class UserController {
     @GetMapping
     public List<UserResponse> getAll(){
         return userService.getAll();
+    }
+
+    // Photo de profil : l'administrateur la change pour tous, les autres pour
+    // eux-mêmes seulement (contrôlé dans le service).
+    @PutMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public UserResponse updatePhoto(
+            @PathVariable Long id,
+            @RequestPart("photo") MultipartFile photo,
+            @AuthenticationPrincipal Jwt jwt) {
+        List<String> roles = jwt.getClaimAsStringList("roles");
+        boolean administrateur = roles != null && roles.contains("ADMIN");
+        return userService.enregistrerPhoto(id, photo, jwt.getSubject(), administrateur);
     }
 
     @PostMapping("/login")

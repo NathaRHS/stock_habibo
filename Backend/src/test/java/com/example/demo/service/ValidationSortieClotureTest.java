@@ -79,7 +79,8 @@ import com.example.demo.repository.UserRepository;
         JournalStatutService.class,
         PickingService.class,
         PickingStatutService.class,
-        LignePickingStatutService.class
+        LignePickingStatutService.class,
+        BonResteService.class
 })
 class ValidationSortieClotureTest {
 

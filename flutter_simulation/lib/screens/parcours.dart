@@ -15,6 +15,7 @@ import 'scan_sortie.dart';
 class EcranParcours extends StatefulWidget {
   const EcranParcours({super.key, required this.journal});
 
+  /// La sortie (bon de commande) dont on prelève les articles.
   final Journal journal;
 
   @override
@@ -22,17 +23,24 @@ class EcranParcours extends StatefulWidget {
 }
 
 class _EcranParcoursState extends State<EcranParcours> {
+  /// Les etapes du parcours, dans l'ordre de passage (triees par rack).
   late List<EtapePicking> _etapes;
+
+  /// Index de l'etape affichee dans la fiche du bas.
   int _selection = 0;
 
   @override
   void initState() {
     super.initState();
+    // Genere le parcours, ou renvoie celui deja cree si on reprend.
     _etapes = magasin.genererParcours(widget.journal);
+    // On se place sur la premiere etape non terminee.
     final premiere = _etapes.indexWhere((etape) => !etape.terminee);
     _selection = premiere >= 0 ? premiere : 0;
   }
 
+  /// Ouvre l'ecran de scan pour l'etape selectionnee. Au retour, passe a
+  /// l'etape suivante si celle-ci est terminee et affiche un message.
   Future<void> _scanner() async {
     final etape = _etapes[_selection];
     final quantite = await Navigator.of(context).push<int>(
@@ -40,6 +48,7 @@ class _EcranParcoursState extends State<EcranParcours> {
         builder: (_) => EcranScanSortie(journal: widget.journal, etape: etape),
       ),
     );
+    // Ecran ferme sans scan valide : rien a mettre a jour.
     if (!mounted || quantite == null) return;
 
     setState(() {
@@ -59,9 +68,11 @@ class _EcranParcoursState extends State<EcranParcours> {
       decalageBas: 96,
     );
 
+    // Toutes les etapes sont faites : on passe a l'ecran de fin.
     if (widget.journal.parcoursTermine) _terminer();
   }
 
+  /// Remplace l'ecran par celui de fin de parcours (pas de retour possible).
   void _terminer() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
@@ -70,6 +81,7 @@ class _EcranParcoursState extends State<EcranParcours> {
     );
   }
 
+  /// Ouvre la feuille du bas avec la progression de chaque article commande.
   void _voirProgression() {
     retourLeger();
     showModalBottomSheet<void>(
@@ -81,6 +93,7 @@ class _EcranParcoursState extends State<EcranParcours> {
 
   @override
   Widget build(BuildContext context) {
+    // Aucun stock disponible : message "Rien a prelever".
     if (_etapes.isEmpty) {
       return Scaffold(
         backgroundColor: Habibo.fond,
@@ -107,6 +120,7 @@ class _EcranParcoursState extends State<EcranParcours> {
     final etape = _etapes[_selection];
     final faites = _etapes.where((e) => e.terminee).length;
 
+    // Haut de page bleu (compteur, barre, chemin) + fiche blanche en bas.
     return FondFonce(
       child: Scaffold(
         backgroundColor: Habibo.bleu,
@@ -114,6 +128,7 @@ class _EcranParcoursState extends State<EcranParcours> {
           bottom: false,
           child: Column(
             children: [
+              // En-tete : titre, reference du bon, bouton "Progression".
               EnTetePage(
                 titre: 'Parcours',
                 sousTitre: widget.journal.reference,
@@ -135,6 +150,7 @@ class _EcranParcoursState extends State<EcranParcours> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Compteur : "3 sur 8 emplacements".
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -161,6 +177,7 @@ class _EcranParcoursState extends State<EcranParcours> {
                       ],
                     ),
                     const SizedBox(height: 12),
+                    // Barre de progression animee (etapes faites / total).
                     ClipRRect(
                       borderRadius: BorderRadius.circular(99),
                       child: TweenAnimationBuilder<double>(
@@ -184,6 +201,7 @@ class _EcranParcoursState extends State<EcranParcours> {
                 ),
               ),
               const SizedBox(height: 22),
+              // Fiche detaillee de l'etape selectionnee.
               Expanded(child: _fiche(etape)),
             ],
           ),
@@ -207,6 +225,7 @@ class _EcranParcoursState extends State<EcranParcours> {
                 _Noeud(
                   etape: _etapes[i],
                   selectionne: i == _selection,
+                  // Toucher une case affiche la fiche de cet emplacement.
                   onTap: () {
                     retourLeger();
                     setState(() => _selection = i);
@@ -214,6 +233,7 @@ class _EcranParcoursState extends State<EcranParcours> {
                 )
               else
                 const SizedBox(width: 50),
+              // Trait entre deux cases (invisible apres la derniere etape).
               if (i < debut + 4)
                 Expanded(
                   child: Container(
@@ -232,9 +252,12 @@ class _EcranParcoursState extends State<EcranParcours> {
     return Column(children: lignes);
   }
 
+  /// La fiche du bas : produit, emplacement, quantite, dates, et le bouton
+  /// d'action ("Scanner" ou "Emplacement suivant").
   Widget _fiche(EtapePicking etape) {
     final article = etape.article;
     final emplacement = etape.emplacement;
+    // DLC a 15 jours ou moins : affichee en orange pour alerter.
     final dlcProche = joursAvant(etape.lot.dlc) <= 15;
 
     return Container(
@@ -248,6 +271,8 @@ class _EcranParcoursState extends State<EcranParcours> {
         child: Column(
           children: [
             Expanded(
+              // Fondu entre deux fiches quand on change d'etape (la cle
+              // ValueKey fait croire a Flutter que c'est un nouveau widget).
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 220),
                 child: ListView(
@@ -259,6 +284,7 @@ class _EcranParcoursState extends State<EcranParcours> {
                     12,
                   ),
                   children: [
+                    // Ligne produit : photo, numero d'etape, nom, statut.
                     Row(
                       children: [
                         VignetteArticle(article: article, taille: 64),
@@ -302,6 +328,7 @@ class _EcranParcoursState extends State<EcranParcours> {
                       ],
                     ),
                     const SizedBox(height: 20),
+                    // Deux cartes : ou aller, et combien prelever.
                     Row(
                       children: [
                         Expanded(
@@ -318,6 +345,8 @@ class _EcranParcoursState extends State<EcranParcours> {
                           child: _Info(
                             libelle: 'À prélever',
                             valeur: '${etape.quantite}',
+                            // Prelevement partiel : on montre ce qui est deja
+                            // pris, sinon le conditionnement (unite de N).
                             detail:
                                 etape.quantitePrelevee > 0 && !etape.terminee
                                 ? '${etape.quantitePrelevee} déjà prélevé'
@@ -329,6 +358,7 @@ class _EcranParcoursState extends State<EcranParcours> {
                       ],
                     ),
                     const SizedBox(height: 14),
+                    // Dates limites du lot (DLC / DLV).
                     Row(
                       children: [
                         Icon(
@@ -364,6 +394,8 @@ class _EcranParcoursState extends State<EcranParcours> {
                 Habibo.marge,
                 16,
               ),
+              // Etape terminee : on propose la suivante (ou la fin du
+              // parcours). Sinon : on lance le scan.
               child: etape.terminee
                   ? BoutonPrincipal(
                       libelle: 'Emplacement suivant',
@@ -392,6 +424,8 @@ class _EcranParcoursState extends State<EcranParcours> {
   }
 }
 
+/// Une case du chemin : le code de l'emplacement, ou une coche si l'etape
+/// est faite. Blanche quand elle est selectionnee.
 class _Noeud extends StatelessWidget {
   const _Noeud({
     required this.etape,
@@ -445,6 +479,8 @@ class _Noeud extends StatelessWidget {
   }
 }
 
+/// Petite carte d'information : libelle, grosse valeur, detail dessous.
+/// `fort` la met en bleu pour la mettre en avant (l'emplacement).
 class _Info extends StatelessWidget {
   const _Info({
     required this.libelle,
@@ -538,6 +574,7 @@ class _FeuilleProgression extends StatelessWidget {
             for (final commande in journal.commandes)
               Builder(
                 builder: (context) {
+                  // Etapes de cette commande, et total deja prelevé.
                   final siennes = etapes
                       .where((etape) => etape.commande.id == commande.id)
                       .toList();
@@ -545,6 +582,7 @@ class _FeuilleProgression extends StatelessWidget {
                     0,
                     (total, etape) => total + etape.quantitePrelevee,
                   );
+                  // Quantite que le stock ne permet pas de servir.
                   final reste = magasin.resteCommande(journal, commande);
                   final progression = commande.quantiteDemandee == 0
                       ? 0.0

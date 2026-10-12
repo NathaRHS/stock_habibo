@@ -32,6 +32,10 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    // Photo de profil : « photos/<nom>.jpg », servie par GET /photos/{nom}.
+    @Column(name = "image_user")
+    private String imageUser;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "role_id", nullable = false)
     private Role role; // admin , inventoriste , superviseur , audit
@@ -91,6 +95,14 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getImageUser() {
+        return imageUser;
+    }
+
+    public void setImageUser(String imageUser) {
+        this.imageUser = imageUser;
     }
 
     public String getPasswordHash() {

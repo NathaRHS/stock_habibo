@@ -75,10 +75,19 @@ public class SecurityConfig {
                                 "/lignes-picking/scan")
                         .hasAnyRole("OPERATEUR", "ADMIN")
 
+                        // "Aucun produit ici" : l'operateur ferme une ligne de picking.
+                        .requestMatchers(HttpMethod.POST, "/lignes-picking/*/impossible")
+                        .hasAnyRole("OPERATEUR", "ADMIN")
+
                         .requestMatchers(HttpMethod.POST, "/**")
                         .hasRole("ADMIN")
 
                         // Toutes les modifications : ADMIN
+                        // Photo de profil : tout utilisateur connecté ; le service
+                        // limite les non-administrateurs à leur propre compte.
+                        .requestMatchers(HttpMethod.PUT, "/user/*/photo")
+                        .authenticated()
+
                         .requestMatchers(HttpMethod.PUT, "/**")
                         .hasRole("ADMIN")
 
@@ -88,6 +97,12 @@ public class SecurityConfig {
                         // Toutes les suppressions : ADMIN
                         .requestMatchers(HttpMethod.DELETE, "/**")
                         .hasRole("ADMIN")
+
+                        // Consultation d'un inventaire (écarts, rapport PDF) : les
+                        // auditeurs et l'administrateur. Les inventoristes comptent
+                        // sur mobile, les opérateurs n'y ont pas accès.
+                        .requestMatchers(HttpMethod.GET, "/inventaire/**")
+                        .hasAnyRole("AUDITEUR", "ADMIN")
 
                         // Toutes les lectures restantes : utilisateur connecté
                         .requestMatchers(HttpMethod.GET, "/**")

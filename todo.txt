@@ -14,6 +14,42 @@ FAIT
     page consultable comme resume (React + Flutter + test ValidationSortieClotureTest)
 [x] validerSortie : verrou findByIdForUpdate + refus 409 si deja cloture  (anomalie 1, en grande partie)
 
+FAIT LES 9-11/10 (compile ; le scenario A de la sortie incomplete a ete teste en SQL)
+[x] Sortie tolerante au manque (backend) :
+    - proposerEmplacement retire les reservations des autres pickings, ignore les lots de
+      moins d'un conditionnement entier (plus de quantite a 0), decremente le disponible
+    - genererMeilleurParcours : plus de 409 ; liste vide et AUCUN picking s'il n'y a rien
+    - POST /lignes-picking/{id}/impossible ("aucun produit ici") : ligne IMPOSSIBLE, ou
+      PRELEVEE si une partie a deja ete prelevee ; aucun mouvement de stock
+    - validerSortie : accepte "pas de picking" / "rien preleve", ferme les lignes EN_COURS,
+      refuse (409) une ligne encore RESERVEE, prend le picking actif le plus recent (A2)
+[x] Bon de reste : BonResteService (reste = demande - prelevements, en conditionnements),
+    UN SEUL bon regroupe tous les manques, reference SOR-xxx-R1, journal_origine_id,
+    cree a la validation (D2 : automatique ; D3 : -R1 ; statut EN COURS)
+[x] Bon de commande PDF : GET /journaux-mouvements/{id}/bon.pdf (produit + quantite),
+    GET /journaux-mouvements/{id}/bon-reste ; carte "Imprimer le bon" sur /sortie/:id
+[x] Lien "Confirmer la sortie" / "Consulter la sortie" dans le menu des journaux (React)
+[x] /sortie/:id : 404 picking = message neutre + confirmation avant de valider sans picking
+[x] Precision conditionnements + pieces (une boite peut etre incomplete) :
+    scan d'entree et scan d'inventaire (backend + mobile), interrupteur "Boite incomplete"
+    - au plus une boite incomplete par scan ; ajouterOuIncrementerPrecis (pas de CEIL)
+[x] Mobile : champ "Serveur" a la connexion (adresse memorisee), zone de scan limitee au
+    cadre, "Aucun produit ici", ecran "Rien a prelever", erreurs lues dans "detail"
+[x] Securite : POST /journaux-mouvements/*/inventaire/scans ouvert (403 inventoriste)
+[x] Blocage de creation d'une entree/sortie pendant un inventaire (compterInventairesEnCours)
+[x] Donnees de test : tables/donnees_test_sortie_incomplete.sql (scenarios A et B, rejouable)
+[x] Simulation Flutter (dossier flutter_simulation) : parcours complet + propositions
+[x] Conflit de routes GET /journaux-mouvements/{id} corrige (chemin /participants/...)
+
+A VERIFIER (fait mais pas encore teste a la main)
+[ ] PDF du bon 24 : l'ouvrir et controler Coca 7 / Eau Vive 6 / Savon 4
+[ ] Carte "Imprimer le bon" dans le navigateur (jeton + nouvel onglet)
+[ ] Precision pieces : reception et inventaire sur telephone (backend redemarre)
+[ ] Parcours mobile sur un bon de reste neuf (le 23) : generation partielle
+[ ] Retester le scan d'inventaire avec l'inventoriste (403 corrige)
+[ ] JournalMouvementController l.94-95 : le chemin declare {idParticipant} mais le
+    parametre s'appelle participantId -> aligner (cette route plantera sinon)
+
 
 -------------------------------------------------------
 P0 - A VERIFIER SUR TA BASE (5 min)
@@ -22,7 +58,7 @@ P0 - A VERIFIER SUR TA BASE (5 min)
 [ ] Journal 5 : lancer tables/reparer_prelevements_manquants.sql
     -> lire d'abord mouvements_sortie_deja_presents ; si > 0, NE PAS valider la sortie apres
 [ ] Tester "Valider la sortie" sur le journal 5
-[ ] Corriger la faute "aaasortie" dans MouvementStockService.validerSortie
+[x] Corriger la faute "aaasortie" dans MouvementStockService.validerSortie (message remplace)
 [ ] Parcours manuel : generer picking -> scanner -> regarder les 3 historiques
 
 
@@ -35,44 +71,58 @@ comme si le client avait redemande. Alerte admin quand le stock revient.
 Stock = 0 au premier essai : meme systeme (plus de 409).
 
 Decisions a prendre :
- D1. Aucune ligne servie : cloturer le journal d'origine tout de suite (conseil)
-     ou seulement a la creation du bon de reliquat ?
- D2. Bon de reliquat cree a la main par l'admin apres alerte (conseil) ou automatique ?
- D3. Reference du nouveau bon : SOR-001-R1 (conseil) ou libre ?
- D4. Anomalie 3 (PRELEVEE pas encore sortie) : nouveau statut ligne SORTIE
+ D1. Aucune ligne servie : FAIT = la validation clot le journal d'origine et cree le bon
+     (avec confirmation cote page quand il n'y a pas de picking)
+ D2. DECIDE : bon cree automatiquement a la validation
+ D3. DECIDE : reference SOR-xxx-R1
+ D4. OUVERT : Anomalie 3 (PRELEVEE pas encore sortie) : nouveau statut ligne SORTIE
      ou mouvement cree au scan ? (tu avais dit garder 5 statuts)
+ D5. OUVERT : bon -R1 en attente de stock : le laisser EN COURS ou statut "EN ATTENTE
+     DE STOCK" ? Valider un bon sans picking en cree un nouveau (-R1-R1, boucle) :
+     aujourd'hui seulement une confirmation dans la page.
 
 Etapes (dans l'ordre) :
-[ ] R1. Calcul commun "stock disponible = stock - reservations" (= anomalie 8)
-        LignePickingRepository.sommePiecesReservees (par emplacement + lot),
-        utilise par CommandeService.proposerEmplacement ET LignePickingService.creerLigne
-        (etape 10, qui boucle a la main aujourd'hui)
-[ ] R2. genererMeilleurParcours : retirer les 2 refus 409
-        ("Stock insuffisant pour l'article", "Aucun stock disponible")
-        -> on genere avec ce qui existe ; aucun picking s'il n'y a rien
-        -> refuser la generation si le journal est CLOTURE
-[ ] R3. Calcul du reste par commande : demande - SUM(lignes RESERVEE/EN_COURS/PRELEVEE)
-        (ANNULEE/IMPOSSIBLE ne comptent pas). Non stocke, calcule.
-        Endpoint GET /commandes/journal/{id}/reliquats (ne casse pas la liste Flutter)
-[ ] R4. Colonne journal_origine_id sur JournalMouvement (+ badgaga.sql / initialiseur)
-[ ] R5. Action "Creer le bon de reliquat" : nouveau journal SORTIE, une commande par
-        article manquant, lien vers l'origine, statut via changerStatut
-[ ] R6. Ne pas recompter un manque deja reporte (journaux enfants) dans le reste
+[~] R1. Calcul commun "stock disponible = stock - reservations" (= anomalie 8)
+        FAIT : LignePickingService.piecesReservees utilise par proposerEmplacement.
+        RESTE : creerLigne (etape 10) boucle encore a la main -> reutiliser piecesReservees ;
+        le controle est par article+emplacement, pas par LOT (sur-reservation possible
+        quand deux lots du meme article sont dans le meme emplacement)
+[x] R2. genererMeilleurParcours : plus de 409 ; on genere avec ce qui existe ; aucun
+        picking s'il n'y a rien.   RESTE : refuser la generation si le journal est CLOTURE
+[x] R3. Reste par commande : demande - prelevements reels (en conditionnements), calcule,
+        BonResteService.calculerRestes. (pas d'endpoint /reliquats : remplace par /bon-reste)
+[x] R4. Colonne journal_origine_id sur JournalMouvement.  RESTE : l'ajouter a badgaga.sql
+[x] R5. Bon de reste cree automatiquement a la validation (un seul bon, une commande par
+        article manquant, lien vers l'origine, statut EN COURS)
+[-] R6. Sans objet : le reste se calcule par journal, sur ses propres commandes
 [ ] R7. Alerte admin : nouveau NotificationType (SORTIE_STOCK_DISPONIBLE) + case dans
         NotificationService.creer ; destinataires = users ADMIN ; pas de doublon ;
         marquee traitee quand le bon est cree. Declencheur : fin de creerEntreeStock.
-[ ] R8. React (page sortie) : afficher le reste + bouton "Creer le bon de reliquat"
-[ ] R9. Cas "rien a prelever" : pas de picking, journal CLOTURE (selon D1)
-[ ] R10. Tests : sortie partielle, stock 0, reliquat cree, alerte sur entree de stock
+[x] R8. React (page sortie) : carte du bon + "Imprimer le bon" (PDF). Pas de bouton
+        "Creer le bon" : il est automatique.
+[x] R9. Cas "rien a prelever" : pas de picking, validation possible, journal CLOTURE.
+[ ] R10. Tests : sortie partielle, stock 0, ligne impossible, bon cree, alerte
+         (ValidationSortieClotureTest et MouvementStockServiceTest ont ete adaptes)
 
 
 -------------------------------------------------------
 P1 - ANOMALIES : LE STOCK PEUT DEVENIR FAUX
 -------------------------------------------------------
-[ ] A2. findPicking renvoie le mauvais picking (SQL natif, tri date_fin DESC, NULL a la fin,
-        ANNULE possible). -> filtrer par statut (GENERE/EN_COURS/TERMINE), trier par id desc,
-        JPQL avec JOIN t_statut_picking. Utilise par validerSortie et ConfirmationSortieService.
-[ ] A1 (reste). validerSortie : exiger picking TERMINE ou toutes lignes PRELEVEE
+[~] A2. findPicking renvoie le mauvais picking (SQL natif, tri date_fin DESC, NULL a la fin,
+        ANNULE possible). FAIT dans validerSortie (findFirstByJournalMouvementId...StatutIn).
+        RESTE : ConfirmationSortieService utilise encore findPicking.
+[x] A1. validerSortie : refuse (409) une ligne encore RESERVEE ; les lignes EN_COURS
+        sont fermees en PRELEVEE, rien prelevee = IMPOSSIBLE. (Plus de "picking TERMINE"
+        exige : un picking partiel est accepte.)
+[ ] NOUVEAU A13. validerSortie n'ecrit pas de mouvement s'il fait passer un emplacement
+        en negatif : AUCUN controle de stock a la validation (cause possible du -120 de
+        l'article 2 / emplacement 100). Refuser en 409 avec l'emplacement concerne.
+[ ] NOUVEAU A14. Precision a la SORTIE : l'operateur precise les pieces quand la boite est
+        incomplete (scan() accepte quantitePieces ; fin de ligne comptee en conditionnements
+        = CEIL(pieces/standard) ; validerSortie ecrit les pieces reelles ; BonResteService
+        arrondit au-dessus). Decision : que faire des pieces isolees (floor) jamais proposees ?
+[ ] NOUVEAU A15. Stock theorique de l'Eau Vive (ligne IMPOSSIBLE) reste a corriger :
+        lie a A6 (l'inventaire ne corrige rien).
 [ ] A3. Fenetre PRELEVEE -> sortie : la marchandise prelevee compte encore dans le stock et
         n'est plus reservee -> double allocation possible. Voir D4.
         Corriger aussi OptimisationService.filtrerEmplacementsCandidats.
@@ -101,18 +151,25 @@ Tests pour prouver (H2, modele de JournalStatutHistoriqueTest) :
 P1 - FLUTTER (incoherences)
 -------------------------------------------------------
 Ordre propose : 2, 3, 1, puis 5, 6, 4. (liste detaillee a refaire en relisant l'app)
-[ ] Messages d'erreur : lire le champ "detail" de la reponse (comme React lireMessageErreur)
-[ ] Statuts terminaux : traiter CLOTURE, IMPOSSIBLE, ANNULEE partout
+[x] Messages d'erreur : champ "detail" lu (picking_service ; scan_service le lisait deja)
+[~] Statuts terminaux : IMPOSSIBLE et ANNULEE traites dans le parcours ;
+    RESTE CLOTURE (journal) dans la liste des journaux mobile
 [ ] Generation du parcours explicite (bouton) plutot qu'implicite
-[ ] Verifier le mismatch de roles et le 403 du scan d'inventaire (POST /** reserve ADMIN)
-[ ] Afficher le reste a servir (apres R3)
+[x] 403 du scan d'inventaire : regle ajoutee dans SecurityConfig (a retester)
+[~] Reste a servir : ecran "Rien a prelever" fait ; RESTE ecran de fin de parcours
+    (resume servi / manque, comme la simulation)
+[ ] Reporter le design de la simulation (demarrage, 4 onglets, accueil "Reprendre",
+    Produits + fiche) dans flutter_application, par etapes
+[ ] Ecran de reception : afficher l'unite (conditionnements) et rappeler qu'il faut
+    scanner le code du CONDITIONNEMENT ; meme chose a l'inventaire
+[ ] Simulation : aligner la reception sur le reel (conditionnements + pieces)
 
 
 -------------------------------------------------------
 P1 - CHEMINS MORTS (releve des liens reels)
 -------------------------------------------------------
-[ ] React : aucun lien vers /sortie/:id (AffectationSortie) -> ajouter l'action
-    "Confirmer la sortie" dans le menu de new-pages/ListeJournal/ListeJournal.jsx (l.356)
+[x] React : lien vers /sortie/:id ajoute dans le menu de ListeJournal.jsx
+    ("Confirmer la sortie", puis "Consulter la sortie" une fois cloturee)
 [ ] React : /upload (UploadFile) et CreateTypeMouvementJournal sans lien ; CreateJournal
     seulement lie depuis ListeInventaire (le modal a pris le relais)
 [ ] React : fichiers sans route : pages/ListeJournal, AffectationStockMine, ListeSociete,
@@ -191,6 +248,17 @@ Ordre conseille :
         - la carte au survol (F0b) reutilise /fiche en version reduite
 [ ] F1. Ecran "Historique du statut" d'un journal (timeline : qui, quand, de quoi a quoi)
         -> les tables d'historique existent deja, il manque la page
+[ ] F2a. CATALOGUE HABIBO (11/10) : on a le PPTX des fiches produits (92 diapositives, 327
+        images) et catalogue_produits_v2.xlsx (feuilles Produits / A verifier / Elements bruts).
+        - script qui produit la feuille "Import" calquee sur POST /articles/complet : nom,
+          marque -> famille, contenance + unite (a extraire du nom), PCB -> pieces par
+          conditionnement, code-barres UNITE et code-barres CARTON (GTIN-14 : a garder, ce
+          ne sont pas des fautes), type de produit par marque, capacite de palette par defaut
+        - tri des photos : resolution, nettete (Laplacien), doublons (pHash), logos exclus ;
+          planche de contact pour validation
+        - codes douteux a corriger a la main : 326547889100 (12 chiffres, diapo 46),
+          7701094015677 (diapo 44), lignes sans code (Fanta diapo 58, Frico diapo 62)
+        - ~30 produits typiques d'Habibo pour la demo plutot que les 119 lignes
 [ ] F2. Jeu de donnees de demonstration complet (listes jamais vides pour les captures ET soutenance)
         Methode retenue (08/10) : NE PAS ecrire des INSERT a la main ; faire rejouer au programme
         ses propres regles (services / API) dans l'ordre chronologique, sur 3 a 6 mois, puis CONTROLER.
@@ -291,12 +359,15 @@ P2/P3 - CONCEPTION ET DIVERS
 
 
 -------------------------------------------------------
-ORDRE CONSEILLE
+ORDRE CONSEILLE (mis a jour le 11/10, soutenance dans la semaine)
 -------------------------------------------------------
-0. P0 : verifications base (journal 5, CLOTURE)
-1. LE RESTE : R1 -> R2 -> R3 -> R4/R5 -> R7 -> R8 -> R9 -> R10
-2. A2 (findPicking) + A1 (reste) : petits correctifs, bugs graves
-3. Flutter : 2, 3, 1
-4. A3/D4, A5, A11
-5. Fin des statuts, tests, secrets
-6. Pagination, pieces jointes, parametrage
+0. Verifier ce qui est fait (liste "A VERIFIER" en haut) + P0 base
+1. Finir la sortie : R7 (alerte), A13 (stock negatif), puis R10 (tests)
+2. Donnees de demonstration : F2a (catalogue Habibo) puis F2 (scenario sur plusieurs mois),
+   mysqldump de la base propre
+3. Mobile : APK (F7), reporter le design de la simulation par etapes
+4. Fiche produit F0d + vignette produit (version reduite, 5-6 pages captures)
+5. Securite rapide : secrets, jwt.expiration, .gitignore ; InventaireServiceTest
+6. Gel des fonctions, captures pour le memoire, repetition de la demo
+--- Apres la soutenance / perspectives : A3/D4, A5, A6, A11, pagination, pieces jointes,
+    parametrage du scoring, Flyway

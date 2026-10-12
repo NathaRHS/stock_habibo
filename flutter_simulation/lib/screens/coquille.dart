@@ -19,8 +19,10 @@ class Coquille extends StatefulWidget {
 }
 
 class _CoquilleState extends State<Coquille> {
+  /// Index de l'onglet affiche (0 Accueil, 1 Operations, 2 Produits, 3 Profil).
   int _onglet = 0;
 
+  /// Change d'onglet, sauf si c'est deja celui affiche.
   void _aller(int index) {
     if (index == _onglet) return;
     retourLeger();
@@ -29,10 +31,13 @@ class _CoquilleState extends State<Coquille> {
 
   @override
   Widget build(BuildContext context) {
+    // Se reconstruit des que le magasin change (stock, journaux...).
     return ListenableBuilder(
       listenable: magasin,
       builder: (context, _) => Scaffold(
         backgroundColor: Habibo.fond,
+        // IndexedStack garde les 4 pages en memoire : on retrouve chaque
+        // onglet tel qu'on l'a laisse (defilement, saisie).
         body: IndexedStack(
           index: _onglet,
           children: [
@@ -51,12 +56,17 @@ class _CoquilleState extends State<Coquille> {
   }
 }
 
+/// Barre du bas : une entree par onglet.
 class _BarreNavigation extends StatelessWidget {
   const _BarreNavigation({required this.selection, required this.onChange});
 
+  /// Index de l'onglet actif.
   final int selection;
+
+  /// Appelee avec l'index touche.
   final ValueChanged<int> onChange;
 
+  /// Icone et libelle de chaque onglet, dans l'ordre de l'IndexedStack.
   static const _onglets = [
     (LucideIcons.house, 'Accueil'),
     (LucideIcons.clipboardList, 'Opérations'),
@@ -94,6 +104,8 @@ class _BarreNavigation extends StatelessWidget {
   }
 }
 
+/// Un onglet : icone dans une pastille bleue (qui s'elargit quand il est
+/// actif) et son libelle dessous.
 class _Onglet extends StatelessWidget {
   const _Onglet({
     required this.icone,

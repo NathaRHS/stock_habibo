@@ -16,15 +16,19 @@ class EcranDemarrage extends StatefulWidget {
 
 class _EcranDemarrageState extends State<EcranDemarrage>
     with SingleTickerProviderStateMixin {
+  /// Animation unique de 1,5 s, decoupee en deux temps ci-dessous.
   late final AnimationController _animation = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1500),
   );
 
+  /// Temps 1 (0 a 55 %) : le logo apparait en grossissant.
   late final Animation<double> _apparition = CurvedAnimation(
     parent: _animation,
     curve: const Interval(0, 0.55, curve: Curves.easeOutCubic),
   );
+
+  /// Temps 2 (45 a 100 %) : le sous-titre et le chargement apparaissent.
   late final Animation<double> _texte = CurvedAnimation(
     parent: _animation,
     curve: const Interval(0.45, 1, curve: Curves.easeOut),
@@ -34,9 +38,11 @@ class _EcranDemarrageState extends State<EcranDemarrage>
   void initState() {
     super.initState();
     _animation.forward();
+    // Apres 2,3 s, on quitte l'ecran de demarrage.
     Future<void>.delayed(const Duration(milliseconds: 2300), _continuer);
   }
 
+  /// Ouvre l'accueil (session memorisee) ou la connexion, avec un fondu.
   void _continuer() {
     if (!mounted) return;
     final connecte = magasin.sessionMemorisee && magasin.utilisateur != null;
@@ -54,6 +60,7 @@ class _EcranDemarrageState extends State<EcranDemarrage>
 
   @override
   void dispose() {
+    // Libere l'animation pour eviter une fuite memoire.
     _animation.dispose();
     super.dispose();
   }

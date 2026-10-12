@@ -9,5 +9,7 @@ public record MouvementStockResponse(
         Integer nombreConditionnements,
         Integer quantitePiecesReelle,
         LocalDateTime dateMouvement,
-        boolean enReserve) {
+        boolean enReserve,
+        // ENTREE, SORTIE, AJUSTEMENT_POSITIF ou AJUSTEMENT_NEGATIF.
+        String typeMouvement) {
 }

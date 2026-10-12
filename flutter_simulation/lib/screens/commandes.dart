@@ -11,9 +11,10 @@ import 'parcours_termine.dart';
 /// Commandes d'un bon de sortie. Reprend « Liste des commandes » de
 /// l'application reelle : consulter les emplacements, generer le parcours.
 /// Ajout propose : le reste a servir quand le stock ne suffit pas.
-class EcranCommandes extends StatefulWidget {
+jwss EcranCommandes extends StatefulWidget {
   const EcranCommandes({super.key, required this.journal});
 
+  /// Le bon de sortie dont on affiche les commandes.
   final Journal journal;
 
   @override
@@ -21,11 +22,15 @@ class EcranCommandes extends StatefulWidget {
 }
 
 class _EcranCommandesState extends State<EcranCommandes> {
+  /// Vrai pendant le "calcul" du parcours : affiche le voile de chargement.
   bool _generation = false;
 
+  /// Bouton du bas : genere le parcours s'il n'existe pas encore, puis ouvre
+  /// l'ecran du parcours (ou l'ecran de fin s'il est deja termine).
   Future<void> _ouvrirParcours() async {
     final journal = widget.journal;
 
+    // Premiere fois : on genere le parcours avec un petit temps d'attente.
     if (journal.parcours == null) {
       setState(() => _generation = true);
       // Simule le calcul du serveur.
@@ -44,9 +49,11 @@ class _EcranCommandesState extends State<EcranCommandes> {
             : EcranParcours(journal: journal),
       ),
     );
+    // Au retour, on rafraichit (progression, libelle du bouton).
     if (mounted) setState(() {});
   }
 
+  /// Ouvre la feuille du bas : emplacements proposes pour une commande.
   void _voirEmplacements(Commande commande) {
     retourLeger();
     showModalBottomSheet<void>(
@@ -60,10 +67,12 @@ class _EcranCommandesState extends State<EcranCommandes> {
   @override
   Widget build(BuildContext context) {
     final journal = widget.journal;
+    // Nombre d'articles que le stock ne permet pas de servir en entier.
     final nombreRestes = journal.commandes
         .where((commande) => magasin.resteCommande(journal, commande) > 0)
         .length;
 
+    // Le texte du bouton suit l'etat : generer, reprendre ou voir le resultat.
     final libelleBouton = journal.parcours == null
         ? 'Générer le meilleur parcours'
         : journal.parcoursTermine
@@ -73,6 +82,7 @@ class _EcranCommandesState extends State<EcranCommandes> {
     return Scaffold(
       backgroundColor: Habibo.fond,
       body: SafeArea(
+        // Stack : le voile de chargement se superpose a toute la page.
         child: Stack(
           children: [
             Column(
@@ -87,6 +97,7 @@ class _EcranCommandesState extends State<EcranCommandes> {
                       24,
                     ),
                     children: [
+                      // Client et nombre d'articles commandes.
                       Row(
                         children: [
                           Container(
@@ -130,6 +141,7 @@ class _EcranCommandesState extends State<EcranCommandes> {
                           ),
                         ],
                       ),
+                      // Bandeau d'alerte, seulement si le stock est insuffisant.
                       if (nombreRestes > 0) ...[
                         const SizedBox(height: 18),
                         Container(
@@ -165,6 +177,8 @@ class _EcranCommandesState extends State<EcranCommandes> {
                         ),
                       ],
                       const SizedBox(height: 20),
+                      // Une carte par article commande ; un appui montre
+                      // ses emplacements.
                       for (final commande in journal.commandes)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 10),
@@ -184,6 +198,7 @@ class _EcranCommandesState extends State<EcranCommandes> {
                     Habibo.marge,
                     16,
                   ),
+                  // Bouton fixe en bas : generer / reprendre le parcours.
                   child: BoutonPrincipal(
                     libelle: libelleBouton,
                     icone: LucideIcons.route,
@@ -200,6 +215,8 @@ class _EcranCommandesState extends State<EcranCommandes> {
   }
 }
 
+/// Carte d'un article commande : photo, nom, quantite demandee, et a droite
+/// l'etat (Prelevé, Reste N, ou simple fleche).
 class _CarteCommande extends StatelessWidget {
   const _CarteCommande({
     required this.journal,
@@ -214,10 +231,13 @@ class _CarteCommande extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final article = commande.article;
+    // Quantite non servable faute de stock.
     final reste = magasin.resteCommande(journal, commande);
+    // Etapes du parcours qui concernent cette commande.
     final etapes = (journal.parcours ?? const <EtapePicking>[]).where(
       (etape) => etape.commande.id == commande.id,
     );
+    // Prelevee = au moins une etape et toutes terminees.
     final terminee = etapes.isNotEmpty && etapes.every((e) => e.terminee);
 
     return Carte(
@@ -291,6 +311,8 @@ class _FeuilleEmplacements extends StatelessWidget {
     final etapes = (journal.parcours ?? const <EtapePicking>[])
         .where((etape) => etape.commande.id == commande.id)
         .toList();
+    // Parcours genere : on montre ses etapes reelles. Sinon, on affiche
+    // les emplacements que le magasin proposerait (FIFO par DLC).
     final lignes = etapes.isNotEmpty
         ? [
             for (final e in etapes)
@@ -367,6 +389,7 @@ class _FeuilleEmplacements extends StatelessWidget {
                 'Aucun stock disponible pour cet article.',
                 style: TextStyle(color: Habibo.texteSecondaire, fontSize: 14),
               ),
+            // Une ligne par emplacement : code, rack/etage, DLC, quantite.
             for (final ligne in lignes)
               Padding(
                 padding: const EdgeInsets.only(bottom: 10),
@@ -427,6 +450,7 @@ class _FeuilleEmplacements extends StatelessWidget {
                   ],
                 ),
               ),
+            // Quantite que le stock ne couvre pas.
             if (reste > 0) ...[
               const SizedBox(height: 4),
               Container(
@@ -453,6 +477,7 @@ class _FeuilleEmplacements extends StatelessWidget {
   }
 }
 
+/// Ecran de chargement plein page affiche pendant la generation du parcours.
 class _VoileGeneration extends StatelessWidget {
   const _VoileGeneration();
 

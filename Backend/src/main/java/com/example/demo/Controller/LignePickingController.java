@@ -54,6 +54,12 @@ public class LignePickingController {
         return lignePickingService.scan(request);
     }
 
+    // "Aucun produit ici" : ferme la ligne sans creer de mouvement de stock.
+    @PostMapping("/{lignePickingId}/impossible")
+    public ScanLigneResponse declarerImpossible(@PathVariable Long lignePickingId) {
+        return lignePickingService.declarerImpossible(lignePickingId);
+    }
+
     @GetMapping("/getLignes/{journalId}")
     public List<LignePickingResponse> getLignes(@PathVariable Long journalId) {
         return lignePickingService.getPickingResponses(journalId);

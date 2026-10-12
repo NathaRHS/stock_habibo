@@ -4,7 +4,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -169,38 +171,63 @@ public class CommandeService {
                 List<MeilleurEmplacementResponse> meilleursEmplacements = new ArrayList<>();
 
                 Integer quantiteRestante = commande.getQuantiteDemandee();
+                int piecesParConditionnement = articleConditionnement.getQuantitePieceStandard();
+
+                // Pieces encore disponibles par emplacement : stock physique moins les
+                // reservations des autres pickings. Cette valeur diminue a mesure que
+                // l'on propose, pour ne jamais proposer deux fois la meme marchandise
+                // (meme logique que le controle de LignePickingService.creerLigne).
+                Map<Long, Integer> disponibleParEmplacement = new HashMap<>();
+
                 for (StockProjection stockProjection : stockProjections) {
-
-                        Emplacement emplacementPropose = emplacementRepository
-                                        .findById(stockProjection.getEmplacementId())
-                                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                                                        "l'emplacement proposé n'est pas trouvé"));
-                        Integer quantiteStocke = stockProjection.getQuantiteStock();
-
-                        Integer quantiteConditionnementStocke = quantiteStocke
-                                        / articleConditionnement.getQuantitePieceStandard();
-                        Long rackId = emplacementPropose.getRack().getId();
-                        String nomRack = emplacementPropose.getRack().getNomRack();
-                        Integer numeroEtage = emplacementPropose.getNumeroEtage();
                         if (quantiteRestante <= 0) {
                                 break;
                         }
+                        Long emplacementId = stockProjection.getEmplacementId();
 
-                        Integer quantiteAPrelever = Math.min(
-                                        quantiteConditionnementStocke,
-                                        quantiteRestante);
+                        int disponibleEnPieces = disponibleParEmplacement.computeIfAbsent(
+                                        emplacementId,
+                                        id -> {
+                                                Integer physique = stockRepository.trouverQuantiteTheorique(
+                                                                articleRecherche.getId(), id);
+                                                return (physique == null ? 0 : physique)
+                                                                - lignePickingService.piecesReservees(
+                                                                                id, articleRecherche.getId());
+                                        });
 
+                        // Un lot ne peut pas fournir plus que ce qui reste disponible.
+                        int piecesUtilisables = Math.min(stockProjection.getQuantiteStock(), disponibleEnPieces);
+                        int conditionnementsUtilisables = piecesUtilisables / piecesParConditionnement;
+                        if (conditionnementsUtilisables <= 0) {
+                                // Moins d'un conditionnement entier : rien a proposer ici.
+                                // (Une quantite a 0 ferait echouer toute la generation.)
+                                continue;
+                        }
+
+                        Emplacement emplacementPropose = emplacementRepository
+                                        .findById(emplacementId)
+                                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                                        "l'emplacement proposé n'est pas trouvé"));
+
+                        int quantiteAPrelever = Math.min(conditionnementsUtilisables, quantiteRestante);
                         quantiteRestante -= quantiteAPrelever;
-                        LocalDate dlc = stockProjection.getDlc();
+                        disponibleParEmplacement.put(
+                                        emplacementId,
+                                        disponibleEnPieces - quantiteAPrelever * piecesParConditionnement);
 
-                        MeilleurEmplacementResponse meilleurEmplacementResponse = new MeilleurEmplacementResponse(
-                                        emplacementPropose.getId(), emplacementPropose.getNomEmplacement(), rackId,
-                                        nomRack, numeroEtage, commande.getId(), quantiteStocke, quantiteAPrelever, dlc,
+                        meilleursEmplacements.add(new MeilleurEmplacementResponse(
+                                        emplacementPropose.getId(),
+                                        emplacementPropose.getNomEmplacement(),
+                                        emplacementPropose.getRack().getId(),
+                                        emplacementPropose.getRack().getNomRack(),
+                                        emplacementPropose.getNumeroEtage(),
+                                        commande.getId(),
+                                        stockProjection.getQuantiteStock(),
+                                        quantiteAPrelever,
+                                        stockProjection.getDlc(),
                                         stockProjection.getDlv(),
                                         emplacementPropose.getRack().getOrdre(),
-                                        emplacementPropose.getOrdreDansEtage());
-
-                        meilleursEmplacements.add(meilleurEmplacementResponse);
+                                        emplacementPropose.getOrdreDansEtage()));
                 }
 
                 return meilleursEmplacements;
@@ -295,24 +322,12 @@ public class CommandeService {
 
                 List<MeilleurEmplacementResponse> propositions = proposerMeilleurParcours(journalId);
 
+                // Rien de disponible : on ne cree pas de picking et on ne leve pas
+                // d'erreur. Le manque est traite a la validation de la sortie, qui
+                // genere un bon de reste (voir BonResteService). Un picking partiel
+                // est accepte : on prend ce qui existe.
                 if (propositions.isEmpty()) {
-                        throw new ResponseStatusException(
-                                        HttpStatus.CONFLICT,
-                                        "Aucun stock disponible pour les commandes de ce journal");
-                }
-
-                // On refuse de creer un picking partiel.
-                for (Commande commande : journal.getCommandes()) {
-                        int quantiteProposee = 0;
-
-                        for (MeilleurEmplacementResponse proposition : propositions) {
-                                if (proposition.commandeId().equals(commande.getId())) {
-                                        quantiteProposee += proposition.quantiteAPrelever();
-                                }
-                        }
-
-
-                            
+                        return new ArrayList<>();
                 }
 
                 Picking pickingSauvegarde = pickingStatutService.creerPicking(journal, user, rackDepart);

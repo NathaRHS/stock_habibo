@@ -6,20 +6,25 @@ import 'package:flutter/material.dart';
 class Habibo {
   const Habibo._();
 
+  // Bleu Habibo : l'unique couleur d'accent de l'application.
   static const bleu = Color(0xFF064B9C);
-  static const bleuDoux = Color(0xFFEAF2FA);
-  static const bleuNuit = Color(0xFF05366F);
+  static const bleuDoux = Color(0xFFEAF2FA); // fond clair derriere le bleu
+  static const bleuNuit = Color(0xFF05366F); // variante sombre
 
-  static const fond = Color(0xFFF7F8FA);
-  static const surface = Colors.white;
+  // Fonds et traits.
+  static const fond = Color(0xFFF7F8FA); // fond des pages
+  static const surface = Colors.white; // cartes, fiches
   static const bordure = Color(0xFFDFE4E8);
   static const neutreDoux = Color(0xFFEEF1F3);
 
+  // Textes, du plus marque au plus discret.
   static const texte = Color(0xFF18212A);
   static const encre = Color(0xFF18212A);
   static const texteSecondaire = Color(0xFF667482);
   static const texteDiscret = Color(0xFF98A2AB);
 
+  // Couleurs d'etat : erreur (rouge), succes (vert), alerte (orange), avec
+  // leur version "douce" pour les fonds.
   static const rouge = Color(0xFFD64545);
   static const rougeDoux = Color(0xFFFBECEC);
   static const vert = Color(0xFF1F9D62);
@@ -27,11 +32,14 @@ class Habibo {
   static const orange = Color(0xFFB8770F);
   static const orangeDoux = Color(0xFFFFF5DF);
 
+  // Dimensions : arrondi des champs, arrondi des cartes, marge des pages.
   static const rayon = 12.0;
   static const rayonCarte = 16.0;
   static const marge = 24.0;
 }
 
+/// Theme Material de toute l'application (couleurs, police Inter,
+/// transitions, snackbars, feuilles et boites de dialogue).
 ThemeData themeHabibo() {
   return ThemeData(
     colorScheme: ColorScheme.fromSeed(seedColor: Habibo.bleu),

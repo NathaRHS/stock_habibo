@@ -35,6 +35,7 @@ function NotificationBell() {
       const resultat = await chargerNotifications(springUrl);
       setNotifications(Array.isArray(resultat) ? resultat : []);
       setErreur("");
+      console.log("MAKA NOTIF");
     } catch (error) {
       setErreur(error.message);
     }
@@ -42,7 +43,8 @@ function NotificationBell() {
 
   useEffect(() => {
     charger();
-    const intervalle = window.setInterval(charger, 30000);
+    const intervalle = window.setInterval(charger, 2000);
+    console.log("je charge");
     return () => window.clearInterval(intervalle);
   }, [springUrl]);
 

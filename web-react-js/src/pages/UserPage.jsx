@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Activity, ArrowLeft, IdCard, ShieldCheck } from "lucide-react";
+import { Activity, ArrowLeft, Camera, IdCard, ShieldCheck } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import { getAccessToken } from "../services/authService";
+import { urlPhoto, verifierPhoto } from "../utils/photo";
 import "./css/UserPage.css";
 
 function UserPage() {
@@ -10,6 +11,9 @@ function UserPage() {
   const springUrl = import.meta.env.VITE_SPRING_URL;
   const token = getAccessToken();
   const [resultat, setResultat] = useState(null);
+  const [envoiEnCours, setEnvoiEnCours] = useState(false);
+  const [erreurPhoto, setErreurPhoto] = useState("");
+  const champFichier = useRef(null);
   const userId = Number(id);
   const idValide = Number.isInteger(userId) && userId > 0;
 
@@ -48,6 +52,57 @@ function UserPage() {
     chargerUtilisateur();
     return () => controller.abort();
   }, [id, idValide, springUrl, token, userId]);
+
+  // Envoie la photo choisie, puis remplace l'image affichée par celle du serveur.
+  const changerPhoto = async (event) => {
+    const fichier = event.target.files?.[0];
+    event.target.value = ""; // permet de rechoisir le même fichier
+    if (!fichier) return;
+
+    const probleme = verifierPhoto(fichier);
+    if (probleme) {
+      setErreurPhoto(probleme);
+      return;
+    }
+
+    setErreurPhoto("");
+    setEnvoiEnCours(true);
+    try {
+      const formulaire = new FormData();
+      formulaire.append("photo", fichier);
+
+      const response = await fetch(`${springUrl}/user/${userId}/photo`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formulaire,
+      });
+
+      if (!response.ok) {
+        let message = `Impossible d'enregistrer la photo (${response.status}).`;
+        try {
+          const corps = await response.json();
+          if (corps?.detail) message = corps.detail;
+        } catch {
+          // Réponse sans corps JSON : le message par défaut reste.
+        }
+        throw new Error(message);
+      }
+
+      const utilisateur = await response.json();
+      setResultat((courant) =>
+        courant?.data
+          ? {
+              ...courant,
+              data: { ...courant.data, imageUser: utilisateur.imageUser },
+            }
+          : courant,
+      );
+    } catch (err) {
+      setErreurPhoto(err.message);
+    } finally {
+      setEnvoiEnCours(false);
+    }
+  };
 
   const resultatActuel = resultat?.id === id ? resultat : null;
   const userInfo = resultatActuel?.data;
@@ -92,7 +147,34 @@ function UserPage() {
           <div className="user-page-grid">
             <section className="user-profile-card" aria-label="Informations utilisateur">
               <div className="user-profile-top">
-                <div className="user-profile-avatar" aria-hidden="true">{initiales}</div>
+                <div className="user-profile-photo">
+                  <div className="user-profile-avatar">
+                    {userInfo.imageUser ? (
+                      <img
+                        alt={`Photo de ${userInfo.nom}`}
+                        src={urlPhoto(userInfo.imageUser)}
+                      />
+                    ) : (
+                      <span aria-hidden="true">{initiales}</span>
+                    )}
+                  </div>
+                  <input
+                    accept="image/jpeg,image/png,image/webp"
+                    hidden
+                    onChange={changerPhoto}
+                    ref={champFichier}
+                    type="file"
+                  />
+                  <button
+                    aria-label="Changer la photo de profil"
+                    className="user-profile-photo-bouton"
+                    disabled={envoiEnCours}
+                    onClick={() => champFichier.current?.click()}
+                    type="button"
+                  >
+                    <Camera size={14} aria-hidden="true" />
+                  </button>
+                </div>
                 <div className="user-profile-identity">
                   <span className="user-page-kicker">FICHE UTILISATEUR</span>
                   <h2>{userInfo.nom}</h2>
@@ -102,6 +184,14 @@ function UserPage() {
                   </span>
                 </div>
               </div>
+              {(envoiEnCours || erreurPhoto) && (
+                <p
+                  className={`user-profile-photo-etat ${erreurPhoto ? "user-profile-photo-etat--erreur" : ""}`}
+                  role={erreurPhoto ? "alert" : "status"}
+                >
+                  {erreurPhoto || "Envoi de la photo…"}
+                </p>
+              )}
               <div className="user-profile-details">
                 <div>
                   <span>Matricule</span>
