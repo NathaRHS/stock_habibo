@@ -195,7 +195,6 @@ class _EcranLoginState extends State<EcranLogin> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           const SizedBox(height: 24),
-                          _entete(),
                           const Spacer(flex: 3),
                           const SizedBox(height: 32),
                           const Text(
@@ -339,48 +338,7 @@ class _EcranLoginState extends State<EcranLogin> {
     );
   }
 
-  Widget _entete() {
-    return Row(
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: _bleu,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Text(
-            'H',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        const SizedBox(width: 14),
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Habibo',
-              style: TextStyle(
-                color: _texte,
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            SizedBox(height: 2),
-            Text(
-              'Gestion d’entrepôt',
-              style: TextStyle(color: _texteSecondaire, fontSize: 15),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+  
 
   Widget _libelle(String texte) {
     return Padding(

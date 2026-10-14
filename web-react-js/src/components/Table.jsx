@@ -313,6 +313,7 @@ function renderValue(value, column) {
         : "success";
     return <span className={`status-badge status-${tone}`}>{text}</span>;
   }
+
   return (
     <span className="cell-value" title={text}>
       {text}

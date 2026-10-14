@@ -62,6 +62,14 @@ function NewRackview({
                       title={emplacement.nomEmplacement}
                       type="button"
                     >
+                      {/* Niveau d'eau : le remplissage de la case (0 à 100). */}
+                      {element.taux > 0 && (
+                        <span
+                          aria-hidden="true"
+                          className={styles.eau}
+                          style={{ height: `${element.taux}%` }}
+                        />
+                      )}
                       {renderCase ? renderCase(element) : emplacement.nomEmplacement}
                     </button>
                   );

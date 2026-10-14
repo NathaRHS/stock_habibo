@@ -12,7 +12,9 @@ import com.example.demo.dto.article.ArticleResponse;
 import com.example.demo.dto.article.CreateArticleRequest;
 import com.example.demo.repository.TypeProduitRepository;
 import com.example.demo.entity.Article;
+import com.example.demo.entity.CibleEvenement;
 import com.example.demo.entity.TypeConditionnement;
+import com.example.demo.entity.TypeEvenementUser;
 import com.example.demo.entity.TypeProduit;
 import com.example.demo.entity.Unite;
 import com.example.demo.repository.ArticleRepository;
@@ -26,18 +28,20 @@ public class ArticleService {
     private final TypeConditionnementRepository typeConditionnementRepository;
     private final UniteRepository uniteRepository;
     private final FileStorageService fileStorageService;
+    private final JournalUserService journalUserService;
 
     private static final String DOSSIER_PHOTOS = "photos/";
 
     //Injection de dépendances
     public ArticleService(ArticleRepository articleRepository, TypeProduitRepository typeProduitRepository,
             TypeConditionnementRepository typeConditionnementRepository, UniteRepository uniteRepository,
-            FileStorageService fileStorageService) {
+            FileStorageService fileStorageService, JournalUserService journalUserService) {
         this.articleRepository = articleRepository;
         this.typeProduitRepository = typeProduitRepository;
         this.typeConditionnementRepository = typeConditionnementRepository;
         this.uniteRepository = uniteRepository;
         this.fileStorageService = fileStorageService;
+        this.journalUserService = journalUserService;
     }
 
     // Verifie une photo AVANT toute ecriture (utilise par les creations avec photo).
@@ -95,9 +99,33 @@ public class ArticleService {
         return versResponse(articleRepository.save(article));
     }
 
+    // Changement de photo demande par un utilisateur : le travail, puis la trace.
+    // (enregistrerPhoto sert aussi aux creations avec photo, qui ont leur trace.)
+    public ArticleResponse changerPhoto(Long id, MultipartFile photo) {
+        ArticleResponse reponse = enregistrerPhoto(id, photo);
+
+        journalUserService.enregistrer(
+                TypeEvenementUser.PHOTO_ARTICLE_CHANGEE,
+                CibleEvenement.ARTICLE,
+                id,
+                reponse.nomArticle());
+
+        return reponse;
+    }
+
     // Supprimer un article
     public void supprimerArticle(Long id) {
-        articleRepository.delete(trouverArticle(id));
+        Article article = trouverArticle(id);
+        // Decrit avant la suppression : apres, il n'y aurait plus rien a lire.
+        String description = article.getNomArticle() + " (" + article.getCodeBar() + ")";
+
+        articleRepository.delete(article);
+
+        journalUserService.enregistrer(
+                TypeEvenementUser.ARTICLE_SUPPRIME,
+                CibleEvenement.ARTICLE,
+                id,
+                description);
     }
 
     // HTTPStatus not found -> 400

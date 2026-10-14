@@ -27,3 +27,22 @@ export function getAuthenticatedUser() {
 export function clearAuthSession() {
   sessionStorage.removeItem(SESSION_KEY);
 }
+
+// Deconnexion : le serveur note le depart dans le journal d'activite, puis la
+// session locale est effacee. Meme si le serveur ne repond pas, on se deconnecte.
+export async function seDeconnecter(springUrl) {
+  const token = getAccessToken();
+
+  if (token) {
+    try {
+      await fetch(`${springUrl}/user/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch {
+      // Le depart local reste possible sans le serveur.
+    }
+  }
+
+  clearAuthSession();
+}

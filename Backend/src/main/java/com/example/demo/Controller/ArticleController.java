@@ -21,6 +21,7 @@ import com.example.demo.dto.article.ArticleResponse;
 import com.example.demo.dto.article.CreateArticleCompletRequest;
 import com.example.demo.dto.article.CreateArticleRequest;
 import com.example.demo.dto.article.CreateVarianteRequest;
+import com.example.demo.dto.article.UpdateArticleCompletRequest;
 import com.example.demo.service.ArticleCompletService;
 import com.example.demo.service.ArticleService;
 import com.example.demo.service.VarianteService;
@@ -48,6 +49,11 @@ public class ArticleController {
         return varianteService.creerVariante(id, request);
     }
 
+    @PutMapping ("/updateArticleComplet")
+    public ArticleCompletResponse updateArticleComplet(@RequestBody UpdateArticleCompletRequest request){
+        return articleCompletService.updateCompletArticle(request);
+
+    }
     // Meme chose avec une photo facultative : partie "data" (JSON) + partie "photo" (fichier).
     @PostMapping(value = "/{id}/variantes", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
@@ -60,7 +66,7 @@ public class ArticleController {
     // Ajoute ou remplace la photo d'un article existant.
     @PutMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ArticleResponse updatePhoto(@PathVariable Long id, @RequestPart("photo") MultipartFile photo) {
-        return articleService.enregistrerPhoto(id, photo);
+        return articleService.changerPhoto(id, photo);
     }
 
     @PostMapping({"", "/create"})

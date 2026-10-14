@@ -5,9 +5,14 @@ import {
   chargerNotifications,
   marquerNotificationLue,
 } from "../services/notificationService";
-import { getAccessToken } from "../services/authService";
+import { getAccessToken, getAuthenticatedUser } from "../services/authService";
+import { chargerActivitesRecentes } from "../services/journalUserService";
 import "./PanneauActivite.css";
 
+
+
+const role = getAuthenticatedUser?.role;
+const isAdmin = role === "ADMIN";
 const heure = (date) =>
   date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
@@ -63,15 +68,19 @@ const iconeNotification = (categorie) => {
  *
  * - notifications : lues depuis GET /notifications (existant) ;
  * - administrateurs : comptes de rôle ADMIN, lus depuis GET /user ;
- * - activités : fournies par la propriété `activites`
- *   ([{ id, utilisateur, texte, date }]). Le journal d'activité n'est pas
- *   encore enregistré côté serveur : tant qu'il n'existe pas, la liste est vide.
+ * - activités : les derniers événements du journal d'activité, lus depuis
+ *   GET /journal-user/recentes ([{ id, utilisateur, texte, date }]). La
+ *   propriété `activites` ne sert que de repli quand le serveur n'en renvoie
+ *   aucune.
  */
 function PanneauActivite({ activites = [] }) {
   const springUrl = import.meta.env.VITE_SPRING_URL;
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
+  const [activitesServeur, setActivitesServeur] = useState([]);
   const [administrateurs, setAdministrateurs] = useState([]);
+  const estAdministrateur = getAuthenticatedUser()?.role === "ADMIN";
+  const listeActivites = activitesServeur.length > 0 ? activitesServeur : activites;
 
   useEffect(() => {
     if (!getAccessToken()) return undefined;
@@ -84,10 +93,18 @@ function PanneauActivite({ activites = [] }) {
       } catch {
         // Le panneau reste affiché, sans notifications.
       }
+
+      // Les activités sont chargées à part : une panne de l'une ne bloque pas l'autre.
+      try {
+        const recentes = await chargerActivitesRecentes(springUrl, 6);
+        if (actif && isAdmin) setActivitesServeur(Array.isArray(recentes) ? recentes : []);
+      } catch {
+        // Le panneau reste affiché, sans activités.
+      }
     };
 
     charger();
-    const minuteur = window.setInterval(charger, 30000);
+    const minuteur = window.setInterval(charger, 2000);
     return () => {
       actif = false;
       window.clearInterval(minuteur);
@@ -168,11 +185,11 @@ function PanneauActivite({ activites = [] }) {
 
       <section>
         <h2>Activités</h2>
-        {activites.length === 0 ? (
+        {listeActivites.length === 0 ? (
           <p className="panneau-vide">Aucune activité enregistrée.</p>
         ) : (
           <ol className="panneau-chronologie">
-            {activites.slice(0, 6).map((activite) => (
+            {listeActivites.slice(0, 6).map((activite) => (
               <li key={activite.id}>
                 <Avatar nom={activite.utilisateur} />
                 <span className="panneau-texte">
@@ -182,6 +199,16 @@ function PanneauActivite({ activites = [] }) {
               </li>
             ))}
           </ol>
+        )}
+
+        {estAdministrateur && (
+          <button
+            className="panneau-lien"
+            onClick={() => navigate("/activites")}
+            type="button"
+          >
+            Voir toutes les activités
+          </button>
         )}
       </section>
 

@@ -9,7 +9,9 @@ export async function chargerEntrepot(springUrl) {
   return { racks, emplacements };
 }
 
-// Stock à la fin de la période, variation et nombre de mouvements par emplacement.
+// Liste de base de l'entrepôt : une ligne SOLDE_INITIAL par (emplacement, article)
+// avec le stock avant la période, puis un mouvement par ligne (quantité signée).
+// La page en déduit le stock, les variations, les totaux et le détail.
 // Dates au format AAAA-MM-JJ ; sans date, le serveur utilise le jour courant.
 export function chargerActiviteEntrepot(springUrl, debut, fin) {
   const parametres = new URLSearchParams();
@@ -17,6 +19,16 @@ export function chargerActiviteEntrepot(springUrl, debut, fin) {
   if (fin) parametres.set("fin", fin);
   const requete = parametres.toString();
   return requeteJson(`${springUrl}/mouvementStock/activite${requete ? `?${requete}` : ""}`);
+}
+
+// Pièces par unité et unités par palette : de quoi calculer la capacité d'un
+// emplacement (unités par palette × pièces par unité, pour l'article présent).
+export async function chargerCapacitesEntrepot(springUrl) {
+  const [conditionnements, palettes] = await Promise.all([
+    requeteJson(`${springUrl}/articles-conditionnements`),
+    requeteJson(`${springUrl}/palettes-conditionnements`),
+  ]);
+  return { conditionnements, palettes };
 }
 
 export const creerRack = (springUrl, { name, nombreEtages }) =>

@@ -13,7 +13,9 @@ import com.example.demo.dto.article.ArticleResponse;
 import com.example.demo.dto.article.CreateArticleCompletRequest;
 import com.example.demo.dto.article.CreateVarianteRequest;
 import com.example.demo.entity.Article;
+import com.example.demo.entity.CibleEvenement;
 import com.example.demo.entity.Famille;
+import com.example.demo.entity.TypeEvenementUser;
 import com.example.demo.repository.ArticleRepository;
 import com.example.demo.repository.FamilleRepository;
 
@@ -28,16 +30,19 @@ public class VarianteService {
     private final FamilleRepository familleRepository;
     private final ArticleService articleService;
     private final ArticleCompletService articleCompletService;
+    private final JournalUserService journalUserService;
 
     public VarianteService(
             ArticleRepository articleRepository,
             FamilleRepository familleRepository,
             ArticleService articleService,
-            ArticleCompletService articleCompletService) {
+            ArticleCompletService articleCompletService,
+            JournalUserService journalUserService) {
         this.articleRepository = articleRepository;
         this.familleRepository = familleRepository;
         this.articleService = articleService;
         this.articleCompletService = articleCompletService;
+        this.journalUserService = journalUserService;
     }
 
     @Transactional
@@ -68,7 +73,7 @@ public class VarianteService {
         verifierContenanceUnique(famille, info.contenanceValeur(), info.uniteId());
 
         // Creation de la variante : article + conditionnement + palette.
-        ArticleCompletResponse cree = articleCompletService.creerArticleComplet(
+        ArticleCompletResponse cree = articleCompletService.construireArticleComplet(
                 new CreateArticleCompletRequest(
                         new CreateArticleCompletRequest.ArticleInfo(
                                 info.nomArticle(),
@@ -85,6 +90,12 @@ public class VarianteService {
                         HttpStatus.INTERNAL_SERVER_ERROR, "Variante introuvable apres creation"));
         variante.setFamille(famille);
         articleRepository.save(variante);
+
+        journalUserService.enregistrer(
+                TypeEvenementUser.VARIANTE_CREEE,
+                CibleEvenement.ARTICLE,
+                variante.getId(),
+                variante.getNomArticle() + " (variante de " + base.getNomArticle() + ")");
 
         return new ArticleCompletResponse(
                 articleService.getArticleById(variante.getId()),

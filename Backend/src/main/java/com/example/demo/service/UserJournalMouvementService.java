@@ -3,6 +3,7 @@ package com.example.demo.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.dto.journal.ParticipantJournalResponse;
+import com.example.demo.entity.CibleEvenement;
 import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.NotificationCategorie;
 import com.example.demo.entity.NotificationPriorite;
@@ -18,6 +20,7 @@ import com.example.demo.entity.Role;
 import com.example.demo.entity.StatutJournalMouvement;
 import com.example.demo.entity.StatutJournalMouvementCode;
 import com.example.demo.entity.StatutParticipation;
+import com.example.demo.entity.TypeEvenementUser;
 import com.example.demo.entity.User;
 import com.example.demo.entity.UserJournalMouvement;
 import com.example.demo.repository.JournalMouvementRepository;
@@ -34,13 +37,16 @@ public class UserJournalMouvementService {
     private final JournalStatutService journalStatutService;
     private final NotificationService notificationService;
     private final RoleRepository roleRepository;
+    private final JournalUserService journalUserService;
 
     public UserJournalMouvementService(
             UserJournalMouvementRepository participationRepository,
             JournalMouvementRepository journalRepository,
             RoleRepository roleRepository,
             UserRepository userRepository,
-            JournalStatutService journalStatutService, NotificationService notificationService) {
+            JournalStatutService journalStatutService, NotificationService notificationService,
+            JournalUserService journalUserService) {
+        this.journalUserService = journalUserService;
         this.participationRepository = participationRepository;
         this.notificationService = notificationService;
         this.journalRepository = journalRepository;
@@ -54,15 +60,27 @@ public class UserJournalMouvementService {
         User user = trouverUtilisateur(matricule);
         verifierSessionOuverte(journal);
 
-        UserJournalMouvement participation = participationRepository
-                .findByJournalMouvementIdAndUserId(journalId, user.getId())
-                .orElseGet(() -> participationRepository.save(
-                        new UserJournalMouvement(journal, user)));
+        Optional<UserJournalMouvement> existante = participationRepository
+                .findByJournalMouvementIdAndUserId(journalId, user.getId());
+        boolean premiereFois = existante.isEmpty();
+
+        UserJournalMouvement participation = existante.orElseGet(
+                () -> participationRepository.save(new UserJournalMouvement(journal, user)));
 
         if (participation.getStatutParticipation() == StatutParticipation.TERMINE) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "Vous avez deja termine votre participation a cette session");
+        }
+
+        // Cette methode est aussi appelee a chaque scan : on ne note que le debut.
+        if (premiereFois) {
+            journalUserService.enregistrerPour(
+                    user,
+                    TypeEvenementUser.PARTICIPATION_DEBUTEE,
+                    CibleEvenement.JOURNAL,
+                    journalId,
+                    journal.getReference());
         }
 
         return versResponse(participation);
@@ -89,6 +107,13 @@ public class UserJournalMouvementService {
         participation.setStatutParticipation(StatutParticipation.TERMINE);
         participation.setDateFin(LocalDateTime.now());
         participationRepository.saveAndFlush(participation);
+
+        journalUserService.enregistrerPour(
+                user,
+                TypeEvenementUser.PARTICIPATION_TERMINEE,
+                CibleEvenement.JOURNAL,
+                journalId,
+                journal.getReference());
 
         boolean participantActifRestant = participationRepository
                 .existsByJournalMouvementIdAndStatutParticipation(

@@ -1,10 +1,12 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
+  Activity,
   Boxes,
   ClipboardCheck,
   HelpCircle,
   HouseIcon,
   LayoutDashboard,
+  LogOut,
   Package,
   PackageOpen,
   Receipt,
@@ -16,6 +18,7 @@ import {
 } from "lucide-react";
 import logoHabibo from "../assets/Logo_Habibo.png";
 import "../assets/css/Sidebar.css";
+import { getAuthenticatedUser, seDeconnecter } from "../services/authService";
 import NotificationBell from "./NotificationBell";
 
 const navigationItems = [
@@ -27,6 +30,8 @@ const navigationItems = [
   { label: "Inventaires", icon: ClipboardCheck, to: "/inventaires" },
   { label: "Conditionnements", icon: PackageOpen, to: "/article-conditionnements" },
   { label: "Capacités palettes", icon: Boxes, to: "/palettes-conditionnements/create" },
+  // Journal d'activité : réservé à l'administrateur (le serveur le refuse aux autres).
+  { label: "Activités", icon: Activity, to: "/activites", adminSeulement: true },
 ];
 
 const optimisationItems = [
@@ -36,6 +41,18 @@ const optimisationItems = [
 ];
 
 function Sidebar() {
+  const navigate = useNavigate();
+  const springUrl = import.meta.env.VITE_SPRING_URL;
+  const estAdministrateur = getAuthenticatedUser()?.role === "ADMIN";
+  const liens = navigationItems.filter(
+    (item) => !item.adminSeulement || estAdministrateur,
+  );
+
+  const quitter = async () => {
+    await seDeconnecter(springUrl);
+    navigate("/login");
+  };
+
   return (
     <aside className="sidebar">
       <Link className="logo" to="/accueil" aria-label="Retour au tableau de bord">
@@ -52,7 +69,7 @@ function Sidebar() {
       <nav className="sidebar-content" aria-label="Navigation principale">
         <div className="content">
           <p className="content-title">Navigation principale</p>
-          {navigationItems.map((item) => (
+          {liens.map((item) => (
             <NavLink className={({ isActive }) => isActive ? "sidebar-link sidebar-link--active" : "sidebar-link"} end={item.end} key={item.label} to={item.to}>
               <item.icon size={18} aria-hidden="true" />
               {item.label}
@@ -75,6 +92,7 @@ function Sidebar() {
       <div className="sidebar-footer">
         <button disabled type="button"><HelpCircle size={18} aria-hidden="true" />Aide</button>
         <button disabled type="button"><Settings size={18} aria-hidden="true" />Paramètres</button>
+        <button onClick={quitter} type="button"><LogOut size={18} aria-hidden="true" />Se déconnecter</button>
       </div>
     </aside>
   );

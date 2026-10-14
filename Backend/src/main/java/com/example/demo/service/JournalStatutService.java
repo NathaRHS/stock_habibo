@@ -11,10 +11,12 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.example.demo.entity.CibleEvenement;
 import com.example.demo.entity.HistoriqueJournalMouvementStatut;
 import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.StatutJournalMouvement;
 import com.example.demo.entity.StatutJournalMouvementCode;
+import com.example.demo.entity.TypeEvenementUser;
 import com.example.demo.entity.User;
 import com.example.demo.repository.HistoriqueJournalMouvementStatutRepository;
 import com.example.demo.repository.JournalMouvementRepository;
@@ -33,16 +35,19 @@ public class JournalStatutService {
     private final HistoriqueJournalMouvementStatutRepository historiqueRepository;
     private final JournalMouvementRepository journalRepository;
     private final UserRepository userRepository;
+    private final JournalUserService journalUserService;
 
     public JournalStatutService(
             StatutJournalMouvementRepository statutRepository,
             HistoriqueJournalMouvementStatutRepository historiqueRepository,
             JournalMouvementRepository journalRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            JournalUserService journalUserService) {
         this.statutRepository = statutRepository;
         this.historiqueRepository = historiqueRepository;
         this.journalRepository = journalRepository;
         this.userRepository = userRepository;
+        this.journalUserService = journalUserService;
     }
 
     // Change le statut en utilisant l'utilisateur authentifie (JWT) comme auteur.
@@ -64,6 +69,36 @@ public class JournalStatutService {
         journalRepository.save(journal);
         historiqueRepository.save(new HistoriqueJournalMouvementStatut(
                 journal, statut, LocalDateTime.now(), user));
+
+        enregistrerDansLeJournalUser(journal, code, user);
+    }
+
+    // Journal d'activite : un seul endroit pour toutes les decisions sur un
+    // journal. EN_COURS et EN_ATTENTE ne sont pas notes ici : ils decoulent des
+    // participations, deja enregistrees.
+    private void enregistrerDansLeJournalUser(
+            JournalMouvement journal, StatutJournalMouvementCode code, User user) {
+        TypeEvenementUser type = switch (code) {
+            case VALIDE -> TypeEvenementUser.JOURNAL_VALIDE;
+            case MODIFIE -> TypeEvenementUser.MODIFICATION_DEMANDEE;
+            case AFFECTEE -> TypeEvenementUser.ENTREE_STOCK_VALIDEE;
+            case CLOTURE -> TypeEvenementUser.SORTIE_CONFIRMEE;
+            default -> null;
+        };
+        if (type == null) {
+            return;
+        }
+
+        journalUserService.enregistrerPour(
+                user, type, CibleEvenement.JOURNAL, journal.getId(), decrire(journal));
+    }
+
+    private String decrire(JournalMouvement journal) {
+        String reference = journal.getReference();
+        String nomType = journal.getTypeMouvementJournal() == null
+                ? null
+                : journal.getTypeMouvementJournal().getNomTypeMouvement();
+        return nomType == null ? reference : reference + " (" + nomType + ")";
     }
 
     // Premiere ligne d'historique, a appeler juste apres la creation du journal.

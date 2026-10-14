@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.dto.article.CreatePaletteConditionnementRequest;
@@ -52,6 +53,24 @@ public class PaletteConditionnementService {
                 request.quantiteMaximale());
         return versResponse(paletteConditionnementRepository.save(paletteConditionnement));
     }
+
+
+@Transactional
+public PaletteConditionnementResponse modifier(Long articleConditionnementId, Integer quantiteMaximale) {
+    if (quantiteMaximale == null || quantiteMaximale <= 0) {
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "La quantite maximale doit etre strictement positive");
+    }
+
+    PaletteConditionnement palette = paletteConditionnementRepository
+            .findByArticleConditionnementId(articleConditionnementId)
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Regle palette introuvable pour ce conditionnement"));
+
+    palette.setQuantite(quantiteMaximale);
+    return versResponse(paletteConditionnementRepository.save(palette));
+}
+
 
     public List<PaletteConditionnementResponse> findAll() {
         return paletteConditionnementRepository.findAll().stream()
