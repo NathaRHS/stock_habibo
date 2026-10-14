@@ -88,7 +88,7 @@ function AffectationStock() {
   const infosEmplacement = (emplacement) => {
     if (!emplacement) return null;
 
-    const stock = stocks.find((element) => element.emplacementId === emplacement.id);
+    const stock = stocks.find((element) => element.emplacementId === emplacement.id && element.quantiteStock > 0);
     const premiereAffectation = affectations.find(
       (affectation) => affectation.emplacementId === emplacement.id,
     );

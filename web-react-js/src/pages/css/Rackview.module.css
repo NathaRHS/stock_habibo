@@ -138,6 +138,14 @@
   font-size: 11px;
   opacity: 0.5;
 }
+/* Nom de l'article présent : une ligne, coupée proprement si trop longue. */
+.article {
+  overflow: hidden;
+  font-size: 10px;
+  opacity: 0.7;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .variation {
   font-size: 10px;
   font-weight: 600;
@@ -154,6 +162,60 @@
 }
 .detail strong { font-weight: 600; }
 .detail span { color: var(--color-text-secondary); }
+
+/* Mouvements de l'emplacement sélectionné */
+.historique {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+.historiqueEntete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+.historiqueEntete h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+.historiqueEntete p {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+.historiqueEntete strong {
+  color: var(--color-text);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableDefile { overflow-x: auto; }
+
+.tableHistorique {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.tableHistorique th {
+  padding: 8px 12px;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+.tableHistorique td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.tableHistorique tbody tr:last-child td { border-bottom: 0; }
 
 @media (max-width: 700px) {
   .periode { margin-left: 0; }

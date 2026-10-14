@@ -16,6 +16,7 @@ import com.example.demo.dto.journal.ScanArticleRequest;
 import com.example.demo.dto.inventaire.ScanInventaireRequest;
 import com.example.demo.entity.Article;
 import com.example.demo.entity.ArticleConditionnement;
+import com.example.demo.entity.CibleEvenement;
 import com.example.demo.entity.ComptageInventaire;
 import com.example.demo.entity.DetailJournal;
 import com.example.demo.entity.Emplacement;
@@ -23,6 +24,7 @@ import com.example.demo.entity.Societe;
 import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.StatutJournalMouvement;
 import com.example.demo.entity.StatutJournalMouvementCode;
+import com.example.demo.entity.TypeEvenementUser;
 import com.example.demo.entity.TypeMouvementJournal;
 import com.example.demo.entity.User;
 import com.example.demo.repository.ArticleConditionnementRepository;
@@ -51,6 +53,7 @@ public class JournalMouvementService {
     private final ComptageInventaireRepository comptageInventaireRepository;
     private final UserRepository userRepository;
     private final JournalStatutService journalStatutService;
+    private final JournalUserService journalUserService;
 
     public JournalMouvementService(
             JournalMouvementRepository journalRepository,
@@ -62,7 +65,9 @@ public class JournalMouvementService {
             ArticleConditionnementRepository articleConditionnementRepository,
             EmplacementRepository emplacementRepository,
             ComptageInventaireRepository comptageInventaireRepository, UserRepository userRepository,
-            JournalStatutService journalStatutService) {
+            JournalStatutService journalStatutService,
+            JournalUserService journalUserService) {
+        this.journalUserService = journalUserService;
         this.journalRepository = journalRepository;
         this.typeRepository = typeRepository;
         this.userJournalMouvementService = userJournalMouvementService;
@@ -100,6 +105,13 @@ public class JournalMouvementService {
 
         JournalMouvement journalSauvegarde = journalRepository.save(journal);
         journalStatutService.enregistrerStatutInitial(journalSauvegarde);
+
+        journalUserService.enregistrer(
+                TypeEvenementUser.JOURNAL_CREE,
+                CibleEvenement.JOURNAL,
+                journalSauvegarde.getId(),
+                reference + " (" + journalSauvegarde.getTypeMouvementJournal().getNomTypeMouvement() + ")");
+
         return versResponse(journalSauvegarde);
     }
 
@@ -138,11 +150,31 @@ public class JournalMouvementService {
                 convertirStatut(trouverStatut(request.statutJournalMouvementId())));
         // remplacerDetails(journal, request.details());
 
-        return versResponse(journalRepository.save(journal));
+        JournalMouvementResponse reponse = versResponse(journalRepository.save(journal));
+
+        journalUserService.enregistrer(
+                TypeEvenementUser.JOURNAL_MODIFIE,
+                CibleEvenement.JOURNAL,
+                id,
+                reference);
+
+        return reponse;
     }
 
     public void delete(Long id) {
-        journalRepository.delete(trouverJournal(id));
+        JournalMouvement journal = trouverJournal(id);
+        // Decrit avant la suppression : apres, il n'y aurait plus rien a lire.
+        String description = journal.getReference() + " ("
+                + journal.getTypeMouvementJournal().getNomTypeMouvement() + ", statut "
+                + journal.getStatut().getNom() + ")";
+
+        journalRepository.delete(journal);
+
+        journalUserService.enregistrer(
+                TypeEvenementUser.JOURNAL_SUPPRIME,
+                CibleEvenement.JOURNAL,
+                id,
+                description);
     }
 
     private JournalMouvement trouverJournal(Long id) {

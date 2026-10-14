@@ -141,6 +141,24 @@
   content: "";
 }
 
+/* Lien discret sous la chronologie, vers la page complète des activités. */
+.panneau-lien {
+  margin-top: 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.panneau-lien:hover,
+.panneau-lien:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+
 .panneau-admins {
   gap: 20px;
 }

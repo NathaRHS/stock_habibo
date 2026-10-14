@@ -79,6 +79,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/lignes-picking/*/impossible")
                         .hasAnyRole("OPERATEUR", "ADMIN")
 
+                        // Deconnexion : tout utilisateur connecte (trace dans le journal).
+                        .requestMatchers(HttpMethod.POST, "/user/logout")
+                        .authenticated()
+
                         .requestMatchers(HttpMethod.POST, "/**")
                         .hasRole("ADMIN")
 
@@ -103,6 +107,12 @@ public class SecurityConfig {
                         // sur mobile, les opérateurs n'y ont pas accès.
                         .requestMatchers(HttpMethod.GET, "/inventaire/**")
                         .hasAnyRole("AUDITEUR", "ADMIN")
+
+                        // Journal d'activité : la liste complète et ses filtres sont
+                        // réservés à l'administrateur. Les derniers événements
+                        // (/journal-user/recentes) suivent la règle de lecture ci-dessous.
+                        .requestMatchers(HttpMethod.GET, "/journal-user", "/journal-user/types")
+                        .hasRole("ADMIN")
 
                         // Toutes les lectures restantes : utilisateur connecté
                         .requestMatchers(HttpMethod.GET, "/**")

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { clearAuthSession, setAuthSession } from "../services/authService";
 import Footer from "../components/Footer";
 import imageConnexion from "../assets/images/slide_hp_17.jpg";
@@ -10,6 +11,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const springUrl = import.meta.env.VITE_SPRING_URL;
 
@@ -47,7 +49,7 @@ function Login() {
       } else if (role === "AUDITEUR") {
         // L'auditeur (rôle à part de l'inventoriste, qui compte sur mobile)
         // consulte les inventaires : il arrive directement sur leur liste.
-        navigate("/inventaires");
+        navigate("/inventaires/isAdmin=false");
       } else {
         // Pas de session pour un rôle qui n'a pas accès au site.
         clearAuthSession();
@@ -108,15 +110,34 @@ function Login() {
             <label className="login-etiquette" htmlFor="password">
               Mot de passe
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="Mot de passe"
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
+            <div className="login-mot-de-passe">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Mot de passe"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+              <button
+                aria-label={
+                  showPassword
+                    ? "Masquer le mot de passe"
+                    : "Afficher le mot de passe"
+                }
+                aria-pressed={showPassword}
+                className="login-oeil"
+                onClick={() => setShowPassword((visible) => !visible)}
+                type="button"
+              >
+                {showPassword ? (
+                  <EyeOff aria-hidden="true" size={18} />
+                ) : (
+                  <Eye aria-hidden="true" size={18} />
+                )}
+              </button>
+            </div>
 
             {error && (
               <p className="login-error" role="alert">

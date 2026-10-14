@@ -41,8 +41,9 @@ public class MouvementStockController {
         return mouvementStockService.getAllEntry();
     }
 
-    // Stock a la fin de la periode, variation et nombre de mouvements par emplacement.
-    // Format des dates : AAAA-MM-JJ. Sans parametre, le jour courant est utilise.
+    // Liste de base de l'entrepot : solde initial et mouvements de la periode (31
+    // jours au plus). Le stock, les variations et les totaux en sont deduits par
+    // l'application. Format des dates : AAAA-MM-JJ ; sans parametre, le jour courant.
     @GetMapping("/activite")
     public List<ActiviteEmplacementResponse> activite(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate debut,

@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import ListeArticle from "./pages/ListeArticle";
 import ListeJournal from "./pages/ListeJournal";
 import ListeUtilisateur from "./pages/ListeUtilisateur";
+import ListeActivite from "./pages/ListeActivite";
 import ListeTypeConditionnement from "./pages/ListeTypeConditionnement";
 import ListeArticleConditionnement from "./pages/ListeArticleConditionnement";
 import CreateTypeMouvementJournal from "./pages/CreateTypeMouvementJournal";
@@ -54,6 +55,7 @@ createRoot(document.getElementById("root")).render(
           element={<Navigate to="/article" replace />}
         />
         <Route path="/users" element={<ListeUtilisateur />} />
+        <Route path="/activites" element={<ListeActivite />} />
         <Route path="/users/create" element={<CreateUtilisateur />} />
         <Route
           path="/type-conditionnement/create"

@@ -27,7 +27,7 @@ function decrire(emplacement, infos, suggestion) {
   return morceaux.join(", ");
 }
 
-function RackView({
+function RackAffectation ({
   racks,
   rackSelectionne,
   onRackChange,
@@ -262,4 +262,4 @@ function RackView({
   );
 }
 
-export default RackView;
+export default RackAffectation ;

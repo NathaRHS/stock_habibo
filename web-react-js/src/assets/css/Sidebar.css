@@ -149,6 +149,9 @@
 
 .sidebar-footer svg { flex: none; }
 .sidebar-footer button:disabled { color: var(--color-text-muted); cursor: not-allowed; }
+.sidebar-footer button:not(:disabled) { cursor: pointer; }
+.sidebar-footer button:not(:disabled):hover,
+.sidebar-footer button:not(:disabled):focus-visible { color: var(--color-primary); outline: none; }
 
 @media (max-width: 640px) {
   .sidebar { width: 100%; min-height: auto; }

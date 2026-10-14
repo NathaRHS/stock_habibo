@@ -12,7 +12,7 @@
 }
 
 /* Le panneau reste visible pendant que la page défile. */
-.avec-panneau > .panneau-activite {
+.avec-panneau-cote {
   position: sticky;
   top: 0;
   flex: 0 0 auto;
@@ -20,9 +20,53 @@
   overflow-y: auto;
 }
 
+/* Le bouton se place sur la ligne du titre « Notifications », sans décaler
+   le contenu du panneau. */
+.avec-panneau-bascule {
+  position: absolute;
+  top: 18px;
+  right: 12px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.avec-panneau-bascule:hover,
+.avec-panneau-bascule:focus-visible {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  outline: none;
+}
+
+/* Replié : une fine bande avec le seul bouton. Le panneau reste monté (donc
+   les notifications continuent de se rafraîchir), il est juste masqué. */
+.avec-panneau-cote--replie {
+  width: 44px;
+  overflow: hidden;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.avec-panneau-cote--replie .panneau-activite {
+  display: none;
+}
+
+.avec-panneau-cote--replie .avec-panneau-bascule {
+  right: 8px;
+}
+
 /* En dessous de 1200 px, il prendrait trop de place au contenu. */
 @media (max-width: 1200px) {
-  .avec-panneau > .panneau-activite {
+  .avec-panneau-cote {
     display: none;
   }
 }

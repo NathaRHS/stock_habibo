@@ -111,6 +111,38 @@
   padding-bottom: 7px;
 }
 
+/* Champ mot de passe : le bouton œil se place à droite, sur la ligne du champ. */
+.login-mot-de-passe {
+  position: relative;
+  width: 100%;
+}
+
+.login-champs .login-mot-de-passe input {
+  padding-right: 32px;
+}
+
+.login-oeil {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--login-gris);
+  cursor: pointer;
+}
+
+.login-oeil:hover,
+.login-oeil:focus-visible {
+  color: var(--login-bleu);
+  outline: none;
+}
+
 .login-error {
   margin: -8px 0 16px 0;
   color: #b3261e;

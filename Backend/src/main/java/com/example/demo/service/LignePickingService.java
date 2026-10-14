@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.entity.ArticleConditionnement;
+import com.example.demo.entity.CibleEvenement;
 import com.example.demo.entity.Commande;
 import com.example.demo.entity.DetailJournal;
 import com.example.demo.entity.Emplacement;
@@ -31,6 +32,7 @@ import com.example.demo.entity.StatutJournalMouvementCode;
 import com.example.demo.entity.StatutLignePickingCode;
 import com.example.demo.entity.StatutPickingCode;
 import com.example.demo.entity.StatutPrelevement;
+import com.example.demo.entity.TypeEvenementUser;
 import com.example.demo.entity.User;
 import com.example.demo.repository.ArticleConditionnementRepository;
 import com.example.demo.repository.CommandeRepository;
@@ -63,6 +65,7 @@ public class LignePickingService {
         private final JournalStatutService journalStatutService;
         private final NotificationService notificationService;
         private final UserRepository userRepository;
+        private final JournalUserService journalUserService;
 
         public LignePickingService(
                         LignePickingRepository lignePickingRepository,
@@ -79,7 +82,9 @@ public class LignePickingService {
                         StatutPrelevementRepository statutPrelevementRepository,
                         NotificationService notificationService,
                         StockRepository stockRepository,
-                        LignePickingStatutService lignePickingStatutService) {
+                        LignePickingStatutService lignePickingStatutService,
+                        JournalUserService journalUserService) {
+                this.journalUserService = journalUserService;
                 this.lignePickingRepository = lignePickingRepository;
                 this.pickingRepository = pickingRepository;
                 this.userRepository = userRepository;
@@ -561,6 +566,16 @@ public class LignePickingService {
 
                 int piecesParConditionnement = lignePicking.getArticleConditionnement().getQuantitePieceStandard();
                 int piecesRestantes = lignePicking.getQuantitePiecesAPrelever() - piecesPrelevees;
+
+                // Signal terrain : il manque de la marchandise a cet emplacement.
+                journalUserService.enregistrer(
+                                TypeEvenementUser.AUCUN_PRODUIT_DECLARE,
+                                CibleEvenement.LIGNE_PICKING,
+                                lignePicking.getId(),
+                                lignePicking.getArticleConditionnement().getArticle().getNomArticle()
+                                                + " à " + lignePicking.getEmplacement().getNomEmplacement()
+                                                + " (manque " + piecesRestantes / piecesParConditionnement
+                                                + " conditionnement(s))");
 
                 return new ScanLigneResponse(
                                 null,

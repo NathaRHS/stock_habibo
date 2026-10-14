@@ -47,6 +47,7 @@ public class CommandeService {
         private final ArticleConditionnementRepository articleConditionnementRepository;
         private final PickingRepository pickingRepository;
         private final PickingStatutService pickingStatutService;
+        private final JournalUserService journalUserService;
 
         public CommandeService(JournalMouvementRepository journalMouvementRepository,
                         LignePickingService lignePickingService,
@@ -59,7 +60,9 @@ public class CommandeService {
                         PickingRepository pickingRepository,
                         PickingStatutService pickingStatutService,
                         StatuPrelevementRepository statuPrelevementRepository,
-                        UserRepository userRepository, StockRepository stockRepository) {
+                        UserRepository userRepository, StockRepository stockRepository,
+                        JournalUserService journalUserService) {
+                this.journalUserService = journalUserService;
                 this.journalMouvementRepository = journalMouvementRepository;
                 this.articleRepository = articleRepository;
                 this.commandeRepository = commandeRepository;
@@ -104,6 +107,17 @@ public class CommandeService {
 
                 }
                 List<Commande> commandeValiny = commandeRepository.saveAll(commandeAInserer);
+
+                if (!commandeValiny.isEmpty()) {
+                        JournalMouvement journalConcerne = commandeValiny.get(0).getJournalMouvement();
+                        journalUserService.enregistrer(
+                                        TypeEvenementUser.COMMANDES_AJOUTEES,
+                                        CibleEvenement.JOURNAL,
+                                        idJournal,
+                                        commandeValiny.size() + " article(s) pour "
+                                                        + journalConcerne.getReference());
+                }
+
                 List<CommandeResponse> responses = new ArrayList<>();
 
                 for (Commande commandeSauvegardee : commandeValiny) {
@@ -364,6 +378,12 @@ public class CommandeService {
                         lignesCreees.add(ligne);
                         ordrePassage++;
                 }
+
+                journalUserService.enregistrer(
+                                TypeEvenementUser.PARCOURS_GENERE,
+                                CibleEvenement.PICKING,
+                                pickingSauvegarde.getId(),
+                                lignesCreees.size() + " étape(s) pour " + journal.getReference());
 
                 return lignesCreees;
         }

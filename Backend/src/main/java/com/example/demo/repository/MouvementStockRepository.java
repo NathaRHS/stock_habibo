@@ -13,26 +13,61 @@ import com.example.demo.projection.ActiviteEmplacementProjection;
 
 public interface MouvementStockRepository extends JpaRepository<MouvementStock, Long> {
 
-    // Stock cumule jusqu'a finExclue, plus variation et nombre de mouvements
-    // sur [debut, finExclue[. Une ligne par emplacement, meme vide.
+    // Liste de base de l'entrepot : c'est l'application qui en tire le stock, les
+    // variations et le detail de chaque emplacement.
+    //
+    // - une ligne SOLDE_INITIAL par (emplacement, article) : le stock juste avant
+    //   la periode (tous les mouvements anterieurs a :debut, sans les lister) ;
+    // - une ligne par mouvement de la periode [debut, finExclue[, avec sa
+    //   quantite signee (entree +, sortie -).
+    //
+    // Stock a la fin de la periode = somme des quantites de toutes les lignes.
+    // Les mouvements en reserve n'ont pas d'emplacement : ils sont exclus.
+    // Le solde initial passe avant les mouvements (son id est NULL).
     @Query(value = """
-            SELECT e.id AS emplacementId,
-                   CAST(COALESCE(SUM(CASE WHEN m.date_mouvement < :finExclue
-                                          THEN m.quantite_pieces_reelle * t.sens END), 0)
-                        AS SIGNED) AS stockFin,
-                   CAST(COALESCE(SUM(CASE WHEN m.date_mouvement >= :debut
-                                           AND m.date_mouvement < :finExclue
-                                          THEN m.quantite_pieces_reelle * t.sens END), 0)
-                        AS SIGNED) AS variation,
-                   COUNT(CASE WHEN m.date_mouvement >= :debut
-                               AND m.date_mouvement < :finExclue
-                              THEN m.id END) AS nbMouvements
-            FROM t_emplacement e
-            LEFT JOIN t_mouvement_stock m ON m.emplacement_id = e.id
-            LEFT JOIN t_type_mouvement t ON t.id = m.type_mouvement_id
-            GROUP BY e.id
+            SELECT m.emplacement_id AS emplacementId,
+                   a.id AS articleId,
+                   a.nom_article AS nomArticle,
+                   CAST(:debut AS DATETIME(6)) AS dateMouvement,
+                   'SOLDE_INITIAL' AS typeMouvement,
+                   CAST(SUM(m.quantite_pieces_reelle * t.sens) AS SIGNED) AS quantite,
+                   CAST(NULL AS CHAR) AS journalReference,
+                   CAST(NULL AS CHAR) AS matricule,
+                   CAST(NULL AS SIGNED) AS id
+            FROM t_mouvement_stock m
+            JOIN t_type_mouvement t ON t.id = m.type_mouvement_id
+            JOIN t_article_conditionnement c ON c.id = m.conditionnement_id
+            JOIN t_article a ON a.id = c.article_id
+            WHERE m.emplacement_id IS NOT NULL
+              AND m.date_mouvement < :debut
+            GROUP BY m.emplacement_id, a.id, a.nom_article
+            HAVING SUM(m.quantite_pieces_reelle * t.sens) <> 0
+
+            UNION ALL
+
+            SELECT m.emplacement_id,
+                   a.id,
+                   a.nom_article,
+                   m.date_mouvement,
+                   t.nom_type_mouvement,
+                   CAST(m.quantite_pieces_reelle * t.sens AS SIGNED),
+                   j.reference,
+                   u.matricule,
+                   m.id
+            FROM t_mouvement_stock m
+            JOIN t_type_mouvement t ON t.id = m.type_mouvement_id
+            JOIN t_article_conditionnement c ON c.id = m.conditionnement_id
+            JOIN t_article a ON a.id = c.article_id
+            JOIN t_detail_journal d ON d.id = m.detail_journal_id
+            JOIN t_journal_mouvement j ON j.id = d.journal_mouvement_id
+            LEFT JOIN t_user u ON u.id = m.user_id
+            WHERE m.emplacement_id IS NOT NULL
+              AND m.date_mouvement >= :debut
+              AND m.date_mouvement < :finExclue
+
+            ORDER BY emplacementId, dateMouvement, id
             """, nativeQuery = true)
-    List<ActiviteEmplacementProjection> calculerActiviteParEmplacement(
+    List<ActiviteEmplacementProjection> listerActivite(
             @Param("debut") LocalDateTime debut,
             @Param("finExclue") LocalDateTime finExclue);
 

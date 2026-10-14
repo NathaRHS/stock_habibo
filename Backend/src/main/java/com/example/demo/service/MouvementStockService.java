@@ -440,8 +440,13 @@ public class MouvementStockService {
                 .toList();
     }
 
-    // Stock et activite par emplacement : sans date, le jour courant est utilise;
-    // sans fin, la periode se limite au jour de debut. La fin est incluse.
+    // Duree maximale de la periode demandee : la liste contient un mouvement par
+    // ligne, elle grossit avec la periode.
+    private static final long PERIODE_MAX_JOURS = 31;
+
+    // Liste de base de l'entrepot (solde initial + mouvements de la periode) :
+    // sans date, le jour courant est utilise; sans fin, la periode se limite au
+    // jour de debut. La fin est incluse.
     public List<ActiviteEmplacementResponse> calculerActivite(LocalDate debut, LocalDate fin) {
         LocalDate jourDebut = debut != null ? debut : LocalDate.now();
         LocalDate jourFin = fin != null ? fin : jourDebut;
@@ -452,16 +457,28 @@ public class MouvementStockService {
                     "La date de fin doit etre posterieure ou egale a la date de debut");
         }
 
+        long jours = java.time.temporal.ChronoUnit.DAYS.between(jourDebut, jourFin) + 1;
+        if (jours > PERIODE_MAX_JOURS) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La periode ne peut pas depasser " + PERIODE_MAX_JOURS + " jours");
+        }
+
         return mouvementStockRepository
-                .calculerActiviteParEmplacement(
+                .listerActivite(
                         jourDebut.atStartOfDay(),
                         jourFin.plusDays(1).atStartOfDay())
                 .stream()
                 .map(ligne -> new ActiviteEmplacementResponse(
+                        ligne.getId(),
                         ligne.getEmplacementId(),
-                        ligne.getStockFin(),
-                        ligne.getVariation(),
-                        ligne.getNbMouvements()))
+                        ligne.getArticleId(),
+                        ligne.getNomArticle(),
+                        ligne.getDateMouvement(),
+                        ligne.getTypeMouvement(),
+                        ligne.getQuantite(),
+                        ligne.getJournalReference(),
+                        ligne.getMatricule()))
                 .toList();
     }
 

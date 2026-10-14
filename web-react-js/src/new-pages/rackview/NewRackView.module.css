@@ -93,6 +93,8 @@
 }
 
 .cell {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex: 0 0 auto;
   width: 88px;
@@ -125,6 +127,53 @@
   background: var(--color-primary);
   border-color: var(--color-primary);
   box-shadow: 0 6px 16px rgba(1, 73, 142, 0.28);
+}
+
+/* Le texte de la case reste au-dessus de l'eau. */
+.cell > *:not(.eau) {
+  position: relative;
+  z-index: 1;
+}
+
+/* L'eau monte depuis le bas de la case, selon le taux de remplissage. */
+.eau {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 0;
+  background: rgba(1, 73, 142, 0.16);
+  pointer-events: none;
+  transition: height 0.6s ease;
+}
+
+/* La vague : une ellipse plus large que la case, qui glisse lentement. */
+.eau::before {
+  position: absolute;
+  top: -5px;
+  left: -25%;
+  width: 150%;
+  height: 10px;
+  background: inherit;
+  border-radius: 50%;
+  animation: vague 7s ease-in-out infinite alternate;
+  content: "";
+}
+
+@keyframes vague {
+  from { transform: translateX(0); }
+  to { transform: translateX(16%); }
+}
+
+/* Case sélectionnée : fond bleu, l'eau devient claire. */
+.active .eau,
+.active:hover .eau {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eau { transition: none; }
+  .eau::before { animation: none; }
 }
 
 @media (max-width: 900px) {

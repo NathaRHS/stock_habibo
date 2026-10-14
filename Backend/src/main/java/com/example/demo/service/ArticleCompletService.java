@@ -14,6 +14,11 @@ import com.example.demo.dto.article.CreateArticleConditionnementRequest;
 import com.example.demo.dto.article.CreateArticleRequest;
 import com.example.demo.dto.article.CreatePaletteConditionnementRequest;
 import com.example.demo.dto.article.PaletteConditionnementResponse;
+import com.example.demo.dto.article.UpdateArticleCompletRequest;
+import com.example.demo.entity.Article;
+import com.example.demo.entity.CibleEvenement;
+import com.example.demo.entity.TypeEvenementUser;
+import com.example.demo.repository.ArticleRepository;
 
 /**
  * Cree un article, son conditionnement et sa capacite palette dans une seule
@@ -25,18 +30,39 @@ public class ArticleCompletService {
     private final ArticleService articleService;
     private final ArticleConditionnementService articleConditionnementService;
     private final PaletteConditionnementService paletteConditionnementService;
+    private final ArticleRepository articleRepository;
+    private final JournalUserService journalUserService;
 
     public ArticleCompletService(
             ArticleService articleService,
             ArticleConditionnementService articleConditionnementService,
-            PaletteConditionnementService paletteConditionnementService) {
+            PaletteConditionnementService paletteConditionnementService, ArticleRepository articleRepository,
+            JournalUserService journalUserService) {
         this.articleService = articleService;
+        this.articleRepository = articleRepository;
         this.articleConditionnementService = articleConditionnementService;
         this.paletteConditionnementService = paletteConditionnementService;
+        this.journalUserService = journalUserService;
     }
 
+    // Creation d'un article : le travail, puis la trace "article cree".
     @Transactional
     public ArticleCompletResponse creerArticleComplet(CreateArticleCompletRequest request) {
+        ArticleCompletResponse cree = construireArticleComplet(request);
+
+        journalUserService.enregistrer(
+                TypeEvenementUser.ARTICLE_CREE,
+                CibleEvenement.ARTICLE,
+                cree.article().id(),
+                cree.article().nomArticle() + " (" + cree.article().codeBar() + ")");
+
+        return cree;
+    }
+
+    // Le travail de creation, sans trace : une variante l'utilise aussi et
+    // enregistre sa propre action ("variante creee"), pas deux.
+    @Transactional
+    public ArticleCompletResponse construireArticleComplet(CreateArticleCompletRequest request) {
         verifierSections(request);
 
         // 1. L'article.
@@ -92,5 +118,24 @@ public class ArticleCompletService {
         if (request.palette() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La section palette est obligatoire");
         }
+    }
+
+    public ArticleCompletResponse updateCompletArticle(UpdateArticleCompletRequest request) {
+        Article article = articleRepository.findById(request.article().articleId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "article introuvable"));
+        ArticleResponse articleResponse = articleService.modifierArticle(article.getId(), new CreateArticleRequest(
+                request.article().nomArticle(), request.article().codeBar(), request.article().typeProduitId(),
+                request.article().typeProduitId(), request.article().contenanceValeur(), request.article().uniteId()));
+        ArticleConditionnementResponse conditionnement = articleConditionnementService
+                .modifierArticleConditionnement(article.getArticleConditionnements().get(0).getId(),
+                        new CreateArticleConditionnementRequest(
+                                articleResponse.id(),
+                                request.conditionnement().typeConditionnementId(),
+                                request.conditionnement().codeBarres(),
+                                request.conditionnement().quantitePieceStandard()));
+
+        PaletteConditionnementResponse palette = paletteConditionnementService
+                .modifier(article.getArticleConditionnements().get(0).getId(), request.palette().quantiteMaximale());
+        return new ArticleCompletResponse(articleResponse, conditionnement, palette);
     }
 }
