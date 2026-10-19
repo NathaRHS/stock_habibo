@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.demo.dto.article.FicheProduitResponseDto;
 import com.example.demo.dto.stock.StockParEmplacementResponse;
 import com.example.demo.service.StockService;
 
@@ -22,6 +23,11 @@ public class StockController {
     @GetMapping("/emplacements")
     public List<StockParEmplacementResponse> showAllStocksParEmplacement() {
         return stockService.getAllStocksParEmplacement();
+    }
+
+    @GetMapping ("/fiche-produit/{id}")
+    public FicheProduitResponseDto getFicheProduit(@PathVariable Long id ){
+        return  stockService.getFicheProduit(id);
     }
 
     // @GetMapping("/getListeEmplacementTotal")

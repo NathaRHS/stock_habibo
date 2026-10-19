@@ -32,6 +32,7 @@ import { User } from "lucide-react";
 import UserPage from "./pages/UserPage";
 import RackView from "./pages/Rackview";
 import AvecPanneauActivite from "./components/AvecPanneauActivite";
+import FicheProduit from "./pages/FicheProduit";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -114,7 +115,8 @@ createRoot(document.getElementById("root")).render(
           element={<NewAffectationStock />}
         />
 
-        <Route path="/ficheProduit/:id"/>
+        <Route  path="/ficheProduit/:id" element={<FicheProduit/>}/>
+
         </Route>
       </Routes>
     </BrowserRouter>

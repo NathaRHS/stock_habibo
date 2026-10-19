@@ -36,7 +36,7 @@ function RackView() {
   // Structure (une seule fois), mouvements (à chaque changement de date) et
   // règles de capacité (une seule fois).
   const [allData, setAllData] = useState(null);
-  const [mouvements, setMouvements] = useState([]);
+  const [activites, setActivites] = useState([]);
   const [listesCapacite, setListesCapacite] = useState({ conditionnements: [], palettes: [] });
   const [rackSelectionne, setRackSelectionne] = useState(null);
   const [emplacementSelectionne, setEmplacementSelectionne] = useState(null);
@@ -94,7 +94,7 @@ function RackView() {
     chargerActiviteEntrepot(springUrl, dateDebut || dateFin, dateFin)
       .then((lignes) => {
         if (annule) return;
-        setMouvements(Array.isArray(lignes) ? lignes : []);
+        setActivites(Array.isArray(lignes) ? lignes : []);
         setErreurActivite("");
       })
       .catch((e) => {
@@ -117,7 +117,7 @@ function RackView() {
   const parEmplacement = useMemo(() => {
     const resultat = new Map();
 
-    mouvements.forEach((ligne) => {
+    activites.forEach((ligne) => {
       const element = resultat.get(ligne.emplacementId) ?? {
         stockFin: 0,
         variation: 0,
@@ -144,7 +144,7 @@ function RackView() {
     });
 
     return resultat;
-  }, [mouvements]);
+  }, [activites]);
 
   // Une ligne par emplacement : stock, variation, mouvements, article présent.
   const activiteParEmplacement = useMemo(() => {
