@@ -11,7 +11,7 @@ function NewRackview({
   emplacementSelectionneId,
   onSelect,
   renderCase,
-}) {
+}) {  
   const aucuneCase = niveaux.every((niveau) => niveau.cases.length === 0);
 
   return (
