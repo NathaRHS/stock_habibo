@@ -49,7 +49,7 @@ function Login() {
       } else if (role === "AUDITEUR") {
         // L'auditeur (rôle à part de l'inventoriste, qui compte sur mobile)
         // consulte les inventaires : il arrive directement sur leur liste.
-        navigate("/inventaires/isAdmin=false");
+        navigate("/inventaires");
       } else {
         // Pas de session pour un rôle qui n'a pas accès au site.
         clearAuthSession();

@@ -37,7 +37,14 @@ export const creerRack = (springUrl, { name, nombreEtages }) =>
     body: JSON.stringify({ name, nombreEtages }),
   });
 
-export const creerEmplacement = (springUrl, { nomEmplacement, rackId, numeroEtage }) =>
+// Crée le rack et tous ses emplacements en une seule transaction.
+export const creerRackComplet = (springUrl, { name, nombreEtages, emplacements }) =>
+  requeteJson(`${springUrl}/emplacements/complet`, {
+    method: "POST",
+    body: JSON.stringify({ name, nombreEtages, emplacements }),
+  });
+
+export const creerEmplacement =(springUrl, { nomEmplacement, rackId, numeroEtage }) =>
   requeteJson(`${springUrl}/emplacements`, {
     method: "POST",
     body: JSON.stringify({ nomEmplacement, rackId, numeroEtage }),

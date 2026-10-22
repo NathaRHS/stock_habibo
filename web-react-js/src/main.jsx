@@ -33,6 +33,9 @@ import UserPage from "./pages/UserPage";
 import RackView from "./pages/Rackview";
 import AvecPanneauActivite from "./components/AvecPanneauActivite";
 import FicheProduit from "./pages/FicheProduit";
+import GenererBon from "./pages/GenererBon";
+import CreationRack from "./pages/CreationRack";
+import Referentiels from "./pages/Referentiels";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -41,6 +44,7 @@ createRoot(document.getElementById("root")).render(
         {/* <Route path="/animate" element={<Animate />} /> */}
         {/* <Route path="/crud" element={<CrudElement />} /> */}
         <Route path="/" element={<Login />} />
+        <Route path="/rack/create/:lastRack" element={<CreationRack />} />
         <Route path="/login" element={<Login />} />
             <Route
           path="/journaux-mouvements/:journalId/affectation-stock"
@@ -95,6 +99,7 @@ createRoot(document.getElementById("root")).render(
         <Route path="/createListeArticle/:id" element={<CreateCommande />} />
         <Route path="/sortie/:id" element={<AffectationSortie />} />
         <Route path="/rack" element={<RackView/>} />
+        <Route path="/referentiels" element={<Referentiels />} />
 
         <Route path="/user/:id" element={<UserPage/>} />
 
@@ -116,6 +121,7 @@ createRoot(document.getElementById("root")).render(
         />
 
         <Route  path="/ficheProduit/:id" element={<FicheProduit/>}/>
+        <Route path="/bons" element={<GenererBon />} />
 
         </Route>
       </Routes>

@@ -297,7 +297,7 @@ public class LignePickingService {
                 if (quantitePiecesAPrelever > stockDisponibleEnPieces) {
                         throw new ResponseStatusException(
                                         HttpStatus.CONFLICT,
-                                        "Stock disponible insuffisant dans cet emplacement");
+                                        "Stock disponible insuffisant dans cet emplacement" + emplacement.getId() +" "+ emplacement.getNomEmplacement());
                 }
 
                 // 11. Toutes les verifications sont passees : la reservation est creee.

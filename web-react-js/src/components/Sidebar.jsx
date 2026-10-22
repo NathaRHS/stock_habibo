@@ -6,6 +6,7 @@ import {
   HelpCircle,
   HouseIcon,
   LayoutDashboard,
+  ListChecks,
   LogOut,
   Package,
   PackageOpen,
@@ -30,6 +31,7 @@ const navigationItems = [
   { label: "Inventaires", icon: ClipboardCheck, to: "/inventaires" },
   { label: "Conditionnements", icon: PackageOpen, to: "/article-conditionnements" },
   { label: "Capacités palettes", icon: Boxes, to: "/palettes-conditionnements/create" },
+  { label: "Référentiels", icon: ListChecks, to: "/referentiels", adminSeulement: true },
   // Journal d'activité : réservé à l'administrateur (le serveur le refuse aux autres).
   { label: "Activités", icon: Activity, to: "/activites", adminSeulement: true },
 ];

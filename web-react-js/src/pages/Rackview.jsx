@@ -8,6 +8,7 @@ import {
 import { construireNiveaux } from "../utils/rack";
 import NewRackview from "../new-pages/rackview/NewRackView";
 import styles from "./css/Rackview.module.css";
+import { useNavigate } from "react-router-dom";
 
 // Ligne qui résume le stock d'un (emplacement, article) avant la période.
 const SOLDE_INITIAL = "SOLDE_INITIAL";
@@ -32,6 +33,8 @@ const libelleType = (type) => {
 
 function RackView() {
   const springUrl = import.meta.env.VITE_SPRING_URL;
+  const navigate = useNavigate();
+
 
   // Structure (une seule fois), mouvements (à chaque changement de date) et
   // règles de capacité (une seule fois).
@@ -420,6 +423,10 @@ function RackView() {
                 </strong>
               </div>
             </section>
+            <div style={{width:"100%",display:"flex",justifyContent:"end",margin:"20px"} } className="ajout">
+              <button style={{width:"20%",height:"40px"}} onClick={() =>  navigate(`/rack/create/lastRack=${racks?.[racks.length - 1]?.name}`)} >ajouter un rack</button>
+              <button style={{width:"20%",height:"40px"}} >ajouter un emplacement</button>
+            </div>
 
             <NewRackview
               racks={racks}

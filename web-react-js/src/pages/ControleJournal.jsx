@@ -401,7 +401,7 @@ function ControleJournal() {
                               Code scanné validé
                             </span>
                           </div>
-                          <div className="item-qty">{d.quantite}</div>
+                          <div className="item-qty"> {d.quantiteConditionnement}<span style={{fontSize:"10px"}}>conditionnements</span> </div>
                         </div>
                       ))}
                     </div>

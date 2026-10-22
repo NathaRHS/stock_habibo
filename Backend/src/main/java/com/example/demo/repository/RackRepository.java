@@ -8,4 +8,6 @@ import com.example.demo.entity.Rack;
 @Repository
 public interface RackRepository extends JpaRepository<Rack, Long> {
 
+    boolean existsByNomRack(String nomRack);
+
 }

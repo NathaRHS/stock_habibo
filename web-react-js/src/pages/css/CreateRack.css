@@ -1,0 +1,14 @@
+.listes {
+  display: grid;
+  grid-template-columns: repeat(var(--colonnes), 80px);
+  grid-auto-rows: 90px;
+  gap: 12px;
+  width: 10%;
+}
+
+.case {
+  padding: 25px;
+  border: 1px solid #d0d7e2;
+  border-radius: 8px;
+  text-align: center;
+}

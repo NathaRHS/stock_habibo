@@ -172,6 +172,9 @@ class _EcranScanSortieMaquetteState extends State<EcranScanSortieMaquette> {
                               '$_rack - ${ligne.nomEmplacement}',
                               style: const TextStyle(fontSize: 11),
                             ),
+                            Text(
+                              "quantite : ${ligne.quantitePiecesAPrelever}"
+                            ),
                           ],
                         ),
                       ],

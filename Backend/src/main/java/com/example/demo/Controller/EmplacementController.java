@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.emplacement.EmplacementRequest;
+import com.example.demo.dto.emplacement.EmplacementRequestAll;
 import com.example.demo.dto.emplacement.EmplacementResponse;
+import com.example.demo.dto.emplacement.EmplacementResponseAll;
 import com.example.demo.service.EmplacementService;
 
 @RestController
@@ -30,6 +32,12 @@ public class EmplacementController {
     @ResponseStatus(HttpStatus.CREATED)
     public EmplacementResponse create(@RequestBody EmplacementRequest request) {
         return emplacementService.create(request);
+    }
+
+    @PostMapping("/complet")
+    @ResponseStatus(HttpStatus.CREATED)
+    public EmplacementResponseAll createAll(@RequestBody EmplacementRequestAll request) {
+        return emplacementService.createAll(request);
     }
 
     @GetMapping
