@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/screens/ecran_liste_journaux.dart';
+import 'package:flutter_application/services/session_utilisateur.dart';
 import 'package:flutter_application/theme/habibo.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -76,6 +77,74 @@ class _EcranLoginState extends State<EcranLogin> {
     return aUnPort ? saisie : '$saisie:8080';
   }
 
+  /// « Mot de passe oublié ? » : on demande le matricule, puis on prévient
+  /// l'administrateur. Le serveur répond la même chose que le matricule existe ou non.
+  Future<void> _motDePasseOublie() async {
+    final matriculeOublie = TextEditingController(
+      text: _matriculeController.text.trim(),
+    );
+
+    final matricule = await showDialog<String>(
+      context: context,
+      builder: (contexte) => AlertDialog(
+        title: const Text('Mot de passe oublié'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'L’administrateur sera prévenu et vous donnera un nouveau '
+              'mot de passe.',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: matriculeOublie,
+              autofocus: true,
+              decoration: _decorationChamp(hint: 'Votre matricule'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(contexte).pop(),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.of(contexte).pop(matriculeOublie.text.trim()),
+            child: const Text('Prévenir l’administrateur'),
+          ),
+        ],
+      ),
+    );
+
+    // Fenêtre fermée avec « Annuler » ou sans matricule : rien à envoyer.
+    if (matricule == null || matricule.isEmpty) return;
+
+    String message;
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${_urlServeur()}/user/mot-de-passe-oublie'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'matricule': matricule}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('Erreur serveur');
+      }
+      message = 'Demande envoyée. L’administrateur va vous contacter.';
+    } catch (_) {
+      message =
+          'Impossible de joindre le serveur. Vérifiez l’adresse du serveur.';
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
   Future<void> _seConnecter() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -129,6 +198,13 @@ class _EcranLoginState extends State<EcranLogin> {
       await preferences.setString(_cleServeur, _serveurController.text.trim());
 
       if (!mounted) return;
+
+      SessionUtilisateur.ouvrir(
+        baseUrl: baseUrl,
+        accessToken: token,
+        userId: userId,
+        nom: utilisateur?['username'] as String?,
+      );
 
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -310,7 +386,19 @@ class _EcranLoginState extends State<EcranLogin> {
                                     ),
                             ),
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 8),
+                          Center(
+                            child: TextButton(
+                              onPressed: _connexionEnCours
+                                  ? null
+                                  : _motDePasseOublie,
+                              child: const Text(
+                                'Mot de passe oublié ?',
+                                style: TextStyle(color: _bleu, fontSize: 15),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
                           _libelle('Serveur'),
                           TextFormField(
                             controller: _serveurController,
@@ -337,8 +425,6 @@ class _EcranLoginState extends State<EcranLogin> {
       ),
     );
   }
-
-  
 
   Widget _libelle(String texte) {
     return Padding(

@@ -13,6 +13,8 @@ public record ArticleResponse(
         String nomFamille,
         BigDecimal contenanceValeur,
         Long uniteId,
-        String nomUnite
+        String nomUnite,
+        Long societeId,
+        String nomSociete
 ) {
 }

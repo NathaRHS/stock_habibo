@@ -35,6 +35,7 @@ import com.example.demo.repository.EmplacementRepository;
 import com.example.demo.repository.SocieteRepository;
 import com.example.demo.repository.JournalMouvementRepository;
 import com.example.demo.repository.StatutJournalMouvementRepository;
+import com.example.demo.repository.StockRepository;
 import com.example.demo.repository.TypeMouvementJournalRepository;
 import com.example.demo.repository.UserRepository;
 
@@ -54,9 +55,11 @@ public class JournalMouvementService {
     private final UserRepository userRepository;
     private final JournalStatutService journalStatutService;
     private final JournalUserService journalUserService;
+    private final StockRepository stockRepository;
 
     public JournalMouvementService(
             JournalMouvementRepository journalRepository,
+            StockRepository stockRepository,
             TypeMouvementJournalRepository typeRepository,
             StatutJournalMouvementRepository statutRepository,
             SocieteRepository fournisseurRepository,
@@ -69,6 +72,7 @@ public class JournalMouvementService {
             JournalUserService journalUserService) {
         this.journalUserService = journalUserService;
         this.journalRepository = journalRepository;
+        this.stockRepository  = stockRepository;
         this.typeRepository = typeRepository;
         this.userJournalMouvementService = userJournalMouvementService;
         this.statutRepository = statutRepository;
@@ -102,6 +106,9 @@ public class JournalMouvementService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Un inventaire est en cours : impossible de créer une entrée ou une sortie");
         }
+        verifierFournisseurEntree(
+                journal.getTypeMouvementJournal().getNomTypeMouvement(),
+                journal.getFournisseur());
 
         JournalMouvement journalSauvegarde = journalRepository.save(journal);
         journalStatutService.enregistrerStatutInitial(journalSauvegarde);
@@ -140,11 +147,15 @@ public class JournalMouvementService {
         verifierReferenceDisponible(reference, id);
         // validerDetails(request.details());
 
+        TypeMouvementJournal nouveauType = trouverType(request.typeMouvementJournalId());
+        Societe nouveauFournisseur = trouverFournisseur(request.fournisseurId());
+        verifierFournisseurEntree(nouveauType.getNomTypeMouvement(), nouveauFournisseur);
+
         journal.setReference(reference);
         journal.setUrlPieceJointe(normaliserFacultatif(request.urlPieceJointe()));
         journal.setNomClient(normaliserFacultatif(request.nomClient()));
-        journal.setFournisseur(trouverFournisseur(request.fournisseurId()));
-        journal.setTypeMouvementJournal(trouverType(request.typeMouvementJournalId()));
+        journal.setFournisseur(nouveauFournisseur);
+        journal.setTypeMouvementJournal(nouveauType);
         journalStatutService.changerStatut(
                 journal,
                 convertirStatut(trouverStatut(request.statutJournalMouvementId())));
@@ -175,6 +186,38 @@ public class JournalMouvementService {
                 CibleEvenement.JOURNAL,
                 id,
                 description);
+    }
+
+    // Une entree vient toujours d'un fournisseur : c'est lui qui decide des articles
+    // qu'on peut scanner (voir verifierSocieteArticle).
+    private void verifierFournisseurEntree(String nomType, Societe fournisseur) {
+        if ("ENTREE".equalsIgnoreCase(nomType) && fournisseur == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Le fournisseur est obligatoire pour une entrée");
+        }
+    }
+
+    // Entree : seuls les produits de la societe du fournisseur peuvent etre scannes.
+    private void verifierSocieteArticle(JournalMouvement journal, Article article) {
+        String nomType = journal.getTypeMouvementJournal().getNomTypeMouvement();
+        if (!"ENTREE".equalsIgnoreCase(nomType)) {
+            return;
+        }
+
+        Societe fournisseur = journal.getFournisseur();
+        if (fournisseur == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Cette entrée n'a pas de fournisseur : renseignez-le avant de scanner");
+        }
+        if (article.getSociete() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "L'article " + article.getNomArticle() + " n'a pas de société");
+        }
+        if (!article.getSociete().getId().equals(fournisseur.getId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Cet article appartient à " + article.getSociete().getNomSociete()
+                            + ", cette entrée vient de " + fournisseur.getNomSociete());
+        }
     }
 
     private JournalMouvement trouverJournal(Long id) {
@@ -366,6 +409,7 @@ public class JournalMouvementService {
                     "La DLV ne peut pas etre posterieure a la DLC");
         }
         Integer conditionnementsSaisis = request.quantiteConditionnement();
+        //On pouvait entrer la quantité sur l'ancien ecran 
         Integer piecesSaisies = request.quantite();
 
         if (conditionnementsSaisis == null && piecesSaisies == null) {
@@ -381,8 +425,10 @@ public class JournalMouvementService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "La quantité réelle doit être strictement positive");
         }
+        //On cherche l'article à partir du code barre scanné 
         Article article = articleRepository.findByCodeBar(request.codeBarres()).orElse(null);
 
+        //On cherche son conditionnement
         ArticleConditionnement articleConditionnement = articleConditionnementRepository
                 .findByCodeBarres(request.codeBarres()).orElse(null);
 
@@ -393,6 +439,9 @@ public class JournalMouvementService {
         if (articleConditionnement != null) {
             article = articleConditionnement.getArticle();
         }
+
+        // Entree : l'article doit etre de la societe du fournisseur du journal.
+        verifierSocieteArticle(journal, article);
 
         if (conditionnementsSaisis != null && articleConditionnement == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -584,11 +633,17 @@ public class JournalMouvementService {
 
         // ComptageInventaire conserve la quantite comptee dans cet emplacement.
         LocalDateTime dateComptage = LocalDateTime.now();
+        // Photo du stock du logiciel a cet instant. Elle n'est retenue qu'au premier
+        // comptage de l'emplacement (voir l'INSERT de ajouterOuIncrementer) : les scans
+        // suivants additionnent la quantite comptee sans changer cette reference.
+        Integer quantiteTheorique = stockRepository.trouverQuantiteTheorique(
+                article.getId(),
+                emplacement.getId());
         comptageInventaireRepository.ajouterOuIncrementer(
                 detailJournal.getId(),
                 emplacement.getId(),
                 quantiteReelle,
-
+                quantiteTheorique,
                 dateComptage);
 
         ComptageInventaire comptage = comptageInventaireRepository
@@ -633,6 +688,14 @@ public class JournalMouvementService {
 
     private ComptageInventaireResponse versComptageInventaireResponse(ComptageInventaire comptage) {
         DetailJournal detail = comptage.getDetailJournal();
+        // Positif = surplus, negatif = manque, sur le total deja compte dans l'emplacement.
+        // Un comptage ancien n'a pas de photo : on retombe sur le stock actuel.
+        Integer quantiteTheorique = comptage.getQuantiteTheorique() != null
+                ? comptage.getQuantiteTheorique()
+                : stockRepository.trouverQuantiteTheorique(
+                        detail.getArticle().getId(),
+                        comptage.getEmplacement().getId());
+        Integer ecart = comptage.getQuantiteComptee() - quantiteTheorique;
         return new ComptageInventaireResponse(
                 comptage.getId(),
                 detail.getId(),
@@ -642,6 +705,7 @@ public class JournalMouvementService {
                 comptage.getEmplacement().getId(),
                 comptage.getEmplacement().getNomEmplacement(),
                 comptage.getQuantiteComptee(),
+                ecart,
                 comptage.getDateComptage());
     }
 }

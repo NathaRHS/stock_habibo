@@ -14,6 +14,7 @@ public enum TypeEvenementUser {
     CONNEXION_ECHOUEE("a échoué à se connecter"),
     DECONNEXION("s'est déconnecté"),
     COMPTE_CREE("a créé un compte"),
+    MOT_DE_PASSE_REINITIALISE("a réinitialisé un mot de passe"),
     PHOTO_UTILISATEUR_CHANGEE("a changé une photo de profil"),
 
     // Articles

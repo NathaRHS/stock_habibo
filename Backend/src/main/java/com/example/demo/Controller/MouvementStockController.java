@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import com.example.demo.dto.stock.ActiviteEmplacementResponse;
 import com.example.demo.dto.stock.CreerMouvementsStockRequest;
 import com.example.demo.dto.stock.MouvementStockResponse;
+import com.example.demo.dto.stock.PointMensuelResponse;
+import com.example.demo.dto.stock.SyntheseMouvementsResponse;
 import com.example.demo.service.MouvementStockService;
 
 @RestController
@@ -34,6 +36,21 @@ public class MouvementStockController {
     public List<MouvementStockResponse> getMouvementStock() {
         return mouvementStockService.findAll();
 
+    }
+
+    // Totaux de l'accueil sur [debut, fin[ et sur la periode precedente de meme duree.
+    // Format des dates : AAAA-MM-JJ.
+    @GetMapping("/synthese")
+    public SyntheseMouvementsResponse synthese(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate debut,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin) {
+        return mouvementStockService.synthese(debut, fin);
+    }
+
+    // Pieces entrees et sorties des douze mois de l'annee demandee.
+    @GetMapping("/serie-mensuelle")
+    public List<PointMensuelResponse> serieMensuelle(@RequestParam int annee) {
+        return mouvementStockService.serieMensuelle(annee);
     }
 
     @GetMapping("/entrees")

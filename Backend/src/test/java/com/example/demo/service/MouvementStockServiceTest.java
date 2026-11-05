@@ -142,7 +142,9 @@ class MouvementStockServiceTest {
         when(palette.getQuantite()).thenReturn(25);
         when(emplacement.getId()).thenReturn(emplacementId);
 
-        when(journalMouvementRepository.findById(journalId)).thenReturn(Optional.of(journal));
+        // Le journal et l'emplacement sont lus avec un verrou en ecriture.
+        when(journalMouvementRepository.findByIdForUpdate(journalId)).thenReturn(Optional.of(journal));
+        when(emplacementRepository.findByIdForUpdate(emplacementId)).thenReturn(Optional.of(emplacement));
         when(userRepository.findByMatricule("EMP001")).thenReturn(Optional.of(utilisateur));
         when(typeMouvementStockRepository.findByNomTypeMouvement("ENTREE"))
                 .thenReturn(Optional.of(typeEntree));

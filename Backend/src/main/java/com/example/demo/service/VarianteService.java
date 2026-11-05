@@ -69,6 +69,11 @@ public class VarianteService {
                 ? info.typeConditionnementId()
                 : base.getTypeConditionnement().getId();
 
+        // Meme societe que l'article de depart, sauf si une autre est donnee.
+        Long societeId = info.societeId() != null
+                ? info.societeId()
+                : (base.getSociete() == null ? null : base.getSociete().getId());
+
         Famille famille = obtenirFamille(base, request.nomFamille());
         verifierContenanceUnique(famille, info.contenanceValeur(), info.uniteId());
 
@@ -81,7 +86,8 @@ public class VarianteService {
                                 typeProduitId,
                                 typeConditionnementId,
                                 info.contenanceValeur(),
-                                info.uniteId()),
+                                info.uniteId(),
+                                societeId),
                         request.conditionnement(),
                         request.palette()));
 

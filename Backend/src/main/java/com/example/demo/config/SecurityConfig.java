@@ -45,6 +45,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/user/login")
                         .permitAll()
 
+                        // Mot de passe oublie : demande sans connexion (reponse neutre)
+                        .requestMatchers(HttpMethod.POST, "/user/mot-de-passe-oublie")
+                        .permitAll()
+
                         .requestMatchers("/error")
                         .permitAll()
 

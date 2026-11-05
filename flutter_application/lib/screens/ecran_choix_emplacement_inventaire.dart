@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/widgets/bouton_profil.dart';
 import 'package:flutter_application/models/comptage_inventaire.dart';
 import 'package:flutter_application/screens/ecran_scan_session.dart';
 import 'package:flutter_application/services/scan_service.dart';
@@ -215,6 +216,10 @@ class _EcranChoixEmplacementInventaireState
                 fontWeight: FontWeight.w700,
               ),
             ),
+          ),
+          const Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: BoutonProfil(taille: 34, surFondSombre: true),
           ),
         ],
       ),

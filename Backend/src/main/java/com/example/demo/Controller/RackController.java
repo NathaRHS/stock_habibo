@@ -42,6 +42,12 @@ public class RackController {
         return rackService.findById(id);
     }
 
+    // Ordre des racks : du plus proche de la sortie au plus loin (sert au calcul de proximite).
+    @PutMapping("/ordre")
+    public List<RackResponse> reordonner(@RequestBody List<Long> idsDansLOrdre) {
+        return rackService.reordonner(idsDansLOrdre);
+    }
+
     @PutMapping("/{id}")
     public RackResponse update(@PathVariable Long id, @RequestBody RackRequest request) {
         return rackService.update(id, request);

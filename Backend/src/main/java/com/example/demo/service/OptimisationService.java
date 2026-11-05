@@ -15,6 +15,7 @@ import com.example.demo.dto.optimisation.SuggestionProduitResponse;
 import com.example.demo.dto.stock.AffectationStockRequest;
 import com.example.demo.entity.Article;
 import com.example.demo.entity.ArticleConditionnement;
+import com.example.demo.entity.CleParametreSuggestion;
 import com.example.demo.entity.DetailJournal;
 import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.StatutLignePickingCode;
@@ -31,16 +32,40 @@ public class OptimisationService {
     private final ArticleConditionnementRepository articleConditionnementRepository;
     private final EmplacementService emplacementService;
     private final LignePickingRepository lignePickingRepository;
+    private final ParametreSuggestionService parametreSuggestionService;
+
+    // Poids du score final, deja ramenes a une somme de 1.
+    private record Poids(double proximite, double capacite, double fiabilite, double regroupement) {
+    }
 
     public OptimisationService(
             DetailJournalRepository detailJournalRepository,
             EmplacementService emplacementService,
             ArticleConditionnementRepository articleConditionnementRepository,
-            LignePickingRepository lignePickingRepository) {
+            LignePickingRepository lignePickingRepository,
+            ParametreSuggestionService parametreSuggestionService) {
         this.detailJournalRepository = detailJournalRepository;
         this.articleConditionnementRepository = articleConditionnementRepository;
         this.emplacementService = emplacementService;
         this.lignePickingRepository = lignePickingRepository;
+        this.parametreSuggestionService = parametreSuggestionService;
+    }
+
+    // Lus une fois par suggestion (et non par emplacement). Si la somme des poids
+    // n'est pas 100, on les ramene a 1 pour que le score reste entre 0 et 100.
+    private Poids lirePoids() {
+        double proximite = parametreSuggestionService.valeurDecimale(CleParametreSuggestion.POIDS_PROXIMITE);
+        double capacite = parametreSuggestionService.valeurDecimale(CleParametreSuggestion.POIDS_CAPACITE);
+        double fiabilite = parametreSuggestionService.valeurDecimale(CleParametreSuggestion.POIDS_FIABILITE);
+        double regroupement = parametreSuggestionService.valeurDecimale(CleParametreSuggestion.POIDS_REGROUPEMENT);
+
+        double total = proximite + capacite + fiabilite + regroupement;
+        if (total <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Les poids de la suggestion sont tous a zero : corrigez le parametrage");
+        }
+        return new Poids(proximite / total, capacite / total, fiabilite / total, regroupement / total);
     }
 
     public SuggestionProduitResponse proposerEmplacements(Long detailJournalId,
@@ -176,6 +201,10 @@ public class OptimisationService {
             return emplacementsEvalues;
         }
 
+        Poids poids = lirePoids();
+        double scoreEmplacementVide = parametreSuggestionService
+                .valeurDecimale(CleParametreSuggestion.SCORE_EMPLACEMENT_VIDE);
+
         long positionMin = calculerPosition(candidats.get(0));
         long positionMax = calculerPosition(candidats.get(0));
 
@@ -206,7 +235,8 @@ public class OptimisationService {
                     quantiteAAffecter);
             double scoreRegroupement = calculerScoreRegroupement(
                     candidat.getArticlePresentId(),
-                    articleAPlacerId);
+                    articleAPlacerId,
+                    scoreEmplacementVide);
 
             // Les anomalies ne sont pas encore disponibles dans la projection.
             double scoreFiabilite = calculerScoreFiabilite(0);
@@ -215,7 +245,8 @@ public class OptimisationService {
                     scoreProximite,
                     scoreCapacite,
                     scoreFiabilite,
-                    scoreRegroupement);
+                    scoreRegroupement,
+                    poids);
 
             evalue.setCapaciteLibre(capaciteLibre);
             evalue.setScoreProximite(scoreProximite);
@@ -314,10 +345,11 @@ public class OptimisationService {
 
     private double calculerScoreRegroupement(
             Long articlePresentId,
-            Long articleAPlacerId) {
+            Long articleAPlacerId,
+            double scoreEmplacementVide) {
 
         if (articlePresentId == null) {
-            return 60;
+            return scoreEmplacementVide;
         }
 
         if (articlePresentId.equals(articleAPlacerId)) {
@@ -331,12 +363,13 @@ public class OptimisationService {
             double scoreProximite,
             double scoreCapacite,
             double scoreFiabilite,
-            double scoreRegroupement) {
+            double scoreRegroupement,
+            Poids poids) {
 
-        return scoreProximite * 0.25
-                + scoreCapacite * 0.30
-                + scoreFiabilite * 0.30
-                + scoreRegroupement * 0.15;
+        return scoreProximite * poids.proximite()
+                + scoreCapacite * poids.capacite()
+                + scoreFiabilite * poids.fiabilite()
+                + scoreRegroupement * poids.regroupement();
     }
 
     private long calculerPosition(

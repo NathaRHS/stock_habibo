@@ -22,6 +22,9 @@ import com.example.demo.dto.utilisateur.CreateUserRequest;
 import com.example.demo.dto.utilisateur.LoginRequest;
 import com.example.demo.dto.utilisateur.LoginResponse;
 import com.example.demo.dto.utilisateur.UserResponse;
+import com.example.demo.dto.utilisateur.MessageResponse;
+import com.example.demo.dto.utilisateur.MotDePasseOublieRequest;
+import com.example.demo.dto.utilisateur.ReinitialisationMotDePasseRequest;
 import com.example.demo.service.UserService;
 
 @RestController
@@ -55,6 +58,21 @@ public class UserController {
         List<String> roles = jwt.getClaimAsStringList("roles");
         boolean administrateur = roles != null && roles.contains("ADMIN");
         return userService.enregistrerPhoto(id, photo, jwt.getSubject(), administrateur);
+    }
+
+    // Route publique (voir SecurityConfig) : la reponse est toujours la meme.
+    @PostMapping("/mot-de-passe-oublie")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public MessageResponse motDePasseOublie(@RequestBody MotDePasseOublieRequest request) {
+        userService.demanderReinitialisation(request.matricule());
+        return new MessageResponse("Si ce matricule existe, l'administrateur a ete prevenu.");
+    }
+
+    // Reserve a l'administrateur (regle PUT de SecurityConfig).
+    @PutMapping("/{id}/mot-de-passe")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void reinitialiserMotDePasse(@PathVariable Long id, @RequestBody ReinitialisationMotDePasseRequest request) {
+        userService.reinitialiserMotDePasse(id, request.nouveauMotDePasse());
     }
 
     @PostMapping("/login")

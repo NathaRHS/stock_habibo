@@ -1,0 +1,296 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.page {
+  min-width: 0;
+  flex: 1;
+  padding: 40px 40px 56px;
+  border-left: 1px solid var(--color-border);
+}
+
+.heading h1 {
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.heading p {
+  margin-top: 8px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin: 22px 0 18px;
+}
+.secondary {
+  display: inline-flex;
+  height: 38px;
+  min-width: 150px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 22px;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  border: 0;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.secondary:hover:not(:disabled) { background: #d9e8f6; }
+.secondary:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+/* Filtres : mêmes champs arrondis que la barre de recherche. */
+.filtres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.filtres label {
+  display: grid;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+.filtres select,
+.filtres input {
+  height: 36px;
+  min-width: 150px;
+  padding: 0 12px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+}
+.filtres select:focus,
+.filtres input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+  outline: 0;
+}
+.reinitialiser {
+  height: 36px;
+  padding: 0 16px;
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.reinitialiser:hover:not(:disabled) { background: var(--color-primary-soft); }
+.reinitialiser:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.search {
+  display: flex;
+  width: min(280px, 100%);
+  height: 36px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+.search:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+.search input {
+  width: 100%;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-size: 13px;
+}
+
+.select {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.select select {
+  height: 36px;
+  padding: 0 34px 0 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  appearance: none;
+  cursor: pointer;
+}
+.select > svg {
+  position: absolute;
+  right: 10px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.error {
+  margin: 8px 0;
+  padding: 12px 14px;
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+/* Tableau : lignes en bandeaux légèrement teintés (comme la liste des journaux). */
+.tableScroll { overflow-x: auto; }
+.table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+.table th {
+  padding: 8px 16px;
+  color: var(--color-text);
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.table td {
+  height: 52px;
+  padding: 8px 16px;
+  background: #f5f6fc;
+  font-size: 13px;
+  vertical-align: middle;
+}
+.table td:first-child { border-radius: 8px 0 0 8px; }
+.table td:last-child { border-radius: 0 8px 8px 0; }
+.table tbody tr:hover td { background: var(--color-primary-soft); }
+
+.triBouton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.triBouton svg { color: var(--color-text-muted); }
+.triBouton:hover svg { color: var(--color-text); }
+
+.date {
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.utilisateur {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Cible : pavé à filet, comme le statut d'un journal. */
+.cible {
+  display: inline-block;
+  padding: 4px 12px;
+  color: #3c3f45;
+  background: #e7e8ea;
+  border: 1px solid #9a9da3;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.details {
+  max-width: 320px;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vide {
+  padding: 32px 16px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.note {
+  margin-top: 6px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.pied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pagination button {
+  display: grid;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  color: var(--color-text);
+  background: var(--color-secondary-soft);
+  border: 0;
+  border-radius: 6px;
+  font-size: 12px;
+  place-items: center;
+  cursor: pointer;
+}
+.pagination button:hover:not(:disabled) { background: var(--color-primary-soft); }
+.pagination button:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+.pagination .pageActive {
+  color: #fff;
+  background: var(--color-primary);
+}
+.ellipse { color: var(--color-text-muted); }

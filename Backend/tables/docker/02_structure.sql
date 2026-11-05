@@ -50,9 +50,11 @@ SELECT v.nom FROM (VALUES
     ROW('Confiserie')) AS v(nom)
 WHERE NOT EXISTS (SELECT 1 FROM t_famille f WHERE f.nom = v.nom);
 
--- Fournisseurs : usines du groupe (a renommer selon les vraies usines).
+-- Societes : chaque article en a une, et une entree ne scanne que les articles de
+-- la societe de son fournisseur. HB porte tous les articles de demonstration.
 INSERT INTO t_societe (nom_societe)
 SELECT v.nom FROM (VALUES
+    ROW('HB'),
     ROW('Habibo Usine Boissons'),
     ROW('Habibo Usine Alimentaire')) AS v(nom)
 WHERE NOT EXISTS (SELECT 1 FROM t_societe s WHERE s.nom_societe = v.nom);
@@ -105,8 +107,9 @@ WHERE r.nom_rack IN ('Rack A', 'Rack B')
 
 INSERT INTO t_article (
     nom_article, code_bar, type_produit_id, type_conditionnement_id,
-    famille_id, contenance_valeur, unite_id)
-SELECT v.nom, v.code, tp.id, tc.id, f.id, v.contenance, u.id
+    famille_id, contenance_valeur, unite_id, societe_id)
+SELECT v.nom, v.code, tp.id, tc.id, f.id, v.contenance, u.id,
+       (SELECT s.id FROM t_societe s WHERE s.nom_societe = 'HB')
 FROM (VALUES
     ROW('Coca-Cola 30 cl', '2000000000015', 'BOISSON',     'PACK',   'Boissons gazeuses', 30.000,  'cL'),
     ROW('Lait Candia 1 L', '2000000000022', 'ALIMENTAIRE', 'CARTON', 'Produits laitiers', 1.000,   'L'),

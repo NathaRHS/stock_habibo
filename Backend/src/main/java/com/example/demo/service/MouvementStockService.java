@@ -104,6 +104,9 @@ import com.example.demo.dto.stock.AffectationStockRequest;
 import com.example.demo.dto.stock.CreerMouvementsStockRequest;
 import com.example.demo.dto.picking.LignePickingResponse;
 import com.example.demo.dto.stock.MouvementStockResponse;
+import com.example.demo.dto.stock.PeriodeSynthese;
+import com.example.demo.dto.stock.PointMensuelResponse;
+import com.example.demo.dto.stock.SyntheseMouvementsResponse;
 import com.example.demo.entity.Article;
 import com.example.demo.entity.ArticleConditionnement;
 import com.example.demo.entity.DetailJournal;
@@ -119,6 +122,8 @@ import com.example.demo.entity.StatutLignePickingCode;
 import com.example.demo.entity.StatutPickingCode;
 import com.example.demo.entity.TypeMouvementStock;
 import com.example.demo.entity.User;
+import com.example.demo.projection.PointMensuelProjection;
+import com.example.demo.projection.SynthesePeriodeProjection;
 import com.example.demo.repository.DetailJournalRepository;
 import com.example.demo.repository.EmplacementRepository;
 import com.example.demo.repository.JournalMouvementRepository;
@@ -190,7 +195,14 @@ public class MouvementStockService {
         List<AffectationStockRequest> listeDesAffectations = request.affectations();
         // verifier si le journal existe
 
-        JournalMouvement journalMouvement = journalMouvementRepository.findById(journalId)
+        // Verrous : le journal d'abord, puis les emplacements par identifiant croissant.
+        // Ils doivent venir AVANT toute autre lecture : MySQL (REPEATABLE READ) fige sa
+        // vue de la base a la premiere lecture simple ; lues apres les verrous, les
+        // quantites en stock incluent les mouvements deja valides par un autre admin.
+        // - meme journal : la 2e requete attend, voit AFFECTEE et est refusee (409) ;
+        // - meme emplacement : la capacite est relue une fois l'autre affectation validee.
+        // L'ordre croissant evite que deux requetes s'attendent l'une l'autre.
+        JournalMouvement journalMouvement = journalMouvementRepository.findByIdForUpdate(journalId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Journal introuvable"));
@@ -200,6 +212,7 @@ public class MouvementStockService {
                     HttpStatus.CONFLICT,
                     "Le statut du journal n'est pas encore VALIDE");
         }
+        verrouillerEmplacements(listeDesAffectations);
 
         // Recuperer l'utilisateur qui valide l'entree depuis le matricule du JWT.
         User utilisateur = userRepository.findByMatricule(matricule)
@@ -387,7 +400,8 @@ public class MouvementStockService {
                         dateMouvement,
                         "Entree en stock du journal " + journalMouvement.getReference(),
                         detailJournal,
-                        false));
+                        false
+                ));
 
                 // Memoriser cette quantite pour les lignes suivantes du meme JSON.
                 quantitesPlanifieesParEmplacement.merge(
@@ -440,6 +454,20 @@ public class MouvementStockService {
                 .toList();
     }
 
+    // Verrouille les emplacements vises, toujours dans le meme ordre (identifiant
+    // croissant). Les lignes sans emplacement sont refusees plus loin, avec leur message.
+    private void verrouillerEmplacements(List<AffectationStockRequest> affectations) {
+        affectations.stream()
+                .filter(affectation -> affectation != null && affectation.emplacementId() != null)
+                .map(AffectationStockRequest::emplacementId)
+                .distinct()
+                .sorted()
+                .forEach(emplacementId -> emplacementRepository.findByIdForUpdate(emplacementId)
+                        .orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Emplacement introuvable : " + emplacementId)));
+    }
+
     // Duree maximale de la periode demandee : la liste contient un mouvement par
     // ligne, elle grossit avec la periode.
     private static final long PERIODE_MAX_JOURS = 31;
@@ -480,6 +508,58 @@ public class MouvementStockService {
                         ligne.getJournalReference(),
                         ligne.getMatricule()))
                 .toList();
+    }
+
+    // Duree maximale d'une synthese : un an (bissextile compris).
+    private static final long SYNTHESE_MAX_JOURS = 366;
+
+    // Totaux de l'accueil : la periode [debut, fin[ (fin exclue) et la periode precedente
+    // de meme duree, qui se termine au debut de la premiere. Les additions sont faites
+    // par la base : le navigateur ne telecharge plus la liste des mouvements.
+    public SyntheseMouvementsResponse synthese(LocalDate debut, LocalDate fin) {
+        if (!fin.isAfter(debut)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La date de fin doit etre posterieure a la date de debut");
+        }
+
+        long jours = java.time.temporal.ChronoUnit.DAYS.between(debut, fin);
+        if (jours > SYNTHESE_MAX_JOURS) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La periode ne peut pas depasser " + SYNTHESE_MAX_JOURS + " jours");
+        }
+
+        LocalDate debutPrecedente = debut.minusDays(jours);
+        return new SyntheseMouvementsResponse(
+                versPeriode(mouvementStockRepository.synthesePeriode(debut.atStartOfDay(), fin.atStartOfDay())),
+                versPeriode(mouvementStockRepository.synthesePeriode(
+                        debutPrecedente.atStartOfDay(), debut.atStartOfDay())));
+    }
+
+    private PeriodeSynthese versPeriode(SynthesePeriodeProjection totaux) {
+        return new PeriodeSynthese(totaux.getEntrees(), totaux.getSorties(), totaux.getNombreMouvements());
+    }
+
+    // Pieces entrees et sorties des 12 mois d'une annee (les mois sans mouvement sont a 0).
+    public List<PointMensuelResponse> serieMensuelle(int annee) {
+        if (annee < 2000 || annee > 2100) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Annee invalide : " + annee);
+        }
+
+        Map<Integer, PointMensuelResponse> parMois = new HashMap<>();
+        for (PointMensuelProjection point : mouvementStockRepository.sommesParMois(
+                LocalDate.of(annee, 1, 1).atStartOfDay(),
+                LocalDate.of(annee + 1, 1, 1).atStartOfDay())) {
+            parMois.put(point.getMois(),
+                    new PointMensuelResponse(point.getMois(), point.getEntrees(), point.getSorties()));
+        }
+
+        List<PointMensuelResponse> serie = new ArrayList<>();
+        for (int mois = 1; mois <= 12; mois++) {
+            serie.add(parMois.getOrDefault(mois, new PointMensuelResponse(mois, 0L, 0L)));
+        }
+        return serie;
     }
 
     // Consultation de tous les mouvements existants.

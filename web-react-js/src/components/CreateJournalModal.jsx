@@ -67,30 +67,56 @@ export default function CreateJournalModal({ isOpen, onClose, onCreated }) {
 
   if (!isOpen) return null;
 
+  // Le type choisi décide des champs utiles : une sortie n'a pas de fournisseur,
+  // une entrée n'a pas de client, un inventaire n'a pas de pièce jointe.
+  const typeChoisi = typesMouvement
+    .find((type) => String(type.id) === String(journal.typeMouvementJournalId))
+    ?.nomTypeMouvement?.toUpperCase();
+  const estEntree = typeChoisi === "ENTREE";
+  const estSortie = typeChoisi === "SORTIE";
+  const estInventaire = typeChoisi === "INVENTAIRE";
+
   const handleChange = ({ target: { name, value } }) => setJournal((actuel) => ({ ...actuel, [name]: value }));
+
+  // Changer de type vide les champs qui ne servent plus : rien n'est envoyé par erreur.
+  const changerType = ({ target: { value } }) => {
+    const nom = typesMouvement.find((type) => String(type.id) === value)?.nomTypeMouvement?.toUpperCase();
+    setJournal((actuel) => ({
+      ...actuel,
+      typeMouvementJournalId: value,
+      nomClient: nom === "ENTREE" ? "" : actuel.nomClient,
+      fournisseurId: nom === "SORTIE" ? "" : actuel.fournisseurId,
+    }));
+    if (nom === "INVENTAIRE") setFichier(null);
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!journal.typeMouvementJournalId) return setError("Le type de mouvement est obligatoire.");
-    if (!fichier) return setError("La pièce jointe est obligatoire.");
+    if (!estInventaire && !fichier) return setError("La pièce jointe est obligatoire.");
+    // Une entrée vient d'un fournisseur : seuls ses produits pourront être scannés.
+    if (estEntree && !journal.fournisseurId) return setError("Le fournisseur est obligatoire pour une entrée.");
     const token = getAccessToken();
     if (!token) return setError("Votre session a expiré. Reconnectez-vous.");
     try {
       setSubmitting(true);
       setError("");
-      const formData = new FormData();
-      formData.append("file", fichier);
-      const upload = await fetch(`${springUrl}/upload`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
-      const cheminFichier = await upload.text();
-      if (!upload.ok) throw new Error(cheminFichier || `Upload impossible (${upload.status})`);
+      let cheminFichier = null;
+      if (!estInventaire) {
+        const formData = new FormData();
+        formData.append("file", fichier);
+        const upload = await fetch(`${springUrl}/upload`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
+        cheminFichier = await upload.text();
+        if (!upload.ok) throw new Error(cheminFichier || `Upload impossible (${upload.status})`);
+      }
       const response = await fetch(`${springUrl}/journaux-mouvements`, {
         method: "POST",
         headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           reference: journal.reference,
           urlPieceJointe: cheminFichier,
-          nomClient: journal.nomClient.trim() || null,
-          fournisseurId: journal.fournisseurId ? Number(journal.fournisseurId) : null,
+          nomClient: estEntree ? null : journal.nomClient.trim() || null,
+          fournisseurId: estSortie || !journal.fournisseurId ? null : Number(journal.fournisseurId),
           typeMouvementJournalId: Number(journal.typeMouvementJournalId),
           statutJournalMouvementId: null,
         }),
@@ -116,11 +142,11 @@ export default function CreateJournalModal({ isOpen, onClose, onCreated }) {
         <form className="journal-modal-form" onSubmit={handleSubmit}>
           <label>Référence générée automatiquement<input name="reference" value={journal.reference} readOnly /></label>
           <div className="journal-modal-grid">
-            <label>Client<input name="nomClient" value={journal.nomClient} onChange={handleChange} placeholder="Nom du client" disabled={submitting} /></label>
-            <label>Fournisseur<select name="fournisseurId" value={journal.fournisseurId} onChange={handleChange} disabled={loadingOptions || submitting}><option value="">Aucun fournisseur</option>{fournisseurs.map((fournisseur) => <option key={fournisseur.id} value={fournisseur.id}>{fournisseur.nomSociete}</option>)}</select></label>
+            <label>Client<input name="nomClient" value={journal.nomClient} onChange={handleChange} placeholder={estEntree ? "Non utilisé pour une entrée" : "Nom du client"} disabled={submitting || estEntree} /></label>
+            <label>Fournisseur<select name="fournisseurId" value={journal.fournisseurId} onChange={handleChange} disabled={loadingOptions || submitting || estSortie} required={estEntree}><option value="">{estSortie ? "Non utilisé pour une sortie" : estEntree ? "Choisissez un fournisseur" : "Aucun fournisseur"}</option>{fournisseurs.map((fournisseur) => <option key={fournisseur.id} value={fournisseur.id}>{fournisseur.nomSociete}</option>)}</select></label>
           </div>
-          <label>Type de mouvement<select name="typeMouvementJournalId" value={journal.typeMouvementJournalId} onChange={handleChange} disabled={loadingOptions || submitting} required><option value="" disabled>{loadingOptions ? "Chargement…" : "Choisissez un type de mouvement"}</option>{typesMouvement.map((type) => <option key={type.id} value={type.id}>{type.nomTypeMouvement} ({type.sens === 1 ? "Entrée" : "Sortie"})</option>)}</select></label>
-          <label className="journal-file-field">Pièce jointe du mouvement<input type="file" name="file" onChange={(event) => { setFichier(event.target.files?.[0] ?? null); setError(""); }} disabled={submitting} required /><small>{fichier ? fichier.name : "PDF, image ou document client"}</small></label>
+          <label>Type de mouvement<select name="typeMouvementJournalId" value={journal.typeMouvementJournalId} onChange={changerType} disabled={loadingOptions || submitting} required><option value="" disabled>{loadingOptions ? "Chargement…" : "Choisissez un type de mouvement"}</option>{typesMouvement.map((type) => <option key={type.id} value={type.id}>{type.nomTypeMouvement} ({type.sens === 1 ? "Entrée" : "Sortie"})</option>)}</select></label>
+          {!estInventaire && <label className="journal-file-field">Pièce jointe du mouvement<input type="file" name="file" onChange={(event) => { setFichier(event.target.files?.[0] ?? null); setError(""); }} disabled={submitting} required /><small>{fichier ? fichier.name : "PDF, image ou document client"}</small></label>}
           {error && <p className="journal-modal-error" role="alert">{error}</p>}
           <footer className="journal-modal-actions"><button className="journal-modal-cancel" onClick={onClose} type="button">Annuler</button><Button type="submit" loading={submitting} disabled={loadingOptions}>Créer le journal</Button></footer>
         </form>

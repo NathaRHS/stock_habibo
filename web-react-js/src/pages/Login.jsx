@@ -12,8 +12,41 @@ function Login() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  // Mot de passe oublié : formulaire caché tant qu'on ne clique pas sur le lien.
+  const [oubliOuvert, setOubliOuvert] = useState(false);
+  const [matriculeOubli, setMatriculeOubli] = useState("");
+  const [messageOubli, setMessageOubli] = useState("");
+  const [oubliEnCours, setOubliEnCours] = useState(false);
   const navigate = useNavigate();
   const springUrl = import.meta.env.VITE_SPRING_URL;
+
+  // Prévient les administrateurs. La réponse est toujours la même, que le matricule existe ou non.
+  const demanderReinitialisation = async (event) => {
+    event.preventDefault();
+
+    if (!matriculeOubli.trim()) {
+      setMessageOubli("Veuillez saisir votre matricule.");
+      return;
+    }
+
+    setOubliEnCours(true);
+    try {
+      const response = await fetch(`${springUrl}/user/mot-de-passe-oublie`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matricule: matriculeOubli.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur serveur");
+      }
+      setMessageOubli("Votre demande a été envoyée. L’administrateur va vous contacter.");
+    } catch {
+      setMessageOubli("Impossible de contacter le serveur. Réessayez plus tard.");
+    } finally {
+      setOubliEnCours(false);
+    }
+  };
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -151,10 +184,37 @@ function Login() {
           </form>
 
           <p className="login-aide">
-            Pour toute cause d’oubli des identifiants il est exclusivement
-            recommandé d’informer vos administrateurs,{" "}
-            <a href="#ticket">envoyer un ticket</a>
+            <button
+              className="login-lien"
+              onClick={() => setOubliOuvert(!oubliOuvert)}
+              type="button"
+            >
+              Mot de passe oublié ?
+            </button>
           </p>
+
+          {oubliOuvert && (
+            <form className="login-oubli" onSubmit={demanderReinitialisation}>
+              <p className="login-aide">
+                Saisissez votre matricule : l’administrateur sera prévenu et vous donnera un
+                nouveau mot de passe.
+              </p>
+              <input
+                type="text"
+                placeholder="Numero matricule"
+                value={matriculeOubli}
+                onChange={(event) => setMatriculeOubli(event.target.value)}
+              />
+              <button className="login-bouton" disabled={oubliEnCours} type="submit">
+                {oubliEnCours ? "Envoi…" : "Prévenir l’administrateur"}
+              </button>
+              {messageOubli && (
+                <p className="login-aide" role="status">
+                  {messageOubli}
+                </p>
+              )}
+            </form>
+          )}
         </section>
 
         <aside

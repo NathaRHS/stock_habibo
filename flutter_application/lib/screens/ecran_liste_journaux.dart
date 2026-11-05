@@ -7,8 +7,10 @@ import 'package:flutter_application/screens/ecran_choix_emplacement_inventaire.d
 import 'package:flutter_application/screens/ecran_liste_commande.dart';
 import 'package:flutter_application/screens/ecran_scan_session.dart';
 import 'package:flutter_application/theme/habibo.dart';
+import 'package:flutter_application/widgets/bouton_profil.dart';
 import 'package:flutter_application/widgets/carte_journal.dart';
 import 'package:flutter_application/widgets/filtres_pastilles.dart';
+import 'package:flutter_application/widgets/fond_degrade.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -173,9 +175,8 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
       );
     }
 
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => prochainePage));
+    await Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => prochainePage));
 
     if (mounted) _chargerJournaux();
   }
@@ -214,20 +215,6 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
         '${_mois[maintenant.month - 1]}';
   }
 
-  String? get _initiales {
-    final mots = (widget.nomUtilisateur ?? '')
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((mot) => mot.isNotEmpty)
-        .toList();
-    if (mots.isEmpty) return null;
-    if (mots.length == 1) {
-      final mot = mots.first;
-      return mot.substring(0, mot.length < 2 ? 1 : 2).toUpperCase();
-    }
-    return '${mots.first[0]}${mots.last[0]}'.toUpperCase();
-  }
-
   @override
   Widget build(BuildContext context) {
     final journaux = _journauxAffiches;
@@ -236,40 +223,42 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
       value: SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: Habibo.fond,
-        body: SafeArea(
-          child: RefreshIndicator(
-            color: Habibo.bleu,
-            onRefresh: _chargerJournaux,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(top: 16, bottom: 32),
-              children: [
-                _entete(),
-                const SizedBox(height: 20),
-                _champRecherche(),
-                const SizedBox(height: 16),
-                FiltresPastilles(
-                  filtres: [
-                    FiltrePastille(
-                      libelle: 'Tous',
-                      compteur: _compter(_Filtre.tous),
-                    ),
-                    FiltrePastille(
-                      libelle: 'En cours',
-                      compteur: _compter(_Filtre.enCours),
-                    ),
-                    FiltrePastille(
-                      libelle: 'Validés',
-                      compteur: _compter(_Filtre.valides),
-                    ),
-                  ],
-                  selection: _filtre.index,
-                  onChange: (index) =>
-                      setState(() => _filtre = _Filtre.values[index]),
-                ),
-                const SizedBox(height: 20),
-                ..._contenu(journaux),
-              ],
+        body: FondDegrade(
+          child: SafeArea(
+            child: RefreshIndicator(
+              color: Habibo.bleu,
+              onRefresh: _chargerJournaux,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(top: 16, bottom: 32),
+                children: [
+                  _entete(),
+                  const SizedBox(height: 20),
+                  _champRecherche(),
+                  const SizedBox(height: 16),
+                  FiltresPastilles(
+                    filtres: [
+                      FiltrePastille(
+                        libelle: 'Tous',
+                        compteur: _compter(_Filtre.tous),
+                      ),
+                      FiltrePastille(
+                        libelle: 'En cours',
+                        compteur: _compter(_Filtre.enCours),
+                      ),
+                      FiltrePastille(
+                        libelle: 'Validés',
+                        compteur: _compter(_Filtre.valides),
+                      ),
+                    ],
+                    selection: _filtre.index,
+                    onChange: (index) =>
+                        setState(() => _filtre = _Filtre.values[index]),
+                  ),
+                  const SizedBox(height: 20),
+                  ..._contenu(journaux),
+                ],
+              ),
             ),
           ),
         ),
@@ -303,7 +292,9 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
     if (journaux.isEmpty) {
       return [
         _message(
-          _journaux.isEmpty ? 'Aucun journal pour le moment.' : 'Aucun résultat.',
+          _journaux.isEmpty
+              ? 'Aucun journal pour le moment.'
+              : 'Aucun résultat.',
         ),
       ];
     }
@@ -317,8 +308,6 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
   }
 
   Widget _entete() {
-    final initiales = _initiales;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Habibo.marge),
       child: Row(
@@ -349,30 +338,7 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
               ],
             ),
           ),
-          Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Habibo.surface,
-              shape: BoxShape.circle,
-              border: Border.all(color: Habibo.bordure),
-            ),
-            child: initiales == null
-                ? const Icon(
-                    LucideIcons.user,
-                    size: 20,
-                    color: Habibo.texteSecondaire,
-                  )
-                : Text(
-                    initiales,
-                    style: const TextStyle(
-                      color: Habibo.texte,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-          ),
+          const BoutonProfil(),
         ],
       ),
     );
@@ -381,39 +347,42 @@ class _EcranListeJournauxState extends State<EcranListeJournaux> {
   Widget _champRecherche() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Habibo.marge),
-      child: TextField(
-        controller: _rechercheController,
-        onChanged: (valeur) => setState(() => _recherche = valeur),
-        textInputAction: TextInputAction.search,
-        style: const TextStyle(color: Habibo.texte, fontSize: 16),
-        decoration: InputDecoration(
-          hintText: 'Rechercher une référence',
-          hintStyle: const TextStyle(color: Habibo.texteDiscret),
-          prefixIcon: const Icon(
-            LucideIcons.search,
-            size: 20,
-            color: Habibo.texteSecondaire,
-          ),
-          suffixIcon: _recherche.isEmpty
-              ? null
-              : IconButton(
-                  tooltip: 'Effacer',
-                  onPressed: () {
-                    _rechercheController.clear();
-                    setState(() => _recherche = '');
-                  },
-                  icon: const Icon(
-                    LucideIcons.x,
-                    size: 18,
-                    color: Habibo.texteSecondaire,
+      child: DecoratedBox(
+        decoration: Habibo.carte(rayon: 18),
+        child: TextField(
+          controller: _rechercheController,
+          onChanged: (valeur) => setState(() => _recherche = valeur),
+          textInputAction: TextInputAction.search,
+          style: const TextStyle(color: Habibo.texte, fontSize: 16),
+          decoration: InputDecoration(
+            hintText: 'Rechercher une référence',
+            hintStyle: const TextStyle(color: Habibo.texteDiscret),
+            prefixIcon: const Icon(
+              LucideIcons.search,
+              size: 20,
+              color: Habibo.texteSecondaire,
+            ),
+            suffixIcon: _recherche.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: 'Effacer',
+                    onPressed: () {
+                      _rechercheController.clear();
+                      setState(() => _recherche = '');
+                    },
+                    icon: const Icon(
+                      LucideIcons.x,
+                      size: 18,
+                      color: Habibo.texteSecondaire,
+                    ),
                   ),
-                ),
-          filled: true,
-          fillColor: Habibo.neutreDoux,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
+            filled: true,
+            fillColor: Colors.transparent,
+            contentPadding: const EdgeInsets.symmetric(vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide.none,
+            ),
           ),
         ),
       ),

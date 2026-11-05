@@ -1,17 +1,27 @@
 package com.example.demo.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import jakarta.persistence.LockModeType;
 
 import com.example.demo.entity.Emplacement;
 import com.example.demo.projection.EmplacementCandidatProjection;
 
 @Repository
 public interface EmplacementRepository extends JpaRepository<Emplacement, Long> {
+        // Verrou en ecriture sur la ligne : une affectation a la fois par emplacement,
+        // le temps de lire son stock puis d'y ajouter les mouvements.
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
+        @Query("SELECT e FROM Emplacement e WHERE e.id = :id")
+        Optional<Emplacement> findByIdForUpdate(@Param("id") Long id);
+
         boolean existsByRackIdAndNumeroEtageAndNomEmplacement(
                         Long rackId, Integer numeroEtage, String nomEmplacement);
 

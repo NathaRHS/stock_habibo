@@ -72,7 +72,9 @@ public class StockService {
         ArticleResponse articleResponse = new ArticleResponse(article.getId(), article.getCodeBar(),
                 article.getNomArticle(), article.getTypeProduit().getId(), article.getTypeProduit().getNomType(),
                 article.getPhotoUrl(), idFamille, nomFamille,
-                article.getContenanceValeur(), article.getUnite().getId(), article.getUnite().getNomUnite());
+                article.getContenanceValeur(), article.getUnite().getId(), article.getUnite().getNomUnite(),
+                article.getSociete() == null ? null : article.getSociete().getId(),
+                article.getSociete() == null ? null : article.getSociete().getNomSociete());
         List<StockParEmplacementResponse> stockParEmplacementResponse = getStocksParEmplacementByArticleId(id);
 
         return new FicheProduitResponseDto(articleResponse, stockParEmplacementResponse, totalMouvementProjection);

@@ -20,6 +20,7 @@ const creerEtatInitial = () => ({
     typeConditionnementId: "",
     contenanceValeur: "",
     uniteId: "",
+    societeId: "",
   },
   conditionnement: {
     typeConditionnementId: "",
@@ -72,6 +73,7 @@ function CreateArticleModal({ isOpen, onClose, onCreated, articleBase = null }) 
   const [typesProduit, setTypesProduit] = useState([]);
   const [typesConditionnement, setTypesConditionnement] = useState([]);
   const [unites, setUnites] = useState([]);
+  const [societes, setSocietes] = useState([]);
   const [chargement, setChargement] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [error, setError] = useState("");
@@ -123,6 +125,7 @@ function CreateArticleModal({ isOpen, onClose, onCreated, articleBase = null }) 
           fetch(`${springUrl}/types-produits`, { headers }),
           fetch(`${springUrl}/types-conditionnements`, { headers }),
           fetch(`${springUrl}/unites`, { headers }),
+          fetch(`${springUrl}/societes`, { headers }),
         ];
 
         // En mode variante, on recupere le conditionnement et la palette de
@@ -137,12 +140,19 @@ function CreateArticleModal({ isOpen, onClose, onCreated, articleBase = null }) 
           throw new Error("Impossible de charger les options du formulaire.");
         }
 
-        const [produits, conditionnements, listeUnites, tousConditionnements, toutesPalettes] =
-          await Promise.all(reponses.map((reponse) => reponse.json()));
+        const [
+          produits,
+          conditionnements,
+          listeUnites,
+          listeSocietes,
+          tousConditionnements,
+          toutesPalettes,
+        ] = await Promise.all(reponses.map((reponse) => reponse.json()));
 
         setTypesProduit(produits);
         setTypesConditionnement(conditionnements);
         setUnites(listeUnites);
+        setSocietes(listeSocietes);
 
         if (articleBase) {
           const conditionnementBase = (tousConditionnements ?? []).find(
@@ -160,6 +170,8 @@ function CreateArticleModal({ isOpen, onClose, onCreated, articleBase = null }) 
               nomArticle: proposerNomFamille(articleBase.nomArticle),
               typeProduitId: articleBase.typeProduitId ?? "",
               typeConditionnementId: conditionnementBase?.typeConditionnementId ?? "",
+              // Une variante garde la societe de l'article de depart (modifiable).
+              societeId: articleBase.societeId ?? "",
             },
             conditionnement: {
               typeConditionnementId: conditionnementBase?.typeConditionnementId ?? "",
@@ -205,9 +217,11 @@ function CreateArticleModal({ isOpen, onClose, onCreated, articleBase = null }) 
         typeConditionnementId,
         contenanceValeur,
         uniteId,
+        societeId,
       } = donnees.article;
       if (!nomArticle.trim()) return "Le nom de l'article est obligatoire.";
       if (!codeBar.trim()) return "Le code-barres est obligatoire.";
+      if (!societeId) return "La société est obligatoire.";
       if (!typeProduitId) return "Le type de produit est obligatoire.";
       if (!typeConditionnementId) return "Le type de conditionnement est obligatoire.";
 
@@ -259,6 +273,7 @@ function CreateArticleModal({ isOpen, onClose, onCreated, articleBase = null }) 
         contenanceValeur:
           article.contenanceValeur !== "" ? Number(article.contenanceValeur) : null,
         uniteId: article.uniteId !== "" ? Number(article.uniteId) : null,
+        societeId: Number(article.societeId),
       },
       conditionnement: {
         typeConditionnementId: Number(conditionnement.typeConditionnementId),
@@ -390,6 +405,7 @@ function CreateArticleModal({ isOpen, onClose, onCreated, articleBase = null }) 
             typesProduit={typesProduit}
             typesConditionnement={typesConditionnement}
             unites={unites}
+            societes={societes}
             chargement={chargement}
             desactive={envoi}
             varianteDe={articleBase}

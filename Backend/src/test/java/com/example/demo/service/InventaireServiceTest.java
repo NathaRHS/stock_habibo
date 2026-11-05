@@ -1,8 +1,11 @@
 package com.example.demo.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -83,12 +86,13 @@ class InventaireServiceTest {
     void calculeLesEcartsNulNegatifEtPositif() {
         JournalMouvement journal = creerJournalAvecType("INVENTAIRE");
 
+        // Comptages anciens : pas de photo du theorique, on utilise le stock actuel.
         ComptageInventaire comptageConforme = creerComptage(
-                10L, "Coca-Cola", 100L, "A-01", "RACK-A", 1, 100);
+                10L, "Coca-Cola", 100L, "A-01", "RACK-A", 1, 100, null);
         ComptageInventaire comptageManquant = creerComptage(
-                11L, "Lait Candia", 101L, "A-02", "RACK-A", 1, 95);
+                11L, "Lait Candia", 101L, "A-02", "RACK-A", 1, 95, null);
         ComptageInventaire comptageSurplus = creerComptage(
-                12L, "Eau Vive", 102L, "A-03", "RACK-A", 1, 108);
+                12L, "Eau Vive", 102L, "A-03", "RACK-A", 1, 108, null);
 
         when(journalMouvementRepository.findById(1L)).thenReturn(Optional.of(journal));
         when(comptageInventaireRepository.findAllByDetailJournalJournalMouvementId(1L))
@@ -109,9 +113,34 @@ class InventaireServiceTest {
         assertEquals("A-01", lignes.get(0).nomEmplacement());
         assertEquals(100, lignes.get(0).quantiteTheorique());
         assertEquals(100, lignes.get(0).quanantiteComptee());
+        // L'operateur est facultatif en base : une ligne sans operateur ne fait pas planter.
+        assertNull(lignes.get(0).user());
+        assertNull(lignes.get(0).userId());
 
         verify(comptageInventaireRepository)
                 .findAllByDetailJournalJournalMouvementId(1L);
+    }
+
+    @Test
+    void l_ecart_se_calcule_sur_le_stock_fige_au_comptage_pas_sur_le_stock_actuel() {
+        JournalMouvement journal = creerJournalAvecType("INVENTAIRE");
+
+        // Le logiciel croyait 50 au comptage ; l'operateur a compte 47 (manque de 3).
+        // Depuis, une sortie de 5 a ramene le stock actuel a 45.
+        ComptageInventaire comptage = creerComptage(
+                10L, "Coca-Cola", 100L, "A-01", "RACK-A", 1, 47, 50);
+
+        when(journalMouvementRepository.findById(1L)).thenReturn(Optional.of(journal));
+        when(comptageInventaireRepository.findAllByDetailJournalJournalMouvementId(1L))
+                .thenReturn(List.of(comptage));
+
+        List<LigneControleInventaireResponse> lignes = inventaireService.getInventaireLignes(1L);
+
+        assertEquals(50, lignes.get(0).quantiteTheorique());
+        assertEquals(47, lignes.get(0).quanantiteComptee());
+        // Compte - theorique : negatif = manque. Avec le stock actuel (45), on aurait trouve +2.
+        assertEquals(-3L, lignes.get(0).ecart());
+        verify(stockRepository, never()).trouverQuantiteTheorique(anyLong(), anyLong());
     }
 
     private JournalMouvement creerJournalAvecType(String nomType) {
@@ -131,9 +160,11 @@ class InventaireServiceTest {
             String nomEmplacement,
             String nomRack,
             Integer numeroEtage,
-            Integer quantiteComptee) {
+            Integer quantiteComptee,
+            Integer quantiteTheoriqueFigee) {
 
         ComptageInventaire comptage = mock(ComptageInventaire.class);
+        when(comptage.getQuantiteTheorique()).thenReturn(quantiteTheoriqueFigee);
         DetailJournal detail = mock(DetailJournal.class);
         Article article = mock(Article.class);
         Emplacement emplacement = mock(Emplacement.class);

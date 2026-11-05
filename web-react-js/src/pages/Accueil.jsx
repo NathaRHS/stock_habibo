@@ -20,6 +20,7 @@ import {
   NOMS_MOIS,
   PERIODES,
   calculerIndicateurs,
+  chargerSynthese,
   chargerTableauDeBord,
   etatDuStock,
   serieMensuelle,
@@ -174,15 +175,20 @@ function Pastilles({ part }) {
 function Accueil() {
   const springUrl = import.meta.env.VITE_SPRING_URL;
   const navigate = useNavigate();
-  const [donnees, setDonnees] = useState({ mouvements: [], stocks: [], articles: [] });
+  const [donnees, setDonnees] = useState({ stocks: [], articles: [], points: [] });
+  // Totaux de la période choisie (additionnés par le serveur) ; null tant qu'ils n'ont pas répondu.
+  const [synthese, setSynthese] = useState(null);
   const [chargement, setChargement] = useState(true);
   const [periode, setPeriode] = useState("jour");
   const [onglet, setOnglet] = useState("journaux");
   const [recherche, setRecherche] = useState("");
 
+  const maintenant = useMemo(() => new Date(), []);
+
+  // Stocks, articles et série mensuelle : chargés une seule fois.
   useEffect(() => {
     let actif = true;
-    chargerTableauDeBord(springUrl)
+    chargerTableauDeBord(springUrl, maintenant.getFullYear())
       .then((resultat) => {
         if (actif) setDonnees(resultat);
       })
@@ -192,17 +198,27 @@ function Accueil() {
     return () => {
       actif = false;
     };
-  }, [springUrl]);
+  }, [springUrl, maintenant]);
 
-  const maintenant = useMemo(() => new Date(), []);
+  // Les totaux sont redemandés au serveur à chaque changement de période. Pendant l'appel,
+  // les chiffres précédents restent affichés (la transition les anime).
+  useEffect(() => {
+    let actif = true;
+    chargerSynthese(springUrl, periode, maintenant).then((resultat) => {
+      if (actif) setSynthese(resultat);
+    });
+    return () => {
+      actif = false;
+    };
+  }, [springUrl, periode, maintenant]);
 
   const indicateurs = useMemo(
-    () => calculerIndicateurs(donnees.mouvements, donnees.stocks, periode, maintenant),
-    [donnees, periode, maintenant],
+    () => calculerIndicateurs(synthese, donnees.stocks),
+    [synthese, donnees.stocks],
   );
   const serie = useMemo(
-    () => serieMensuelle(donnees.mouvements, maintenant.getFullYear(), maintenant),
-    [donnees.mouvements, maintenant],
+    () => serieMensuelle(donnees.points, maintenant.getFullYear(), maintenant),
+    [donnees.points, maintenant],
   );
   const etat = useMemo(
     () => etatDuStock(donnees.stocks, donnees.articles),

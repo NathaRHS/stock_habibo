@@ -3,6 +3,7 @@ import 'package:flutter_application/models/ligne_picking.dart';
 import 'package:flutter_application/models/scan_ligne_response.dart';
 import 'package:flutter_application/screens/ecran_scan_sortie_maquette.dart';
 import 'package:flutter_application/services/picking_service.dart';
+import 'package:flutter_application/widgets/bouton_profil.dart';
 
 class EcranParcoursPickingMaquette extends StatefulWidget {
   const EcranParcoursPickingMaquette({
@@ -378,12 +379,21 @@ class _EcranParcoursPickingMaquetteState
   Widget _construireEntete() {
     return Container(
       height: 80,
-      padding: const EdgeInsets.only(top: 23, right: 34),
+      padding: const EdgeInsets.only(top: 12, left: 8, right: 34),
       color: Colors.white,
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          IconButton(
+            tooltip: 'Retour',
+            onPressed: () => Navigator.of(context).maybePop(),
+            icon: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 20,
+              color: Color(0xFF3E3E3E),
+            ),
+          ),
+          const Spacer(),
           Text(
             'Sessions',
             style: TextStyle(color: Color(0xFFCECECE), fontSize: 11),
@@ -393,6 +403,8 @@ class _EcranParcoursPickingMaquetteState
             'Se déconnecter',
             style: TextStyle(color: Color(0xFF3E3E3E), fontSize: 11),
           ),
+          SizedBox(width: 14),
+          BoutonProfil(taille: 32),
         ],
       ),
     );

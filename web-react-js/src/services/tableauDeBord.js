@@ -19,7 +19,7 @@ export const NOMS_MOIS = [
   "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
 ];
 
-async function lire(springUrl, chemin) {
+async function lireJson(springUrl, chemin) {
   const reponse = await fetch(`${springUrl}${chemin}`, {
     headers: {
       Accept: "application/json",
@@ -27,18 +27,26 @@ async function lire(springUrl, chemin) {
     },
   });
   if (!reponse.ok) throw new Error(`${chemin} (${reponse.status})`);
-  const donnees = await reponse.json();
+  return reponse.json();
+}
+
+async function lire(springUrl, chemin) {
+  const donnees = await lireJson(springUrl, chemin);
   return Array.isArray(donnees) ? donnees : [];
 }
 
-/** Charge les trois sources du tableau de bord ; une source en échec reste vide. */
-export async function chargerTableauDeBord(springUrl) {
-  const [mouvements, stocks, articles] = await Promise.all([
-    lire(springUrl, "/mouvementStock").catch(() => []),
+/**
+ * Charge les sources du tableau de bord ; une source en échec reste vide.
+ * Les mouvements ne sont plus téléchargés : le serveur les additionne et renvoie
+ * seulement les totaux (la série mensuelle ici, la synthèse de la période plus bas).
+ */
+export async function chargerTableauDeBord(springUrl, annee) {
+  const [stocks, articles, points] = await Promise.all([
     lire(springUrl, "/stocks/emplacements").catch(() => []),
     lire(springUrl, "/articles").catch(() => []),
+    lire(springUrl, `/mouvementStock/serie-mensuelle?annee=${annee}`).catch(() => []),
   ]);
-  return { mouvements, stocks, articles };
+  return { stocks, articles, points };
 }
 
 const debutDeJour = (date) =>
@@ -48,6 +56,13 @@ const ajouterJours = (date, jours) => {
   const copie = new Date(date);
   copie.setDate(copie.getDate() + jours);
   return copie;
+};
+
+// AAAA-MM-JJ avec les éléments du jour local (toISOString décalerait la date en UTC).
+const dateApi = (date) => {
+  const mois = String(date.getMonth() + 1).padStart(2, "0");
+  const jour = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${mois}-${jour}`;
 };
 
 /** Période courante et période précédente de même durée : [debut, fin[. */
@@ -61,21 +76,20 @@ export function bornesPeriode(cle, maintenant = new Date()) {
   };
 }
 
-function sommePieces(mouvements, type, [debut, fin]) {
-  let total = 0;
-  for (const mouvement of mouvements) {
-    if (mouvement.typeMouvement !== type) continue;
-    const date = new Date(mouvement.dateMouvement);
-    if (date >= debut && date < fin) total += mouvement.quantitePiecesReelle ?? 0;
+/**
+ * Totaux des mouvements de la période et de la précédente (de même durée), additionnés
+ * par le serveur. Renvoie null en cas d'échec : les indicateurs restent alors à zéro.
+ */
+export async function chargerSynthese(springUrl, cle, maintenant = new Date()) {
+  const [debut, fin] = bornesPeriode(cle, maintenant).courante;
+  try {
+    return await lireJson(
+      springUrl,
+      `/mouvementStock/synthese?debut=${dateApi(debut)}&fin=${dateApi(fin)}`,
+    );
+  } catch {
+    return null;
   }
-  return total;
-}
-
-function nombreMouvements(mouvements, [debut, fin]) {
-  return mouvements.filter((mouvement) => {
-    const date = new Date(mouvement.dateMouvement);
-    return date >= debut && date < fin;
-  }).length;
 }
 
 /** Variation en % ; null quand la période précédente est vide. */
@@ -84,20 +98,19 @@ function variation(courant, precedent) {
   return ((courant - precedent) * 100) / precedent;
 }
 
-export function calculerIndicateurs(mouvements, stocks, cle, maintenant = new Date()) {
-  const { courante, precedente } = bornesPeriode(cle, maintenant);
+const PERIODE_VIDE = { entrees: 0, sorties: 0, nombreMouvements: 0 };
 
-  const entrees = sommePieces(mouvements, "ENTREE", courante);
-  const sorties = sommePieces(mouvements, "SORTIE", courante);
-  const total = nombreMouvements(mouvements, courante);
+export function calculerIndicateurs(synthese, stocks) {
+  const courante = synthese?.courante ?? PERIODE_VIDE;
+  const precedente = synthese?.precedente ?? PERIODE_VIDE;
 
   return {
-    entrees,
-    variationEntrees: variation(entrees, sommePieces(mouvements, "ENTREE", precedente)),
-    sorties,
-    variationSorties: variation(sorties, sommePieces(mouvements, "SORTIE", precedente)),
-    total,
-    variationTotal: variation(total, nombreMouvements(mouvements, precedente)),
+    entrees: courante.entrees,
+    variationEntrees: variation(courante.entrees, precedente.entrees),
+    sorties: courante.sorties,
+    variationSorties: variation(courante.sorties, precedente.sorties),
+    total: courante.nombreMouvements,
+    variationTotal: variation(courante.nombreMouvements, precedente.nombreMouvements),
     unitesDisponibles: stocks.reduce(
       (somme, ligne) => somme + (ligne.quantiteStock ?? 0),
       0,
@@ -105,25 +118,18 @@ export function calculerIndicateurs(mouvements, stocks, cle, maintenant = new Da
   };
 }
 
-/** Pièces entrées et sorties par mois, de janvier au mois courant. */
-export function serieMensuelle(mouvements, annee, maintenant = new Date()) {
+/** Pièces entrées et sorties par mois, de janvier au mois courant (points du serveur). */
+export function serieMensuelle(points, annee, maintenant = new Date()) {
   const dernierMois = annee === maintenant.getFullYear() ? maintenant.getMonth() : 11;
-  const serie = MOIS.slice(0, dernierMois + 1).map((mois) => ({
-    mois,
-    entrees: 0,
-    sorties: 0,
-  }));
 
-  for (const mouvement of mouvements) {
-    const date = new Date(mouvement.dateMouvement);
-    if (date.getFullYear() !== annee || date.getMonth() > dernierMois) continue;
-    const point = serie[date.getMonth()];
-    const pieces = mouvement.quantitePiecesReelle ?? 0;
-    if (mouvement.typeMouvement === "ENTREE") point.entrees += pieces;
-    if (mouvement.typeMouvement === "SORTIE") point.sorties += pieces;
-  }
-
-  return serie;
+  return MOIS.slice(0, dernierMois + 1).map((mois, index) => {
+    const point = points.find((element) => element.mois === index + 1);
+    return {
+      mois,
+      entrees: point?.entrees ?? 0,
+      sorties: point?.sorties ?? 0,
+    };
+  });
 }
 
 /** Articles en stock normal, en stock faible ou en rupture. */

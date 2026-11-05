@@ -58,8 +58,10 @@ SET @st_en_attente = (SELECT id FROM t_statut_journal_mouvement WHERE nom = 'EN 
 SET @st_valide     = (SELECT id FROM t_statut_journal_mouvement WHERE nom = 'VALIDE');
 SET @st_affectee   = (SELECT id FROM t_statut_journal_mouvement WHERE nom = 'AFFECTEE');
 
-SET @f_boissons = (SELECT id FROM t_societe WHERE nom_societe = 'Habibo Usine Boissons');
-SET @f_alim     = (SELECT id FROM t_societe WHERE nom_societe = 'Habibo Usine Alimentaire');
+-- Tous les articles de demonstration appartiennent a HB (voir 02_structure.sql) :
+-- une entree ne peut scanner que les articles de la societe de son fournisseur.
+SET @f_boissons = (SELECT id FROM t_societe WHERE nom_societe = 'HB');
+SET @f_alim     = @f_boissons;
 
 SET @coca   = (SELECT id FROM t_article WHERE code_bar = '2000000000015');
 SET @candia = (SELECT id FROM t_article WHERE code_bar = '2000000000022');

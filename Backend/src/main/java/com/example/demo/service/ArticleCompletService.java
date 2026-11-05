@@ -72,7 +72,8 @@ public class ArticleCompletService {
                 request.article().typeProduitId(),
                 request.article().typeConditionnementId(),
                 request.article().contenanceValeur(),
-                request.article().uniteId()));
+                request.article().uniteId(),
+                request.article().societeId()));
 
         // 2. Son conditionnement, rattache a l'article qui vient d'etre cree.
         ArticleConditionnementResponse conditionnement = articleConditionnementService
@@ -125,7 +126,8 @@ public class ArticleCompletService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "article introuvable"));
         ArticleResponse articleResponse = articleService.modifierArticle(article.getId(), new CreateArticleRequest(
                 request.article().nomArticle(), request.article().codeBar(), request.article().typeProduitId(),
-                request.article().typeProduitId(), request.article().contenanceValeur(), request.article().uniteId()));
+                request.article().typeProduitId(), request.article().contenanceValeur(), request.article().uniteId(),
+                request.article().societeId()));
         ArticleConditionnementResponse conditionnement = articleConditionnementService
                 .modifierArticleConditionnement(article.getArticleConditionnements().get(0).getId(),
                         new CreateArticleConditionnementRequest(

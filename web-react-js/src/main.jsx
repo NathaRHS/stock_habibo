@@ -28,6 +28,13 @@ import AffectationSortie from "./pages/AffectationSortie";
 // Nouvelles versions en cours de validation (src/new-pages), servies sous /new/...
 import NewListeJournal from "./new-pages/ListeJournal/ListeJournal";
 import NewAffectationStock from "./new-pages/AffectationStock/AffectationStock";
+import NewListeArticle from "./new-pages/ListeArticle/ListeArticle";
+import NewProfil from "./new-pages/Profil/Profil";
+import NewJournaux from "./new-pages/Journaux/Journaux";
+import NewActivites from "./new-pages/Activites/Activites";
+import NewListeArticle2 from "./new-pages/ListeArticle2/ListeArticle2";
+import NewListeConditionnement2 from "./new-pages/ListeConditionnement2/ListeConditionnement2";
+import NewReferentiels from "./new-pages/Referentiels/Referentiels";
 import { User } from "lucide-react";
 import UserPage from "./pages/UserPage";
 import RackView from "./pages/Rackview";
@@ -36,6 +43,8 @@ import FicheProduit from "./pages/FicheProduit";
 import GenererBon from "./pages/GenererBon";
 import CreationRack from "./pages/CreationRack";
 import Referentiels from "./pages/Referentiels";
+import ParametrageSuggestion from "./pages/ParametrageSuggestion";
+import ReinitialisationMotDePasse from "./pages/ReinitialisationMotDePasse";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -100,6 +109,8 @@ createRoot(document.getElementById("root")).render(
         <Route path="/sortie/:id" element={<AffectationSortie />} />
         <Route path="/rack" element={<RackView/>} />
         <Route path="/referentiels" element={<Referentiels />} />
+        <Route path="/parametrage-suggestion" element={<ParametrageSuggestion />} />
+        <Route path="/users/reinitialisation/:id" element={<ReinitialisationMotDePasse />} />
 
         <Route path="/user/:id" element={<UserPage/>} />
 
@@ -115,6 +126,19 @@ createRoot(document.getElementById("root")).render(
         <Route path="/upload" element={<UploadFile />} />
 
         <Route path="/new/journaux-mouvements" element={<NewListeJournal />} />
+        {/* Refonte de la liste des articles (maquette du designer), en test. */}
+        <Route path="/new/articles" element={<NewListeArticle />} />
+        {/* Refonte du profil (maquette du designer), en test : le sien, ou celui d'un utilisateur. */}
+        {/* Refonte de la liste des journaux (maquette du designer), en test. */}
+        <Route path="/new/journaux" element={<NewJournaux />} />
+        <Route path="/new/activites" element={<NewActivites />} />
+        {/* Liste des articles avec la mise en page de la liste des journaux, en test. */}
+        <Route path="/new/2/articles" element={<NewListeArticle2 />} />
+        <Route path="/new/2/conditionnements" element={<NewListeConditionnement2 />} />
+        {/* Refonte des référentiels : menu à gauche, liste à droite, en test. */}
+        <Route path="/new/referentiels" element={<NewReferentiels />} />
+        <Route path="/new/profil" element={<NewProfil />} />
+        <Route path="/new/user/:id" element={<NewProfil />} />
         <Route
           path="/new/journaux-mouvements/:journalId/affectation-stock"
           element={<NewAffectationStock />}

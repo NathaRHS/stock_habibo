@@ -23,22 +23,26 @@ public interface ComptageInventaireRepository extends JpaRepository<ComptageInve
                 detail_journal_id,
                 emplacement_id,
                 quantite_comptee,
+                quantite_theorique,
                 date_comptage
             )
             VALUES (
                 :detailJournalId,
                 :emplacementId,
                 :quantiteComptee,
+                :quantiteTheorique,
                 :dateComptage
             )
             ON DUPLICATE KEY UPDATE
                 quantite_comptee = quantite_comptee + VALUES(quantite_comptee),
                 date_comptage = VALUES(date_comptage)
             """, nativeQuery = true)
+    // quantite_theorique n'est dans l'INSERT que : ecrite au premier comptage, jamais modifiee ensuite.
     int ajouterOuIncrementer(
             @Param("detailJournalId") Long detailJournalId,
             @Param("emplacementId") Long emplacementId,
             @Param("quantiteComptee") Integer quantiteComptee,
+            @Param("quantiteTheorique") Integer quantiteTheorique,
             @Param("dateComptage") LocalDateTime dateComptage);
 
     List<ComptageInventaire> findAllByDetailJournalJournalMouvementId(

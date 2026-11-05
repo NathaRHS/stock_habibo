@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 import com.example.demo.entity.Article;
 import com.example.demo.entity.MouvementStock;
 import com.example.demo.projection.ActiviteEmplacementProjection;
+import com.example.demo.projection.PointMensuelProjection;
+import com.example.demo.projection.SynthesePeriodeProjection;
 
 public interface MouvementStockRepository extends JpaRepository<MouvementStock, Long> {
 
@@ -68,6 +70,45 @@ public interface MouvementStockRepository extends JpaRepository<MouvementStock, 
             ORDER BY emplacementId, dateMouvement, id
             """, nativeQuery = true)
     List<ActiviteEmplacementProjection> listerActivite(
+            @Param("debut") LocalDateTime debut,
+            @Param("finExclue") LocalDateTime finExclue);
+
+    // Totaux de l'accueil sur [debut, finExclue[ : memes regles que l'ancien calcul du
+    // navigateur (type ENTREE ou SORTIE par son nom, pieces reelles, reserve comprise).
+    // Sans mouvement, les sommes valent 0 et il n'y a toujours qu'une seule ligne.
+    @Query(value = """
+            SELECT
+                CAST(COALESCE(SUM(CASE WHEN t.nom_type_mouvement = 'ENTREE'
+                                       THEN m.quantite_pieces_reelle ELSE 0 END), 0) AS SIGNED) AS entrees,
+                CAST(COALESCE(SUM(CASE WHEN t.nom_type_mouvement = 'SORTIE'
+                                       THEN m.quantite_pieces_reelle ELSE 0 END), 0) AS SIGNED) AS sorties,
+                COUNT(*) AS nombreMouvements
+            FROM t_mouvement_stock m
+            JOIN t_type_mouvement t ON t.id = m.type_mouvement_id
+            WHERE m.date_mouvement >= :debut
+              AND m.date_mouvement < :finExclue
+            """, nativeQuery = true)
+    SynthesePeriodeProjection synthesePeriode(
+            @Param("debut") LocalDateTime debut,
+            @Param("finExclue") LocalDateTime finExclue);
+
+    // Pieces entrees et sorties par mois sur [debut, finExclue[. Seuls les mois qui ont
+    // des mouvements sont renvoyes : le service complete les autres avec des zeros.
+    @Query(value = """
+            SELECT
+                MONTH(m.date_mouvement) AS mois,
+                CAST(SUM(CASE WHEN t.nom_type_mouvement = 'ENTREE'
+                              THEN m.quantite_pieces_reelle ELSE 0 END) AS SIGNED) AS entrees,
+                CAST(SUM(CASE WHEN t.nom_type_mouvement = 'SORTIE'
+                              THEN m.quantite_pieces_reelle ELSE 0 END) AS SIGNED) AS sorties
+            FROM t_mouvement_stock m
+            JOIN t_type_mouvement t ON t.id = m.type_mouvement_id
+            WHERE m.date_mouvement >= :debut
+              AND m.date_mouvement < :finExclue
+            GROUP BY MONTH(m.date_mouvement)
+            ORDER BY MONTH(m.date_mouvement)
+            """, nativeQuery = true)
+    List<PointMensuelProjection> sommesParMois(
             @Param("debut") LocalDateTime debut,
             @Param("finExclue") LocalDateTime finExclue);
 

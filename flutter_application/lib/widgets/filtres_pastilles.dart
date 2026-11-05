@@ -37,9 +37,9 @@ class FiltresPastilles extends StatelessWidget {
           final actif = index == selection;
 
           return Material(
-            color: actif ? Habibo.encre : Habibo.surface,
+            color: actif ? Habibo.bleu : Habibo.surface,
             shape: StadiumBorder(
-              side: BorderSide(color: actif ? Habibo.encre : Habibo.bordure),
+              side: BorderSide(color: actif ? Habibo.bleu : Habibo.bordure),
             ),
             clipBehavior: Clip.antiAlias,
             child: InkWell(

@@ -1,5 +1,7 @@
 package com.example.demo.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,13 +36,17 @@ public class UserService {
         private final JwtService jwtService;
         private final FileStorageService fileStorageService;
         private final JournalUserService journalUserService;
+        private final NotificationService notificationService;
+        private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class);
 
         public UserService(
                         UserRepository userRepository,
                         RoleRepository roleRepository,
                         JwtService jwtService,
                         FileStorageService fileStorageService,
-                        JournalUserService journalUserService) {
+                        JournalUserService journalUserService,
+                        NotificationService notificationService) {
+                this.notificationService = notificationService;
                 this.userRepository = userRepository;
                 this.roleRepository = roleRepository;
                 this.jwtService = jwtService;
@@ -153,6 +159,49 @@ public class UserService {
                                 CibleEvenement.USER,
                                 user == null ? null : user.getId(),
                                 null);
+        }
+
+        /**
+         * Un utilisateur a oublie son mot de passe : on previent les administrateurs.
+         * Ne dit JAMAIS si le matricule existe (la reponse est la meme), et ne cree
+         * pas de doublon tant qu'une demande est en attente.
+         */
+        public void demanderReinitialisation(String matricule) {
+                if (matricule == null || matricule.isBlank()) {
+                        return;
+                }
+                User demandeur = userRepository.findByMatricule(matricule.trim()).orElse(null);
+                if (demandeur == null || notificationService.demandeMotDePasseEnAttente(demandeur.getId())) {
+                        return;
+                }
+                for (User administrateur : userRepository.findAllByRoleName("ADMIN")) {
+                        notificationService.creerDemandeMotDePasse(administrateur, demandeur);
+                }
+        }
+
+        /** L'administrateur choisit un nouveau mot de passe pour un utilisateur. */
+        public void reinitialiserMotDePasse(Long id, String nouveauMotDePasse) {
+                if (nouveauMotDePasse == null || nouveauMotDePasse.length() < 6) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST, "Le mot de passe doit contenir au moins 6 caracteres");
+                }
+                User user = userRepository.findById(id).orElseThrow(
+                                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "utilisateur introuvable"));
+
+                user.setPasswordHash(passwordEncoder.encode(nouveauMotDePasse));
+                userRepository.save(user);
+                notificationService.cloreDemandesMotDePasse(id);
+
+                // La trace ne doit jamais faire echouer un changement deja enregistre.
+                try {
+                        journalUserService.enregistrer(
+                                        TypeEvenementUser.MOT_DE_PASSE_REINITIALISE,
+                                        CibleEvenement.USER,
+                                        id,
+                                        "pour " + user.getMatricule());
+                } catch (RuntimeException erreur) {
+                        LOGGER.warn("Journal d'activite : trace impossible ({})", erreur.getMessage());
+                }
         }
 
         public List<UserResponse> getAll() {

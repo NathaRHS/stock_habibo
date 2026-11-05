@@ -11,6 +11,7 @@ function EtapeIdentite({
   typesProduit,
   typesConditionnement,
   unites,
+  societes = [],
   chargement,
   desactive,
   varianteDe = null,
@@ -67,6 +68,25 @@ function EtapeIdentite({
           placeholder="Code-barres de l'article"
           disabled={desactive}
         />
+      </label>
+
+      <label>
+        Société
+        <select
+          name="societeId"
+          value={valeurs.societeId}
+          onChange={onChange}
+          disabled={chargement || desactive}
+        >
+          <option value="" disabled>
+            {chargement ? "Chargement…" : "Choisir la société du produit"}
+          </option>
+          {societes.map((societe) => (
+            <option key={societe.id} value={societe.id}>
+              {societe.nomSociete}
+            </option>
+          ))}
+        </select>
       </label>
 
       <div className="acm-grille">

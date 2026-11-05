@@ -13,6 +13,7 @@ import {
   Receipt,
   Route,
   Settings,
+  SlidersHorizontal,
   TrendingDown,
   TriangleAlert,
   Users,
@@ -32,6 +33,7 @@ const navigationItems = [
   { label: "Conditionnements", icon: PackageOpen, to: "/article-conditionnements" },
   { label: "Capacités palettes", icon: Boxes, to: "/palettes-conditionnements/create" },
   { label: "Référentiels", icon: ListChecks, to: "/referentiels", adminSeulement: true },
+  { label: "Paramétrage suggestion", icon: SlidersHorizontal, to: "/parametrage-suggestion", adminSeulement: true },
   // Journal d'activité : réservé à l'administrateur (le serveur le refuse aux autres).
   { label: "Activités", icon: Activity, to: "/activites", adminSeulement: true },
 ];
@@ -57,11 +59,11 @@ function Sidebar() {
 
   return (
     <aside className="sidebar">
-      <Link className="logo" to="/accueil" aria-label="Retour au tableau de bord">
-        <span className="logo-mark" aria-hidden="true">
+      <Link style={{display:"flex",justifyContent:"ceter",alignItems:"center"}}className="logo" to="/accueil" aria-label="Retour au tableau de bord">
+        <span   className="logo-mark" aria-hidden="true">
           <img src={logoHabibo} alt="" />
         </span>
-        <p>WMS</p>
+        {/* <p>WMS</p> */}
       </Link>
       <div className="sidebar-notification">
         <NotificationBell />

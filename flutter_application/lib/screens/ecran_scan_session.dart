@@ -4,7 +4,9 @@ import 'package:flutter_application/models/detail_journal.dart';
 import 'package:flutter_application/screens/ecran_scanner_code_barres.dart';
 import 'package:flutter_application/services/scan_service.dart';
 import 'package:flutter_application/theme/habibo.dart';
-import 'package:flutter_application/widgets/en_tete_page.dart';
+import 'package:flutter_application/widgets/bouton_profil.dart';
+import 'package:flutter_application/widgets/bouton_retour.dart';
+import 'package:flutter_application/widgets/fond_degrade.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class EcranScanSession extends StatefulWidget {
@@ -316,186 +318,283 @@ class _EcranScanSessionState extends State<EcranScanSession> {
     return '${morceaux[2]}/${morceaux[1]}/${morceaux[0]}';
   }
 
+  // ------------------------------------------------------------------
+  // Affichage
+  // ------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: Habibo.fond,
-        body: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: Column(
-                children: [
-                  EnTetePage(
-                    titre: _estInventaire ? 'Comptage' : 'Réception',
-                    sousTitre: widget.referenceJournal,
-                    action: _estInventaire
-                        ? null
-                        : TextButton(
-                            onPressed: _enregistrementEnCours
-                                ? null
-                                : _terminerParticipation,
-                            style: TextButton.styleFrom(
-                              foregroundColor: Habibo.bleu,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                              ),
-                              minimumSize: const Size(0, 44),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            // Le style est sur le texte : il garde la police du thème.
-                            child: const Text(
-                              'Terminer',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                  ),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(
-                        Habibo.marge,
-                        12,
-                        Habibo.marge,
-                        24,
-                      ),
-                      children: [
-                        if (_estInventaire) ...[
-                          _resumeEmplacementInventaire(),
-                          const SizedBox(height: 24),
-                        ],
-                        _libelle('Code-barres'),
-                        _champCodeBarres(),
-                        _texteErreur(_erreurCodeBarres),
-                        if (!_estInventaire) ...[
-                          const SizedBox(height: 20),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: _champDate(
-                                  libelle: 'DLV',
-                                  date: _dlv,
-                                  onTap: () => _choisirDate(dlc: false),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _champDate(
-                                  libelle: 'DLC',
-                                  date: _dlc,
-                                  onTap: () => _choisirDate(dlc: true),
-                                ),
-                              ),
-                            ],
-                          ),
-                          _texteErreur(_erreurDates),
-                        ],
-                        const SizedBox(height: 20),
-                        _libelle(
-                          _estInventaire
-                              ? 'Conditionnements comptés'
-                              : 'Conditionnements reçus',
+        body: FondDegrade(
+          child: SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Column(
+                  children: [
+                    _entete(),
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(
+                          Habibo.marge,
+                          20,
+                          Habibo.marge,
+                          24,
                         ),
-                        _selecteurQuantite(),
-                        _texteErreur(_erreurQuantite),
-                        ...[
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              const Expanded(
-                                child: Text(
-                                  'Boîte incomplète',
-                                  style: TextStyle(
-                                    color: Habibo.texte,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              Switch(
-                                value: _boiteIncomplete,
-                                activeTrackColor: Habibo.bleu,
-                                onChanged: _enregistrementEnCours
-                                    ? null
-                                    : (valeur) => setState(() {
-                                        _boiteIncomplete = valeur;
-                                        _erreurPieces = null;
-                                        if (!valeur) _piecesController.clear();
-                                      }),
-                              ),
-                            ],
-                          ),
-                          if (_boiteIncomplete) ...[
-                            const SizedBox(height: 8),
-                            _libelle('Pièces réelles (total reçu)'),
-                            TextField(
-                              controller: _piecesController,
-                              enabled: !_enregistrementEnCours,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                              onChanged: (_) =>
-                                  setState(() => _erreurPieces = null),
-                              style: const TextStyle(
-                                color: Habibo.texte,
-                                fontSize: 16,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: 'Ex. 25',
-                                filled: true,
-                                fillColor: Habibo.surface,
-                                enabledBorder: _bordure(
-                                  _erreurPieces != null
-                                      ? Habibo.rouge
-                                      : Habibo.bordure,
-                                ),
-                                focusedBorder: _bordure(
-                                  Habibo.bleu,
-                                  epaisseur: 1.5,
-                                ),
-                              ),
+                        children: [
+                          if (_estInventaire) ...[
+                            _resumeEmplacementInventaire(),
+                            const SizedBox(height: 16),
+                          ],
+                          _carteFormulaire(),
+                          if (_erreur != null) ...[
+                            const SizedBox(height: 16),
+                            _message(
+                              _erreur!,
+                              icone: LucideIcons.circleAlert,
+                              couleur: Habibo.rouge,
+                              fond: Habibo.rougeDoux,
                             ),
-                            _texteErreur(_erreurPieces),
+                          ],
+                          if (_dernierDetail != null) ...[
+                            const SizedBox(height: 16),
+                            _message(
+                              '${_dernierDetail!.nomArticle} ajouté · total '
+                              '${_dernierDetail!.quantite}',
+                              icone: LucideIcons.circleCheck,
+                              couleur: Habibo.vert,
+                              fond: Habibo.vertDoux,
+                            ),
+                          ],
+                          if (!_estInventaire) ...[
+                            const SizedBox(height: 28),
+                            _produitsDuJournal(),
                           ],
                         ],
-                        if (_erreur != null) ...[
-                          const SizedBox(height: 16),
-                          _message(
-                            _erreur!,
-                            icone: LucideIcons.circleAlert,
-                            couleur: Habibo.rouge,
-                            fond: Habibo.rougeDoux,
-                          ),
-                        ],
-                        if (_dernierDetail != null) ...[
-                          const SizedBox(height: 16),
-                          _message(
-                            '${_dernierDetail!.nomArticle} ajouté · total '
-                            '${_dernierDetail!.quantite}',
-                            icone: LucideIcons.circleCheck,
-                            couleur: Habibo.vert,
-                            fond: Habibo.vertDoux,
-                          ),
-                        ],
-                        if (!_estInventaire) ...[
-                          const SizedBox(height: 32),
-                          _produitsDuJournal(),
-                        ],
-                      ],
+                      ),
                     ),
-                  ),
-                  _barreAction(),
-                ],
+                    _barreAction(),
+                  ],
+                ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// Retour, « Terminer » et profil, puis le titre et la référence du journal.
+  Widget _entete() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Habibo.marge, 12, Habibo.marge, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const BoutonRetour(),
+              const Spacer(),
+              if (!_estInventaire) ...[
+                _boutonTerminer(),
+                const SizedBox(width: 10),
+              ],
+              const BoutonProfil(),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            _estInventaire ? 'Comptage' : 'Réception',
+            style: const TextStyle(
+              color: Habibo.texte,
+              fontSize: 34,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -1,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Habibo.bleuDoux,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(LucideIcons.fileText, size: 14, color: Habibo.bleu),
+                const SizedBox(width: 6),
+                Text(
+                  widget.referenceJournal,
+                  style: const TextStyle(
+                    color: Habibo.bleu,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _boutonTerminer() {
+    return Material(
+      color: Habibo.bleuDoux,
+      shape: const StadiumBorder(),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: _enregistrementEnCours ? null : _terminerParticipation,
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(LucideIcons.check, size: 18, color: Habibo.bleu),
+              SizedBox(width: 6),
+              Text(
+                'Terminer',
+                style: TextStyle(
+                  color: Habibo.bleu,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Tous les champs de saisie dans une seule carte blanche.
+  Widget _carteFormulaire() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: Habibo.carte(rayon: 26),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _libelle('Code-barres'),
+          _champCodeBarres(),
+          _texteErreur(_erreurCodeBarres),
+          if (!_estInventaire) ...[
+            const SizedBox(height: 20),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _champDate(
+                    libelle: 'DLV',
+                    date: _dlv,
+                    onTap: () => _choisirDate(dlc: false),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _champDate(
+                    libelle: 'DLC',
+                    date: _dlc,
+                    onTap: () => _choisirDate(dlc: true),
+                  ),
+                ),
+              ],
+            ),
+            _texteErreur(_erreurDates),
+          ],
+          const SizedBox(height: 20),
+          _libelle(
+            _estInventaire
+                ? 'Conditionnements comptés'
+                : 'Conditionnements reçus',
+          ),
+          _selecteurQuantite(),
+          _texteErreur(_erreurQuantite),
+          const SizedBox(height: 16),
+          _tuileBoiteIncomplete(),
+          if (_boiteIncomplete) ...[
+            const SizedBox(height: 14),
+            _libelle('Pièces réelles (total reçu)'),
+            TextField(
+              controller: _piecesController,
+              enabled: !_enregistrementEnCours,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (_) => setState(() => _erreurPieces = null),
+              style: const TextStyle(color: Habibo.texte, fontSize: 16),
+              decoration: _decoration(
+                hint: 'Ex. 25',
+                erreur: _erreurPieces != null,
+              ),
+            ),
+            _texteErreur(_erreurPieces),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Interrupteur « boîte incomplète » dans une petite tuile.
+  Widget _tuileBoiteIncomplete() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+      decoration: BoxDecoration(
+        color: Habibo.fond,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: Habibo.surface,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              LucideIcons.packageOpen,
+              size: 19,
+              color: Habibo.bleu,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Boîte incomplète',
+                  style: TextStyle(
+                    color: Habibo.texte,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'La boîte n’est pas pleine',
+                  style: TextStyle(color: Habibo.texteSecondaire, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: _boiteIncomplete,
+            activeTrackColor: Habibo.bleu,
+            onChanged: _enregistrementEnCours
+                ? null
+                : (valeur) => setState(() {
+                    _boiteIncomplete = valeur;
+                    _erreurPieces = null;
+                    if (!valeur) _piecesController.clear();
+                  }),
+          ),
+        ],
       ),
     );
   }
@@ -505,7 +604,7 @@ class _EcranScanSessionState extends State<EcranScanSession> {
       padding: const EdgeInsets.fromLTRB(Habibo.marge, 8, Habibo.marge, 16),
       child: SizedBox(
         width: double.infinity,
-        height: 54,
+        height: 56,
         child: FilledButton(
           onPressed: _enregistrementEnCours ? null : _ajouterProduit,
           style: FilledButton.styleFrom(
@@ -514,7 +613,7 @@ class _EcranScanSessionState extends State<EcranScanSession> {
             disabledBackgroundColor: Habibo.bleu.withValues(alpha: 0.6),
             disabledForegroundColor: Colors.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(Habibo.rayon),
+              borderRadius: BorderRadius.circular(18),
             ),
           ),
           child: _enregistrementEnCours
@@ -526,14 +625,24 @@ class _EcranScanSessionState extends State<EcranScanSession> {
                     color: Colors.white,
                   ),
                 )
-              : Text(
-                  _estInventaire
-                      ? 'Enregistrer le comptage'
-                      : 'Ajouter le produit',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _estInventaire ? LucideIcons.check : LucideIcons.plus,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _estInventaire
+                          ? 'Enregistrer le comptage'
+                          : 'Ajouter le produit',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
         ),
       ),
@@ -546,8 +655,8 @@ class _EcranScanSessionState extends State<EcranScanSession> {
       child: Text(
         texte,
         style: const TextStyle(
-          color: Habibo.texte,
-          fontSize: 14,
+          color: Habibo.texteSecondaire,
+          fontSize: 13,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -567,14 +676,34 @@ class _EcranScanSessionState extends State<EcranScanSession> {
 
   OutlineInputBorder _bordure(Color couleur, {double epaisseur = 1}) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(Habibo.rayon),
+      borderRadius: BorderRadius.circular(16),
       borderSide: BorderSide(color: couleur, width: epaisseur),
     );
   }
 
-  Widget _champCodeBarres() {
-    final enErreur = _erreurCodeBarres != null;
+  /// Champ gris clair très arrondi : bordure rouge en erreur, bleue au focus.
+  InputDecoration _decoration({
+    String? hint,
+    bool erreur = false,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Habibo.texteDiscret),
+      filled: true,
+      fillColor: Habibo.fond,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      suffixIcon: suffixIcon,
+      enabledBorder: _bordure(erreur ? Habibo.rouge : Colors.transparent),
+      disabledBorder: _bordure(Colors.transparent),
+      focusedBorder: _bordure(
+        erreur ? Habibo.rouge : Habibo.bleu,
+        epaisseur: 1.5,
+      ),
+    );
+  }
 
+  Widget _champCodeBarres() {
     return TextField(
       controller: _codeBarresController,
       enabled: !_enregistrementEnCours,
@@ -584,29 +713,29 @@ class _EcranScanSessionState extends State<EcranScanSession> {
       },
       onSubmitted: (_) => _quantiteFocusNode.requestFocus(),
       style: const TextStyle(color: Habibo.texte, fontSize: 16),
-      decoration: InputDecoration(
-        hintText: 'Scannez ou saisissez le code',
-        hintStyle: const TextStyle(color: Habibo.texteDiscret),
-        filled: true,
-        fillColor: Habibo.surface,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 18,
-        ),
-        suffixIcon: IconButton(
-          tooltip: 'Ouvrir la caméra',
-          onPressed: _enregistrementEnCours ? null : _ouvrirScanner,
-          icon: const Icon(
-            LucideIcons.scanBarcode,
-            size: 22,
+      decoration: _decoration(
+        hint: 'Scannez ou saisissez le code',
+        erreur: _erreurCodeBarres != null,
+        // Le bouton de la caméra est une petite tuile bleue à droite du champ.
+        suffixIcon: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Material(
             color: Habibo.bleu,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: _enregistrementEnCours ? null : _ouvrirScanner,
+              child: const SizedBox(
+                width: 44,
+                child: Icon(
+                  LucideIcons.scanBarcode,
+                  size: 22,
+                  color: Colors.white,
+                  semanticLabel: 'Ouvrir la caméra',
+                ),
+              ),
+            ),
           ),
-        ),
-        enabledBorder: _bordure(enErreur ? Habibo.rouge : Habibo.bordure),
-        disabledBorder: _bordure(Habibo.bordure),
-        focusedBorder: _bordure(
-          enErreur ? Habibo.rouge : Habibo.bleu,
-          epaisseur: 1.5,
         ),
       ),
     );
@@ -624,16 +753,18 @@ class _EcranScanSessionState extends State<EcranScanSession> {
       children: [
         _libelle(libelle),
         Material(
-          color: Habibo.surface,
+          color: Habibo.fond,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(Habibo.rayon),
-            side: BorderSide(color: enErreur ? Habibo.rouge : Habibo.bordure),
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: enErreur ? Habibo.rouge : Colors.transparent,
+            ),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: _enregistrementEnCours ? null : onTap,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
               child: Row(
                 children: [
                   Expanded(
@@ -643,14 +774,14 @@ class _EcranScanSessionState extends State<EcranScanSession> {
                         color: date == null
                             ? Habibo.texteDiscret
                             : Habibo.texte,
-                        fontSize: 16,
+                        fontSize: 15,
                       ),
                     ),
                   ),
                   const Icon(
                     LucideIcons.calendar,
                     size: 18,
-                    color: Habibo.texteSecondaire,
+                    color: Habibo.bleu,
                   ),
                 ],
               ),
@@ -661,27 +792,28 @@ class _EcranScanSessionState extends State<EcranScanSession> {
     );
   }
 
+  /// « − 12 + » : un grand nombre au centre, deux boutons ronds de chaque côté.
   Widget _selecteurQuantite() {
     final quantite = int.tryParse(_quantiteController.text.trim()) ?? 0;
 
     return Container(
-      height: 64,
+      height: 72,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Habibo.surface,
-        borderRadius: BorderRadius.circular(14),
+        color: Habibo.fond,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _erreurQuantite != null ? Habibo.rouge : Habibo.bordure,
+          color: _erreurQuantite != null ? Habibo.rouge : Colors.transparent,
         ),
       ),
-      clipBehavior: Clip.antiAlias,
       child: Row(
         children: [
           _boutonQuantite(
             icone: LucideIcons.minus,
             libelle: 'Diminuer',
+            principal: false,
             onTap: quantite > 1 ? () => _changerQuantite(-1) : null,
           ),
-          Container(width: 1, color: Habibo.bordure),
           Expanded(
             child: TextField(
               controller: _quantiteController,
@@ -695,7 +827,7 @@ class _EcranScanSessionState extends State<EcranScanSession> {
               onSubmitted: (_) => _ajouterProduit(),
               style: const TextStyle(
                 color: Habibo.texte,
-                fontSize: 26,
+                fontSize: 30,
                 fontWeight: FontWeight.w700,
               ),
               decoration: const InputDecoration(
@@ -706,10 +838,10 @@ class _EcranScanSessionState extends State<EcranScanSession> {
               ),
             ),
           ),
-          Container(width: 1, color: Habibo.bordure),
           _boutonQuantite(
             icone: LucideIcons.plus,
             libelle: 'Augmenter',
+            principal: true,
             onTap: () => _changerQuantite(1),
           ),
         ],
@@ -720,20 +852,30 @@ class _EcranScanSessionState extends State<EcranScanSession> {
   Widget _boutonQuantite({
     required IconData icone,
     required String libelle,
+    required bool principal,
     required VoidCallback? onTap,
   }) {
     final actif = onTap != null && !_enregistrementEnCours;
 
-    return InkWell(
-      onTap: actif ? onTap : null,
-      child: SizedBox(
-        width: 72,
-        height: double.infinity,
-        child: Icon(
-          icone,
-          size: 22,
-          color: actif ? Habibo.texte : Habibo.texteDiscret,
-          semanticLabel: libelle,
+    return Material(
+      color: principal ? Habibo.bleu : Habibo.surface,
+      shape: CircleBorder(
+        side: BorderSide(color: principal ? Habibo.bleu : Habibo.bordure),
+      ),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: actif ? onTap : null,
+        child: SizedBox(
+          width: 50,
+          height: 50,
+          child: Icon(
+            icone,
+            size: 22,
+            color: principal
+                ? Colors.white
+                : (actif ? Habibo.texte : Habibo.texteDiscret),
+            semanticLabel: libelle,
+          ),
         ),
       ),
     );
@@ -746,22 +888,22 @@ class _EcranScanSessionState extends State<EcranScanSession> {
     required Color fond,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: fond,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          Icon(icone, color: couleur, size: 18),
-          const SizedBox(width: 10),
+          Icon(icone, color: couleur, size: 20),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               texte,
               style: TextStyle(
                 color: couleur,
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -770,6 +912,7 @@ class _EcranScanSessionState extends State<EcranScanSession> {
     );
   }
 
+  /// Les produits déjà reçus dans ce journal, une carte par produit.
   Widget _produitsDuJournal() {
     final nombre = _details.length;
 
@@ -783,22 +926,34 @@ class _EcranScanSessionState extends State<EcranScanSession> {
                 'Dans ce journal',
                 style: TextStyle(
                   color: Habibo.texte,
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
+                  letterSpacing: -0.3,
                 ),
               ),
             ),
             if (nombre > 0)
-              Text(
-                '$nombre produit${nombre > 1 ? 's' : ''}',
-                style: const TextStyle(
-                  color: Habibo.texteSecondaire,
-                  fontSize: 14,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: Habibo.bleuDoux,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '$nombre produit${nombre > 1 ? 's' : ''}',
+                  style: const TextStyle(
+                    color: Habibo.bleu,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         if (_chargementDetails && _details.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 24),
@@ -810,40 +965,44 @@ class _EcranScanSessionState extends State<EcranScanSession> {
             style: const TextStyle(color: Habibo.rouge, fontSize: 14),
           )
         else if (_details.isEmpty)
-          const Text(
-            'Aucun produit pour le moment.',
-            style: TextStyle(color: Habibo.texteSecondaire, fontSize: 14),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: Habibo.carte(rayon: 20),
+            child: const Text(
+              'Aucun produit pour le moment. Scannez le premier.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Habibo.texteSecondaire, fontSize: 14),
+            ),
           )
         else
-          Container(
-            decoration: BoxDecoration(
-              color: Habibo.surface,
-              borderRadius: BorderRadius.circular(Habibo.rayonCarte),
-              border: Border.all(color: Habibo.bordure),
-            ),
-            child: Column(
-              children: [
-                for (var i = 0; i < _details.length; i++) ...[
-                  if (i > 0)
-                    const Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: Color.fromARGB(44, 232, 223, 223),
-                    ),
-                  _ligneProduit(_details[i]),
-                ],
-              ],
-            ),
-          ),
+          for (var i = 0; i < _details.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            _ligneProduit(_details[i]),
+          ],
       ],
     );
   }
 
   Widget _ligneProduit(DetailJournal detail) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: Habibo.carte(rayon: 20),
       child: Row(
         children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Habibo.bleuDoux,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              LucideIcons.package,
+              size: 21,
+              color: Habibo.bleu,
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -855,7 +1014,7 @@ class _EcranScanSessionState extends State<EcranScanSession> {
                   style: const TextStyle(
                     color: Habibo.texte,
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 if (detail.dlc != null) ...[
@@ -871,13 +1030,20 @@ class _EcranScanSessionState extends State<EcranScanSession> {
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          Text(
-            '× ${detail.quantite}',
-            style: const TextStyle(
-              color: Habibo.texte,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: Habibo.bleuDoux,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              '× ${detail.quantite}',
+              style: const TextStyle(
+                color: Habibo.bleu,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -885,6 +1051,7 @@ class _EcranScanSessionState extends State<EcranScanSession> {
     );
   }
 
+  /// Comptage : l'emplacement concerné, avec l'article et le stock attendus.
   Widget _resumeEmplacementInventaire() {
     final article = widget.nomArticleAttendu ?? 'Emplacement libre';
     final stock = widget.quantiteStockAttendue == null
@@ -893,26 +1060,22 @@ class _EcranScanSessionState extends State<EcranScanSession> {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Habibo.surface,
-        border: Border.all(color: Habibo.bordure),
-        borderRadius: BorderRadius.circular(Habibo.rayonCarte),
-      ),
+      decoration: Habibo.carte(rayon: 22),
       child: Row(
         children: [
           Container(
             constraints: const BoxConstraints(minWidth: 64),
-            height: 48,
+            height: 52,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Habibo.bleuDoux,
-              borderRadius: BorderRadius.circular(14),
+              color: Habibo.bleu,
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
               widget.nomEmplacement ?? '--',
               style: const TextStyle(
-                color: Habibo.bleu,
+                color: Colors.white,
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
               ),

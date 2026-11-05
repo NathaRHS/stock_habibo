@@ -11,5 +11,6 @@ public record ComptageInventaireResponse(
         Long emplacementId,
         String nomEmplacement,
         Integer quantiteComptee,
+        Integer ecart,
         LocalDateTime dateComptage) {
 }

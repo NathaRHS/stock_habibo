@@ -1,0 +1,164 @@
+/* Une ligne de réglage : texte à gauche, curseur au milieu, valeur à droite. */
+.param-contenu {
+  display: grid;
+  gap: 4px;
+  padding: 8px 20px 16px;
+}
+
+.param-ligne {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 100px;
+  gap: 20px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-secondary-soft);
+}
+
+.param-ligne:last-of-type {
+  border-bottom: 0;
+}
+
+.param-ligne strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.param-ligne p {
+  margin-top: 3px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.param-ligne input[type="range"] {
+  width: 100%;
+  accent-color: var(--color-primary);
+}
+
+/* Champ numérique à droite du curseur : on peut taper la valeur au clavier. */
+.param-saisie {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.param-saisie input {
+  width: 64px;
+  height: 36px;
+  padding: 0 8px;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.param-saisie input:focus {
+  border-color: var(--color-primary);
+  outline: 3px solid var(--color-primary-soft);
+}
+
+/* Total des poids : rouge tant qu'il ne fait pas 100, vert ensuite. */
+.param-total {
+  margin-top: 8px;
+  color: var(--color-danger);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.param-total--ok {
+  color: var(--color-success);
+}
+
+.param-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 20px;
+  background: #fbfcfd;
+  border-top: 1px solid var(--color-border);
+}
+
+.param-vide {
+  padding: 24px 20px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+/* Liste des racks avec leurs flèches. */
+.param-racks {
+  list-style: none;
+}
+
+.param-racks li {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--color-secondary-soft);
+}
+
+.param-racks strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.param-racks p {
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.param-rang {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.param-fleches {
+  display: flex;
+  gap: 6px;
+}
+
+.param-fleches button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: var(--color-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.param-fleches button:hover:not(:disabled) {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.param-fleches button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .param-ligne {
+    grid-template-columns: 1fr 100px;
+  }
+
+  .param-ligne > div:first-child {
+    grid-column: 1 / -1;
+  }
+}

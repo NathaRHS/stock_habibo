@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, BellOff, ClipboardCheck, LogOut, Package } from "lucide-react";
+import { Bell, BellOff, ClipboardCheck, KeyRound, LogOut, Package } from "lucide-react";
 import {
   chargerNotifications,
   marquerNotificationLue,
@@ -170,6 +170,8 @@ function NotificationBell() {
                       <LogOut size={16} />
                     ) : notification.categorie === "INVENTAIRE" ? (
                       <ClipboardCheck size={16} />
+                    ) : notification.categorie === "COMPTE" ? (
+                      <KeyRound size={16} />
                     ) : (
                       <Package size={16} />
                     )}

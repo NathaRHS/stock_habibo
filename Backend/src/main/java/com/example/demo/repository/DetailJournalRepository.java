@@ -18,6 +18,9 @@ public interface DetailJournalRepository extends JpaRepository<DetailJournal, Lo
 
     DetailJournal findByJournalMouvementIdAndArticleId(Long journalId, Long articleId);
 
+    // Vrai si l'article a deja ete recu, compte ou sorti dans un journal.
+    boolean existsByArticleId(Long articleId);
+
     Optional<DetailJournal> findByArticleIdAndDlcAndDlv(
             Long articleId,
             LocalDate dlc,

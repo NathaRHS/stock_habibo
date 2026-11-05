@@ -17,7 +17,9 @@ public record UpdateArticleCompletRequest(
                 Long typeConditionnementId,
                 // Facultatifs : contenance d'une piece (valeur + unite), a donner ensemble.
                 java.math.BigDecimal contenanceValeur,
-                Long uniteId) {
+                Long uniteId,
+                // Obligatoire : societe du produit.
+                Long societeId) {
     }
 
     // L'article n'existe pas encore : son identifiant est ajoute par le service.

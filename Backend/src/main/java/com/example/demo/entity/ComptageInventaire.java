@@ -25,6 +25,16 @@ public class ComptageInventaire {
     @JoinColumn(name = "user_id")
     User user;
 
+    // Stock que le logiciel croyait avoir au premier comptage de cet emplacement.
+    // Fige une seule fois (INSERT de ComptageInventaireRepository.ajouterOuIncrementer) ;
+    // vide pour les comptages anciens. L'ecart se deduit : quantiteComptee - quantiteTheorique.
+    @Column(name = "quantite_theorique")
+    private Integer quantiteTheorique;
+
+    public Integer getQuantiteTheorique() {
+        return quantiteTheorique;
+    }
+
     public User getUser() {
         return user;
     }

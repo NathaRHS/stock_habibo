@@ -9,6 +9,8 @@ public record CreateArticleRequest(
         Long typeConditionnementId,
         // Facultatifs : contenance d'une piece (valeur + unite), a donner ensemble.
         BigDecimal contenanceValeur,
-        Long uniteId
+        Long uniteId,
+        // Obligatoire : societe du produit.
+        Long societeId
 ) {
 }

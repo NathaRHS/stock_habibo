@@ -1,0 +1,74 @@
+.reinit-contenu {
+  display: grid;
+  gap: 12px;
+  max-width: 560px;
+  padding: 20px;
+}
+
+.reinit-contenu label {
+  color: var(--color-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Le champ et ses trois petits boutons sur la même ligne. */
+.reinit-ligne {
+  display: flex;
+  gap: 8px;
+}
+
+.reinit-ligne input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: 600 15px "JetBrains Mono", Consolas, monospace;
+  letter-spacing: 0.04em;
+}
+
+.reinit-ligne input:focus {
+  border-color: var(--color-primary);
+  outline: 3px solid var(--color-primary-soft);
+}
+
+.reinit-ligne button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  color: var(--color-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.reinit-ligne button:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.reinit-aide {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.reinit-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.reinit-resultat {
+  padding: 16px;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  border-radius: 8px;
+  font: 700 22px "JetBrains Mono", Consolas, monospace;
+  letter-spacing: 0.06em;
+  text-align: center;
+}

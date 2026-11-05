@@ -28,4 +28,20 @@ class Habibo {
   static const rayon = 12.0;
   static const rayonCarte = 16.0;
   static const marge = 24.0;
+
+  /// Carte blanche aux angles arrondis, avec une ombre très douce.
+  static BoxDecoration carte({double rayon = 22}) {
+    return BoxDecoration(
+      color: surface,
+      borderRadius: BorderRadius.circular(rayon),
+      border: Border.all(color: bordure.withValues(alpha: 0.6)),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.04),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    );
+  }
 }

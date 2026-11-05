@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Download, Plus, Upload } from "lucide-react";
 import Table from "../components/Table";
 import Button from "../components/Button";
 import CreateArticleModal from "../components/CreateArticleModal";
 import VignetteArticle from "../components/VignetteArticle";
 import { getAccessToken } from "../services/authService";
+import { importerCsv, telechargerFichier } from "../services/importService";
 import { verifierPhoto } from "../utils/photo";
 import Sidebar from "../components/Sidebar";
 import "./css/ListeArticle.css";
@@ -26,6 +27,11 @@ function ListeArticle() {
   // Article de depart quand on ajoute une variante (null = nouvel article).
   const [articleBase, setArticleBase] = useState(null);
   const [erreurPhoto, setErreurPhoto] = useState("");
+  // Import CSV : résultat du serveur (créés ou erreurs par ligne) et erreur générale.
+  const champFichier = useRef(null);
+  const [importEnCours, setImportEnCours] = useState(false);
+  const [resultatImport, setResultatImport] = useState(null);
+  const [erreurImport, setErreurImport] = useState("");
 
   const chargerArticles = useCallback(async () => {
     const token = getAccessToken();
@@ -67,6 +73,30 @@ function ListeArticle() {
     chargerArticles();
   }, [chargerArticles]);
 
+  const importerFichier = async (fichier) => {
+    if (!fichier) return;
+    setImportEnCours(true);
+    setResultatImport(null);
+    setErreurImport("");
+    try {
+      const resultat = await importerCsv(springUrl, "/articles/import", fichier);
+      setResultatImport(resultat);
+      if (resultat.nombreCrees > 0) chargerArticles();
+    } catch (erreur) {
+      setErreurImport(erreur.message);
+    } finally {
+      setImportEnCours(false);
+    }
+  };
+
+  const telechargerModele = async () => {
+    try {
+      await telechargerFichier(springUrl, "/articles/import/modele", "modele_articles.csv");
+    } catch (erreur) {
+      setErreurImport(erreur.message);
+    }
+  };
+
   // Colonnes lisibles pour le tableau (au lieu de tous les champs bruts).
   const lignes = useMemo(
     () =>
@@ -78,6 +108,7 @@ function ListeArticle() {
         famille: article.nomFamille,
         codeBarres: article.codeBar,
         typeProduit: article.typeProduit,
+        societe: article.nomSociete ?? "",
         variante: "",
       })),
     [articles],
@@ -188,7 +219,54 @@ function ListeArticle() {
             <Button icon={<Plus size={16} />} onClick={ouvrirNouvelArticle}>
               Nouvel article
             </Button>
+            <Button
+              variant="secondary"
+              icon={<Upload size={16} />}
+              loading={importEnCours}
+              onClick={() => champFichier.current?.click()}
+            >
+              Importer
+            </Button>
+            <Button variant="secondary" icon={<Download size={16} />} onClick={telechargerModele}>
+              Télécharger le modèle
+            </Button>
+            <input
+              ref={champFichier}
+              type="file"
+              accept=".csv,text/csv"
+              hidden
+              onChange={(event) => {
+                importerFichier(event.target.files?.[0] ?? null);
+                event.target.value = "";
+              }}
+            />
           </div>
+
+          {erreurImport && (
+            <div className="article-list-error" role="alert">
+              {erreurImport}
+            </div>
+          )}
+
+          {resultatImport?.nombreCrees > 0 && (
+            <div className="article-list-succes" role="status">
+              {resultatImport.nombreCrees} article{resultatImport.nombreCrees > 1 ? "s" : ""} importé
+              {resultatImport.nombreCrees > 1 ? "s" : ""}.
+            </div>
+          )}
+
+          {resultatImport?.erreurs?.length > 0 && (
+            <div className="article-list-error" role="alert">
+              <strong>Import refusé : aucun article n’a été créé.</strong>
+              <ul className="article-import-erreurs">
+                {resultatImport.erreurs.map((erreur, index) => (
+                  <li key={index}>
+                    Ligne {erreur.ligne} : {erreur.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {erreurPhoto && (
             <div className="article-list-error" role="alert">

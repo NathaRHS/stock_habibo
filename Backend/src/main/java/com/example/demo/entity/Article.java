@@ -52,6 +52,21 @@ public class Article {
     @JoinColumn(name = "unite_id", nullable = true)
     private Unite unite;
 
+    // Societe du produit (HB, HH...). Obligatoire a la creation et a la modification
+    // (verifie par ArticleService) ; la colonne reste nullable pour que Hibernate puisse
+    // l'ajouter a une table deja remplie. Le NOT NULL se pose en SQL une fois tout rempli.
+    @ManyToOne
+    @JoinColumn(name = "societe_id")
+    private Societe societe;
+
+    public Societe getSociete() {
+        return societe;
+    }
+
+    public void setSociete(Societe societe) {
+        this.societe = societe;
+    }
+
     public Famille getFamille() {
         return famille;
     }

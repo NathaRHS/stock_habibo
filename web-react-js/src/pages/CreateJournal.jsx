@@ -159,6 +159,15 @@ function CreateJournal() {
       return;
     }
 
+    // Une entrée vient d'un fournisseur : seuls ses produits pourront être scannés.
+    const typeChoisi = typesMouvement.find(
+      (type) => String(type.id) === String(journal.typeMouvementJournalId),
+    );
+    if (typeChoisi?.nomTypeMouvement?.toUpperCase() === "ENTREE" && !journal.fournisseurId) {
+      setError("Le fournisseur est obligatoire pour une entrée.");
+      return;
+    }
+
     const token = getAccessToken();
 
     if (!token) {

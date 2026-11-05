@@ -256,3 +256,20 @@
     display: none;
   }
 }
+
+/* Mot de passe oublié */
+.login-lien {
+  padding: 0;
+  color: var(--color-primary);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+.login-oubli {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}

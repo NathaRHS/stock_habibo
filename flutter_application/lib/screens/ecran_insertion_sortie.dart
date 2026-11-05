@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/widgets/bouton_profil.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application/screens/ecran_scanner_code_barres.dart';
 
@@ -50,9 +51,7 @@ class _EcranInsertionSortieState extends State<EcranInsertionSortie> {
 
   Future<void> _ouvrirScanner() async {
     final codeBarres = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
-        builder: (_) => const EcranScannerCodeBarres(),
-      ),
+      MaterialPageRoute(builder: (_) => const EcranScannerCodeBarres()),
     );
 
     if (!mounted || codeBarres == null) return;
@@ -102,6 +101,12 @@ class _EcranInsertionSortieState extends State<EcranInsertionSortie> {
         title: const Text('Prélever une commande'),
         backgroundColor: const Color(0xFF063D77),
         foregroundColor: Colors.white,
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: BoutonProfil(taille: 34, surFondSombre: true),
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -176,9 +181,7 @@ class _EcranInsertionSortieState extends State<EcranInsertionSortie> {
                         decoration: BoxDecoration(
                           color: const Color(0xFFFFECEC),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: const Color(0xFFF0B5B5),
-                          ),
+                          border: Border.all(color: const Color(0xFFF0B5B5)),
                         ),
                         child: Text(
                           _erreur!,

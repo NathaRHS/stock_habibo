@@ -14,10 +14,13 @@ import com.example.demo.repository.TypeProduitRepository;
 import com.example.demo.entity.Article;
 import com.example.demo.entity.CibleEvenement;
 import com.example.demo.entity.TypeConditionnement;
+import com.example.demo.entity.Societe;
 import com.example.demo.entity.TypeEvenementUser;
 import com.example.demo.entity.TypeProduit;
 import com.example.demo.entity.Unite;
 import com.example.demo.repository.ArticleRepository;
+import com.example.demo.repository.DetailJournalRepository;
+import com.example.demo.repository.SocieteRepository;
 import com.example.demo.repository.TypeConditionnementRepository;
 import com.example.demo.repository.UniteRepository;
 
@@ -27,6 +30,8 @@ public class ArticleService {
     private final TypeProduitRepository typeProduitRepository;
     private final TypeConditionnementRepository typeConditionnementRepository;
     private final UniteRepository uniteRepository;
+    private final SocieteRepository societeRepository;
+    private final DetailJournalRepository detailJournalRepository;
     private final FileStorageService fileStorageService;
     private final JournalUserService journalUserService;
 
@@ -35,11 +40,14 @@ public class ArticleService {
     //Injection de dépendances
     public ArticleService(ArticleRepository articleRepository, TypeProduitRepository typeProduitRepository,
             TypeConditionnementRepository typeConditionnementRepository, UniteRepository uniteRepository,
+            SocieteRepository societeRepository, DetailJournalRepository detailJournalRepository,
             FileStorageService fileStorageService, JournalUserService journalUserService) {
         this.articleRepository = articleRepository;
         this.typeProduitRepository = typeProduitRepository;
         this.typeConditionnementRepository = typeConditionnementRepository;
         this.uniteRepository = uniteRepository;
+        this.societeRepository = societeRepository;
+        this.detailJournalRepository = detailJournalRepository;
         this.fileStorageService = fileStorageService;
         this.journalUserService = journalUserService;
     }
@@ -73,7 +81,9 @@ public class ArticleService {
     public ArticleResponse creerArticle(CreateArticleRequest request) {
         TypeProduit typeProduit = trouverTypeProduit(request.typeProduitId());
         TypeConditionnement typeConditionnement = trouverTypeConditionnement(request.typeConditionnementId());
+        Societe societe = trouverSociete(request.societeId());
         Article article = new Article(typeProduit, request.codeBar(), request.nomArticle(), typeConditionnement);
+        article.setSociete(societe);
         appliquerContenance(article, request.contenanceValeur(), request.uniteId());
         return versResponse(articleRepository.save(article));
     }
@@ -91,10 +101,22 @@ public class ArticleService {
     // Modifier un article existant
     public ArticleResponse modifierArticle(Long id, CreateArticleRequest request) {
         Article article = trouverArticle(id);
+        Societe societe = trouverSociete(request.societeId());
+
+        // Un article deja utilise dans un journal garde sa societe : sinon l'historique
+        // des entrees (controlees par fournisseur) ne serait plus coherent.
+        boolean societeChangee = article.getSociete() != null
+                && !article.getSociete().getId().equals(societe.getId());
+        if (societeChangee && detailJournalRepository.existsByArticleId(article.getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "La societe d'un article deja utilise dans un journal ne peut plus etre modifiee");
+        }
+
         article.setNomArticle(request.nomArticle());
         article.setCodeBar(request.codeBar());
         article.setTypeProduit(trouverTypeProduit(request.typeProduitId()));
         article.setTypeConditionnement(trouverTypeConditionnement(request.typeConditionnementId()));
+        article.setSociete(societe);
         appliquerContenance(article, request.contenanceValeur(), request.uniteId());
         return versResponse(articleRepository.save(article));
     }
@@ -154,6 +176,16 @@ public class ArticleService {
                         HttpStatus.NOT_FOUND, "Type de conditionnement introuvable : " + id));
     }
 
+    // La societe est obligatoire : elle decide des entrees qui peuvent scanner ce produit.
+    private Societe trouverSociete(Long id) {
+        if (id == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "societeId est obligatoire");
+        }
+        return societeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Societe introuvable : " + id));
+    }
+
     // La contenance est facultative, mais valeur et unite vont ensemble.
     private void appliquerContenance(Article article, BigDecimal valeur, Long uniteId) {
         if (valeur == null && uniteId == null) {
@@ -188,7 +220,9 @@ public class ArticleService {
                 article.getFamille() == null ? null : article.getFamille().getNom(),
                 article.getContenanceValeur(),
                 article.getUnite() == null ? null : article.getUnite().getId(),
-                article.getUnite() == null ? null : article.getUnite().getNomUnite());
+                article.getUnite() == null ? null : article.getUnite().getNomUnite(),
+                article.getSociete() == null ? null : article.getSociete().getId(),
+                article.getSociete() == null ? null : article.getSociete().getNomSociete());
     }
 
 }

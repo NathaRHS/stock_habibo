@@ -1,0 +1,289 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.page {
+  min-width: 0;
+  flex: 1;
+  padding: 40px 40px 56px;
+  border-left: 1px solid var(--color-border);
+}
+
+.heading h1 {
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.heading p {
+  margin-top: 8px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+/* Boutons du haut : pastilles, comme sur la liste des articles. */
+.actions {
+  display: flex;
+  gap: 10px;
+  margin: 22px 0 26px;
+}
+.primary,
+.secondary {
+  display: inline-flex;
+  height: 38px;
+  min-width: 150px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.primary {
+  color: #fff;
+  background: var(--color-primary);
+}
+.primary:hover { background: var(--color-primary-hover); }
+.secondary {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+.secondary:hover:not(:disabled) { background: #d9e8f6; }
+.secondary:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.search {
+  display: flex;
+  width: min(280px, 100%);
+  height: 36px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+.search:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+.search input {
+  width: 100%;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-size: 13px;
+}
+
+.select {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.select select {
+  height: 36px;
+  padding: 0 34px 0 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  appearance: none;
+  cursor: pointer;
+}
+.select > svg {
+  position: absolute;
+  right: 10px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.error {
+  margin: 8px 0;
+  padding: 12px 14px;
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+/* Lignes en bandeaux légèrement teintés, séparées par un petit vide. */
+.tableScroll { overflow-x: auto; }
+.table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+.table th {
+  padding: 8px 16px;
+  color: var(--color-text);
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.table td {
+  height: 56px;
+  padding: 8px 16px;
+  background: #f5f6fc;
+  font-size: 13px;
+  vertical-align: middle;
+}
+.table td:first-child { border-radius: 8px 0 0 8px; }
+.table td:last-child { border-radius: 0 8px 8px 0; }
+.table tbody tr:hover td { background: var(--color-primary-soft); }
+
+.triBouton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.triBouton svg { color: var(--color-text-muted); }
+.triBouton:hover svg { color: var(--color-text); }
+
+.reference {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* « Type de flux » : pavé plein. */
+.flux {
+  display: inline-block;
+  min-width: 64px;
+  padding: 4px 12px;
+  color: #fff;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+.sortie { background: #d90000; }
+.entree { background: #0a8a63; }
+.inventaire { background: var(--color-primary); }
+
+/* « Statut » : pavé à filet. */
+.statut {
+  display: inline-block;
+  min-width: 82px;
+  padding: 4px 12px;
+  border: 1px solid;
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+  white-space: nowrap;
+}
+.vert { color: #0b7a58; background: #d6f5ea; border-color: #19a37a; }
+.gris { color: #3c3f45; background: #e7e8ea; border-color: #9a9da3; }
+.bleu { color: #1b4f8f; background: #e3eefb; border-color: #5b8fd0; }
+.orange { color: #9a5f12; background: #fff1d6; border-color: #d99016; }
+.sombre { color: #fff; background: #4b5563; border-color: #4b5563; }
+
+.actionsEntete { text-align: right; }
+.iconeActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.icone {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  place-items: center;
+  cursor: pointer;
+  text-decoration: none;
+}
+.icone:hover:not(:disabled) { background: rgba(1, 73, 142, 0.08); }
+.icone:disabled {
+  color: var(--color-text-muted);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.telecharger { color: #14285a; }
+.details { color: #1b9a6a; }
+.supprimer { color: #e01818; }
+.supprimer:hover:not(:disabled) { background: var(--color-danger-soft); }
+
+.vide {
+  padding: 32px 16px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.pied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pagination button {
+  display: grid;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  color: var(--color-text);
+  background: var(--color-secondary-soft);
+  border: 0;
+  border-radius: 6px;
+  font-size: 12px;
+  place-items: center;
+  cursor: pointer;
+}
+.pagination button:hover:not(:disabled) { background: var(--color-primary-soft); }
+.pagination button:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+.pagination .pageActive {
+  color: #fff;
+  background: var(--color-primary);
+}
+.ellipse { color: var(--color-text-muted); }

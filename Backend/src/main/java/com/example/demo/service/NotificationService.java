@@ -122,6 +122,47 @@ public class NotificationService {
         return versResponse(notificationRepository.save(notification));
     }
 
+    /** Y a-t-il deja une demande en attente pour ce compte ? Evite d'inonder les administrateurs. */
+    @Transactional(readOnly = true)
+    public boolean demandeMotDePasseEnAttente(Long demandeurId) {
+        return notificationRepository.existsByTypeAndUrlCibleAndTraiteeFalse(
+                NotificationType.MOT_DE_PASSE_OUBLIE, urlReinitialisation(demandeurId));
+    }
+
+    /** Previent un administrateur qu'un utilisateur a oublie son mot de passe. */
+    @Transactional
+    public void creerDemandeMotDePasse(User administrateur, User demandeur) {
+        notificationRepository.save(new Notification(
+                NotificationCategorie.COMPTE,
+                NotificationType.MOT_DE_PASSE_OUBLIE,
+                NotificationPriorite.ATTENTION,
+                "Mot de passe oublie",
+                demandeur.getMatricule() + " (" + demandeur.getUsername() + ") a oublie son mot de passe.",
+                urlReinitialisation(demandeur.getId()),
+                administrateur));
+    }
+
+    /** Le mot de passe a ete reinitialise : la demande est traitee pour tous les administrateurs. */
+    @Transactional
+    public void cloreDemandesMotDePasse(Long demandeurId) {
+        List<Notification> demandes = notificationRepository.findAllByTypeAndUrlCibleAndTraiteeFalse(
+                NotificationType.MOT_DE_PASSE_OUBLIE, urlReinitialisation(demandeurId));
+        LocalDateTime maintenant = LocalDateTime.now();
+        for (Notification demande : demandes) {
+            demande.setLu(true);
+            demande.setTraitee(true);
+            if (demande.getDateLecture() == null) {
+                demande.setDateLecture(maintenant);
+            }
+            demande.setDateTraitement(maintenant);
+        }
+        notificationRepository.saveAll(demandes);
+    }
+
+    private String urlReinitialisation(Long demandeurId) {
+        return "/users/reinitialisation/" + demandeurId;
+    }
+
     @Transactional(readOnly = true)
     public List<NotificationResponse> trouverToutes(User destinataire) {
         verifierDestinataire(destinataire);

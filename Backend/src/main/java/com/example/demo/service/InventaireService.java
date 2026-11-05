@@ -15,6 +15,7 @@ import com.example.demo.entity.DetailJournal;
 import com.example.demo.entity.Emplacement;
 import com.example.demo.entity.JournalMouvement;
 import com.example.demo.entity.Rack;
+import com.example.demo.entity.User;
 import com.example.demo.entity.UserJournalMouvement;
 import com.example.demo.repository.ComptageInventaireRepository;
 import com.example.demo.repository.JournalMouvementRepository;
@@ -71,17 +72,23 @@ public class InventaireService {
                         Emplacement emplacement = comptage.getEmplacement();
                         Rack rack = emplacement.getRack();
 
-                        // Stock que le système pense avoir
-                        Integer quantiteTheorique = stockRepository.trouverQuantiteTheorique(
-                                        article.getId(),
-                                        emplacement.getId());
+                        // Stock que le système pensait avoir au moment du comptage (photo
+                        // prise au premier scan). Un comptage ancien n'a pas de photo :
+                        // on retombe alors sur le stock actuel.
+                        Integer quantiteTheorique = comptage.getQuantiteTheorique() != null
+                                        ? comptage.getQuantiteTheorique()
+                                        : stockRepository.trouverQuantiteTheorique(
+                                                        article.getId(),
+                                                        emplacement.getId());
 
                         // Stock réellement compté par l'opérateur
                         Integer quantiteComptee = comptage.getQuantiteComptee();
 
                         // Positif = surplus, négatif = manque
-                        Integer ecartInteger = quantiteComptee - quantiteTheorique;
-                        Long ecart = ecartInteger.longValue();
+                        Long ecart = (long) (quantiteComptee - quantiteTheorique);
+
+                        // L'opérateur est facultatif en base (comptages anciens).
+                        User operateur = comptage.getUser();
 
                         LigneControleInventaireResponse ligne = new LigneControleInventaireResponse(
                                         emplacement.getId(),
@@ -92,8 +99,10 @@ public class InventaireService {
                                         article.getNomArticle(),
                                         quantiteTheorique,
                                         quantiteComptee,
-                                        ecart, comptage.getUser().getUsername(), comptage.getUser().getId(),
-                                        comptage.getUser().getImageUser());
+                                        ecart,
+                                        operateur == null ? null : operateur.getUsername(),
+                                        operateur == null ? null : operateur.getId(),
+                                        operateur == null ? null : operateur.getImageUser());
 
                         lignes.add(ligne);
                 }
