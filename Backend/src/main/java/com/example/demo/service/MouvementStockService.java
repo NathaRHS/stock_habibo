@@ -182,6 +182,79 @@ public class MouvementStockService {
         this.journalStatutService = journalStatutService;
     }
 
+
+    public void checkPiecesRestantes(Map<Long,Integer>piecesRestantesParDetail){
+        for (Map.Entry<Long, Integer> entree : piecesRestantesParDetail.entrySet()) {
+            if (entree.getValue() != 0) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Toutes les pieces du detail " + entree.getKey()
+                                + " n'ont pas ete reparties");
+            }
+        }
+    }
+
+    public Map<Long, Integer> verifierSiQuantiteAffecteeVrai(Map<Long, Integer> affectations) {
+
+        for (Map.Entry<Long, Integer> entree : affectations.entrySet()) {
+            Long detailJournalId = entree.getKey();
+            Integer quantiteAffectee = entree.getValue();
+
+            DetailJournal correspondant = detailJournalRepository.findById(detailJournalId)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Detail journal introuvable : " + detailJournalId));
+
+            if (!correspondant.getQuantiteConditionnement().equals(quantiteAffectee)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "La quantite affectee au detail " + detailJournalId
+                                + " ne correspond pas a la quantite attendue");
+            }
+
+            // rechercher le DetailJournal
+            // comparer quantiteAffectee avec getQuantiteConditionnement()
+        }
+        return affectations;
+    }
+
+    public Map<Long, Integer> regrouperAffectations(
+            List<AffectationStockRequest> lignes,
+            JournalMouvement journalMouvement) {
+
+        Map<Long, Integer> regroupees = new LinkedHashMap<>();
+
+        for (AffectationStockRequest ligne : lignes) {
+            if (ligne == null
+                    || ligne.detailJournalId() == null
+                    || ligne.emplacementId() == null
+                    || ligne.nombreConditionnements() == null
+                    || ligne.nombreConditionnements() <= 0) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Une affectation est incomplete ou possede une quantite invalide");
+            }
+
+            DetailJournal detailJournal = detailJournalRepository.findById(ligne.detailJournalId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Detail journal introuvable : " + ligne.detailJournalId()));
+
+            if (detailJournal.getJournalMouvement() == null
+                    || !journalMouvement.getId().equals(detailJournal.getJournalMouvement().getId())) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Le detail journal " + detailJournal.getId()
+                                + " n'appartient pas au journal " + journalMouvement.getId());
+            }
+
+            // Si le detail est deja la, on additionne ; sinon on l'ajoute.
+            regroupees.merge(ligne.detailJournalId(), ligne.nombreConditionnements(), Integer::sum);
+        }
+
+        return regroupees;
+    }
+
     @Transactional
     public List<MouvementStockResponse> creerEntreeStock(Long journalId, CreerMouvementsStockRequest request,
             String matricule) {
@@ -195,12 +268,14 @@ public class MouvementStockService {
         List<AffectationStockRequest> listeDesAffectations = request.affectations();
         // verifier si le journal existe
 
-        // Verrous : le journal d'abord, puis les emplacements par identifiant croissant.
+        // Verrous : le journal d'abord, puis les emplacements par identifiant
+        // croissant.
         // Ils doivent venir AVANT toute autre lecture : MySQL (REPEATABLE READ) fige sa
         // vue de la base a la premiere lecture simple ; lues apres les verrous, les
         // quantites en stock incluent les mouvements deja valides par un autre admin.
         // - meme journal : la 2e requete attend, voit AFFECTEE et est refusee (409) ;
-        // - meme emplacement : la capacite est relue une fois l'autre affectation validee.
+        // - meme emplacement : la capacite est relue une fois l'autre affectation
+        // validee.
         // L'ordre croissant evite que deux requetes s'attendent l'une l'autre.
         JournalMouvement journalMouvement = journalMouvementRepository.findByIdForUpdate(journalId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -229,59 +304,8 @@ public class MouvementStockService {
 
         // regroupement liste affectation
         Map<Long, Integer> affectation = new LinkedHashMap<>();
-        for (AffectationStockRequest affectationStockRequest : listeDesAffectations) {
-            // Verifier les champs obligatoires de chaque ligne du JSON.
-            if (affectationStockRequest == null
-                    || affectationStockRequest.detailJournalId() == null
-                    || affectationStockRequest.emplacementId() == null
-                    || affectationStockRequest.nombreConditionnements() == null
-                    || affectationStockRequest.nombreConditionnements() <= 0) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Une affectation est incomplete ou possede une quantite invalide");
-            }
-
-            Integer quantite = affectationStockRequest.nombreConditionnements();
-            DetailJournal detailJournal = detailJournalRepository.findById(affectationStockRequest.detailJournalId())
-                    .orElseThrow(() -> new ResponseStatusException(
-                            HttpStatus.NOT_FOUND,
-                            "Detail journal introuvable : " + affectationStockRequest.detailJournalId()));
-            if (detailJournal.getJournalMouvement() == null
-                    || !journalMouvement.getId().equals(detailJournal.getJournalMouvement().getId())) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Le detail journal " + detailJournal.getId()
-                                + " n'appartient pas au journal " + journalId);
-            }
-            // regarder si l'id est déjà là si oui on ajoute la quantité si non on insère
-            if (!affectation.containsKey(affectationStockRequest.detailJournalId())) {
-                affectation.put(affectationStockRequest.detailJournalId(), quantite);
-            } else {
-                Integer ancienneQuantite = affectation.get(affectationStockRequest.detailJournalId());
-                affectation.put(affectationStockRequest.detailJournalId(), ancienneQuantite + quantite);
-            }
-
-        }
-        // verifier si la quantité du detail == quantité affectés
-        for (Map.Entry<Long, Integer> entree : affectation.entrySet()) {
-            Long detailJournalId = entree.getKey();
-            Integer quantiteAffectee = entree.getValue();
-
-            DetailJournal correspondant = detailJournalRepository.findById(detailJournalId)
-                    .orElseThrow(() -> new ResponseStatusException(
-                            HttpStatus.NOT_FOUND,
-                            "Detail journal introuvable : " + detailJournalId));
-
-            if (!correspondant.getQuantiteConditionnement().equals(quantiteAffectee)) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "La quantite affectee au detail " + detailJournalId
-                                + " ne correspond pas a la quantite attendue");
-            }
-
-            // rechercher le DetailJournal
-            // comparer quantiteAffectee avec getQuantiteConditionnement()
-        }
+        affectation = regrouperAffectations(listeDesAffectations, journalMouvement);
+        affectation = verifierSiQuantiteAffecteeVrai(affectation);
 
         // Verifier qu'aucun detail du journal n'a ete oublie dans le JSON et
         // qu'aucune entree n'a deja ete creee pour ce detail.
@@ -400,8 +424,7 @@ public class MouvementStockService {
                         dateMouvement,
                         "Entree en stock du journal " + journalMouvement.getReference(),
                         detailJournal,
-                        false
-                ));
+                        false));
 
                 // Memoriser cette quantite pour les lignes suivantes du meme JSON.
                 quantitesPlanifieesParEmplacement.merge(
@@ -436,15 +459,7 @@ public class MouvementStockService {
         }
 
         // Verifier que la quantite reelle de chaque detail a ete entierement repartie.
-        for (Map.Entry<Long, Integer> entree : piecesRestantesParDetail.entrySet()) {
-            if (entree.getValue() != 0) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Toutes les pieces du detail " + entree.getKey()
-                                + " n'ont pas ete reparties");
-            }
-        }
-
+        checkPiecesRestantes(piecesRestantesParDetail);
         journalStatutService.changerStatut(journalMouvement, StatutJournalMouvementCode.AFFECTEE, utilisateur);
         // Un seul enregistrement pour tous les mouvements. La transaction annule tout
         // si l'une des insertions echoue.
@@ -455,7 +470,8 @@ public class MouvementStockService {
     }
 
     // Verrouille les emplacements vises, toujours dans le meme ordre (identifiant
-    // croissant). Les lignes sans emplacement sont refusees plus loin, avec leur message.
+    // croissant). Les lignes sans emplacement sont refusees plus loin, avec leur
+    // message.
     private void verrouillerEmplacements(List<AffectationStockRequest> affectations) {
         affectations.stream()
                 .filter(affectation -> affectation != null && affectation.emplacementId() != null)
@@ -513,8 +529,10 @@ public class MouvementStockService {
     // Duree maximale d'une synthese : un an (bissextile compris).
     private static final long SYNTHESE_MAX_JOURS = 366;
 
-    // Totaux de l'accueil : la periode [debut, fin[ (fin exclue) et la periode precedente
-    // de meme duree, qui se termine au debut de la premiere. Les additions sont faites
+    // Totaux de l'accueil : la periode [debut, fin[ (fin exclue) et la periode
+    // precedente
+    // de meme duree, qui se termine au debut de la premiere. Les additions sont
+    // faites
     // par la base : le navigateur ne telecharge plus la liste des mouvements.
     public SyntheseMouvementsResponse synthese(LocalDate debut, LocalDate fin) {
         if (!fin.isAfter(debut)) {
@@ -541,7 +559,8 @@ public class MouvementStockService {
         return new PeriodeSynthese(totaux.getEntrees(), totaux.getSorties(), totaux.getNombreMouvements());
     }
 
-    // Pieces entrees et sorties des 12 mois d'une annee (les mois sans mouvement sont a 0).
+    // Pieces entrees et sorties des 12 mois d'une annee (les mois sans mouvement
+    // sont a 0).
     public List<PointMensuelResponse> serieMensuelle(int annee) {
         if (annee < 2000 || annee > 2100) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Annee invalide : " + annee);
